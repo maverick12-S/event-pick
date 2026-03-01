@@ -1,0 +1,49 @@
+name: Unit CI
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+
+jobs:
+  frontend-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend-web-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci || true
+
+      - name: Run frontend tests (if exist)
+        run: |
+          if npm run | grep -q "test:run"; then
+            npm run test:run
+          else
+            echo "No frontend tests yet. Skipping."
+          fi
+
+  backend-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Run backend tests (if exist)
+        run: |
+          if [ -d "src/test" ]; then
+            ./gradlew test
+          else
+            echo "No backend tests yet. Skipping."
+          fi
