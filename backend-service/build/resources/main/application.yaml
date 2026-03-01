@@ -1,3 +1,16 @@
 spring:
   application:
     name: eventpick-backend
+    
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  profiles:
+    active: local
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/eventpick
+    username: user
+    password: password

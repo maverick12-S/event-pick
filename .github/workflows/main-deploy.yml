@@ -1,0 +1,23 @@
+name: Production Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    if: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build backend image
+        run: docker build -t backend ./backend-service
+
+      - name: Deploy Backend
+        run: echo "Deploy step placeholder"
+
+      - name: Deploy Frontend
+        run: echo "Deploy step placeholder"
