@@ -1,0 +1,34 @@
+.footer {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 10px 12px;
+  margin-top: 25px;
+  position: relative;
+  z-index: 10;
+  background: rgba(1, 5, 15, 0.55);
+  backdrop-filter: blur(6px);
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.footerInner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: rgba(255,255,255,0.7);
+  font-size: 0.875rem;
+}
+.lock {
+  font-size: 1.1rem;
+}
+.company {
+  font-weight: 600;
+}
+.footerLinks {
+  display: flex;
+  gap: 12px;
+}
+.footerLinks a {
+  color: rgba(255,255,255,0.68);
+  text-decoration: underline;
+}
+.footerLinks a:hover { color: #ffffff; }
