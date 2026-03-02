@@ -1,0 +1,141 @@
+/* =============================================
+   🎯 背景画像の重要ポイント
+   background-size: cover  → アスペクト比を保ちながら全体を覆う
+   background-position: center → 中心基準でトリミングされる
+   画面を縮小 → 画像は切り取られる（はみ出した部分が消える）
+   ============================================= */
+
+.pageWrapper {
+  position: relative;
+  width: 100vw;   /* viewport width = 画面幅100% */
+  height: 100vh;  /* viewport height = 画面高さ100% */
+  overflow: hidden; /* はみ出た背景を隠す */
+
+  /* 画像をベースに表示（画像が主役） */
+  background-image: url('/src/assets/images/login-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  /* 背景を少し暗くしてテキストを読みやすく */
+  isolation: isolate;
+}
+
+/* 背景画像を薄く表示（下層） */
+.pageWrapper::before {
+  /* スポットハイライトや淡い反射を上に重ねる（画像は下地） */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(900px 320px at 80% 8%, rgba(255,255,255,0.06), transparent 12%),
+    radial-gradient(700px 300px at 18% 20%, rgba(255,255,255,0.02), transparent 10%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 背景オーバーレイ（画像とベースの上に重ねて色を濃くする） */
+.pageWrapper::after {
+  content: '';
+  position: absolute;
+  inset: 0; /* top/right/bottom/left = 0 の省略形 */
+  /* 多層のグラデーションでリッチな色被せを実現
+     - 下層に暖色・寒色の混合で深みを与え
+     - 中間に縦横のソフトな暗がり（ビネット）を入れ
+     - 上層にスポットのハイライトを薄く乗せる */
+  background-image:
+    radial-gradient(800px 240px at 82% 8%, rgba(255,255,255,0.06), transparent 12%),
+    radial-gradient(60% 40% at 50% 95%, rgba(0,0,0,0.34), transparent 35%),
+    linear-gradient(135deg, rgba(9, 15, 26, 0.62), rgba(15, 25, 37, 0.62));
+  background-blend-mode: overlay, multiply, normal;
+  /* かすかなテクスチャを追加（必要ならコメント解除して調整） */
+  /* background-image: url('/src/assets/images/noise.png'), ...; */
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* ========== ヘッダーバー ========== */
+.header {
+  position: relative;
+  z-index: 10; /* 背景オーバーレイより前面に */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: rgba(10, 20, 50, 0.55);
+  backdrop-filter: blur(8px);       /* ← フロストガラス効果 */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.9rem;
+}
+
+.headerDate,
+.headerTime {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums; /* 数字の幅を固定（時刻のガタつき防止） */
+}
+
+/* ========== メインコンテンツ ========== */
+.main {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column; /* タイトルをカードの上に積む */
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  /* ヘッダー分を差し引いた残り高さ。ヘッダーを固定にしたので余白を多めに取る */
+  height: calc(100vh - 64px);
+}
+
+/* ===== タイトルセクション ===== */
+.titleSection {
+  text-align: center;
+  color: #fff;
+  margin-bottom: 12px;
+  margin-top: 100px; /* ヘッダーとの間に余白を作る（以前の -36px から変更） */
+}
+
+.titleSection h1 {
+  font-size: 2.6rem;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  letter-spacing: 1px;
+}
+
+.titleSection .subtitle {
+  font-size: 1rem;
+  color: rgba(255,255,255,0.75);
+  margin: 0;
+}
+
+/* フロストガラスカード */
+.card {
+  width: 100%;
+  max-width: 380px;
+  padding: 36px 32px;
+  border-radius: 12px;
+  opacity: 0.8; /* 少し透明にして背景を透かす */
+  /* ▼ フロストガラス（Glassmorphism）の実装 */
+  background: rgba(255, 255, 255, 0.08);     /* 半透明の白 */
+  backdrop-filter: blur(16px);               /* 背景をぼかす */
+  -webkit-backdrop-filter: blur(16px);       /* Safari対応 */
+  border: 1px solid rgba(255, 255, 255, 0.18); /* 薄いボーダー */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); /* 影で浮かせる */
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 480px) {
+  .card {
+    margin: 0 16px;
+    padding: 28px 20px;
+  }
+}

@@ -3,9 +3,15 @@
   line-height: 1.5;
   font-weight: 400;
 
+  /* EventPick ブランド背景カラー (洗練されたグラデーション) */
+  --bg-start: #071020; /* 深いネイビー（左上） */
+  --bg-mid:   #0b2a4a; /* 中間の青み */
+  --bg-end:   #133a66; /* 明るめのブルー（右下） */
+  --bg-spot:  rgba(255, 255, 255, 0.06); /* スポットライトの薄いハイライト */
+
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  background-color: var(--bg-start);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -28,6 +34,13 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  /* ベースに滑らかな斜めグラデーション + 軽いスポットハイライト */
+  background-image: 
+    radial-gradient(1200px 400px at 85% 8%, var(--bg-spot), transparent 20%),
+    linear-gradient(135deg, var(--bg-start) 0%, var(--bg-mid) 50%, var(--bg-end) 100%);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-size: cover;
 }
 
 h1 {
@@ -57,6 +70,10 @@ button:focus-visible {
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
+    /* ライトモード向けに控えめなグラデーションを上書き */
+    --bg-start: #f6f9fc;
+    --bg-mid:   #eef4fb;
+    --bg-end:   #e6eef9;
     background-color: #ffffff;
   }
   a:hover {

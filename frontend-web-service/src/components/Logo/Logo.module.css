@@ -1,0 +1,25 @@
+/* =============================================
+   CSS Modules = クラス名が自動でユニーク化される
+   .logoWrapper → .Logo_logoWrapper__xAb3c のように変換
+   → 他のファイルのCSSと絶対衝突しない
+   ============================================= */
+
+.logoWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: default;
+}
+
+.logoImage {
+  width: 70px; /* +3px */
+  height: 70px; /* +3px */
+  object-fit: contain;
+}
+
+.logoText {
+  font-size: calc(2.5rem + 10px); /* 縦方向に約+3px相当 */
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+}

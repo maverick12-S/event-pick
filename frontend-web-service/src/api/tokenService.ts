@@ -1,0 +1,43 @@
+// Token storage abstraction
+// 環境変数 VITE_AUTH_USE_COOKIES=true の場合は httpOnly cookie を使う想定
+const USE_COOKIES = import.meta.env.VITE_AUTH_USE_COOKIES === 'true';
+
+const ACCESS_KEY = 'access_token';
+const REFRESH_KEY = 'refresh_token';
+
+export const tokenService = {
+  isUsingCookies(): boolean {
+    return USE_COOKIES;
+  },
+
+  getAccessToken(): string | null {
+    if (USE_COOKIES) return null; // httpOnly cookie は JS から取得不可
+    return localStorage.getItem(ACCESS_KEY);
+  },
+
+  setAccessToken(token: string | null) {
+    if (USE_COOKIES) return; // cookie サーバ側で管理
+    if (token) localStorage.setItem(ACCESS_KEY, token);
+    else localStorage.removeItem(ACCESS_KEY);
+  },
+
+  getRefreshToken(): string | null {
+    if (USE_COOKIES) return null;
+    return localStorage.getItem(REFRESH_KEY);
+  },
+
+  setRefreshToken(token: string | null) {
+    if (USE_COOKIES) return;
+    if (token) localStorage.setItem(REFRESH_KEY, token);
+    else localStorage.removeItem(REFRESH_KEY);
+  },
+
+  clear() {
+    try {
+      localStorage.removeItem(ACCESS_KEY);
+      localStorage.removeItem(REFRESH_KEY);
+    } catch (_) {}
+  }
+};
+
+export default tokenService;
