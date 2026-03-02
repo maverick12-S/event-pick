@@ -1,346 +1,83 @@
-## 🔹 api/
-```ts
-export const apiSignOut = ...
----
+**Project Overview**
+- **Purpose:**: Frontend for EventPick — structured for scalable features and easy screen creation.
+- **Design/Specs:**: Do not change visual design or behavior in feature implementations; keep styles and UX intact.
 
-## 🛠 リファクタ実施ログ（今回の変更）
+**Folder Structure (current, high-level)**
+- **api**: アプリ共通の通信基盤（axios instance, interceptor, refresh token）。インフラ層、UIを含まない。
+- **assets**: 画像・SVG・フォントなどの静的リソース。ロジックやコンポーネントは置かない。
+- **components**: ドメイン非依存の共通UI（Button, Logo, Modal, Input）。業務ロジックを持たない。
+- **contexts**: React Context 定義（AuthContext, ThemeContext）。ロジックは hooks に分離。
+- **features**: 機能単位で完結するフォルダ（例: features/login）。内部に api, components, hooks, screens を持つ。
+- **hooks**: アプリ全体で使う再利用フック（useAuth, useDebounce）。feature 依存禁止。
+- **layouts**: 画面骨組み（BaseLayout, Header, Footer）。Screen に骨組みを書かない。
+- **lib**: 汎用ユーティリティ（date formatter, storage helper）。ビジネスロジックを含めない。
+- **routes**: ルーティング定義と ProtectedRoute。
+- **screens**: feature に属さない単発ページ（404 等）。
+- **types**: アプリ共通型定義。feature 固有型は feature 内に置く。
+- **app**: App 組み立て層（App.tsx など）。
+- **styles**: グローバル CSS（index.css, app.css）。
+- **main.tsx**: エントリーポイント（Provider ラップ、グローバル CSS 読み込み）。
 
-- `App.tsx` を `src/app/App.tsx` に移動して `src/app/index.ts` を作成しました。
-	- 理由：`app/` を「アプリの組み立て層」として責務を明確化するため。
-- `src/main.tsx` の `App` import を `./app` に変更しました。
-- ヘッダー周りのスタイルを調整しました。
-	- `Header.module.css` と `Logo.module.css` を編集し、上部バー風の見た目へ変更。
-	- 日付/時刻を小さな丸パネルで表示する `datePanel` を追加。
-	- `Header.tsx` の JSX を更新して `datePanel` を使用するようにしました。
+**依存の流れ（守ること）**
+- main.tsx → app/ → layouts/ → routes/ → features/ → components/hooks/api/lib
+- 一方向依存を維持し、feature から上位へ依存しない。
 
-これらの変更は命名と責務の一貫性を高め、画面作成・API連携・認証（Cognito など）追加の拡張性を改善します。
+**How to add a new Login-like screen (step-by-step)**
+- **1. Create feature folder:**: Create `features/yourFeature` with subfolders: `api`, `components`, `hooks`, `screens`.
+- **2. API shim:**: Add `features/yourFeature/api/index.ts` for feature-specific calls or use global `api` for infra-level logic.
+- **3. Component(s):**: Put UI bits in `features/yourFeature/components` as CSS Modules (`*.module.css`) and TSX components.
+- **4. Screen:**: Add `features/yourFeature/screens/YourScreen.tsx` that exports the page layout only (no global header/footer).
+- **5. Hook:**: Implement feature logic in `features/yourFeature/hooks/useYourFeature.ts` and keep async calls in `api`.
+- **6. Route:**: Register route in `routes/index.tsx` as a lazy-loaded component and wrap with `Suspense` + `SuspenseLoading`.
+- **7. Styles:**: Use a component-level CSS Module. Avoid touching global styles unless necessary.
+- **8. Test locally:**: Run `npm run dev` and verify layout inside the app's BaseLayout (header/footer/background provided by layout).
 
-## ✅ 現状の判断 — アプリ開発の基礎は十分か？
----
+**Code templates (minimal)**
+- **Feature screen skeleton:**
+  - **File:** features/yourFeature/screens/YourScreen.tsx
+  - **Code:**
+    import React from 'react';
+    import styles from './YourScreen.module.css';
+    import YourComponent from '../components/YourComponent';
 
-## 🔐 トークン戦略設計（推奨）
+    const YourScreen: React.FC = () => {
+      return (
+        <>
+          <div className={styles.titleSection}>...</div>
+          <div className={styles.card}><YourComponent /></div>
+        </>
+      );
+    };
+    export default YourScreen;
 
-目的：Amazon Cognito 等と連携する際のトークン保管・更新戦略を明文化し、フロント実装とサーバ実装の責務を分ける。
+- **Add route (routes/index.tsx):**
+  - Use lazy import and SuspenseFallback:
+    {
+      path: '/your',
+      element: <Suspense fallback={<SuspenseLoading />}><YourScreen /></Suspense>
+    }
 
-1) 保管方式の選択
-- httpOnly Cookie（推奨）
-	- 長所：XSS に対して安全。ブラウザが自動で cookie を送信するためフロントがアクセストークンを直接保持しない。
-	- 短所：CSR の場合、CSRF 対策が必要（SameSite, CSRF トークン等）。API ドメイン設計や CORS 設定が必要。
+**Best practices / Efficiency tips**
+- **Small PRs:**: One screen or one feature per PR.
+- **Reuse components:**: If a UI element could be shared, move it to `components/` instead of duplicating.
+- **Keep styles local:**: Prefer CSS Modules; keep global CSS minimal.
+- **Separation of concerns:**: Contexts = provider only; hooks = logic; components = UI.
+- **Templates:**: Copy the `features/login` structure when creating similar features to reduce setup time.
+- **Dev server checks:**: Use `npm run dev` and DevTools Network/Elements when debugging backgrounds or assets.
 
-- localStorage（簡易）
-	- 長所：実装が簡単。アクセストークンを JS から直接参照可能。
-	- 短所：XSS 攻撃に弱い。セキュリティリスクが高まるため、本番では推奨しない。
+**On assets and background images**
+- Prefer `public/` for images that must be reachable via absolute path at runtime.
+- For imports that go through bundler, place images under `src/assets` and import them for guaranteed resolution.
 
-2) 推奨フロー（httpOnly cookie + short-lived access token）
-- サーバ側で Cognito とやり取りし、`Set-Cookie: HttpOnly; Secure; SameSite=Strict` でリフレッシュトークンを保管。
-- フロントは通常の API リクエストを行う（cookie が自動送信される）。必要に応じて Authorization ヘッダーは使用しない。
-- 401 を検知したら `/auth/refresh` をサーバに POST し、サーバ側で cookie を参照して新しい access token を発行（cookie 更新）。
+**When to change files**
+- **UI/design changes:**: Only after design approval — do not alter current styles while adding screens.
+- **Refactor:**: Keep behavior consistent; split into smaller commits and document reasons.
 
-3) 実装上の注意点
-- refresh の競合対策（refresh lock）：複数リクエストが同時に 401 を受けた際に並列で refresh を実行しない。
-- トークンサービス抽象化：`src/api/tokenService.ts` のように storage 戦略を抽象化しておくと切り替えが容易。
-- サーバは CORS、SameSite、Secure 属性を正しく設定すること。
-
-4) 今回の実装
-- `src/api/tokenService.ts` を追加し、`VITE_AUTH_USE_COOKIES` 環境変数で cookie ベース / localStorage ベースを切り替え可能にしました。
-- `src/api/client.ts` のレスポンスインターセプターに refresh の排他制御（lock + queue）と簡易ログを追加しました。
-
----
-- `contexts/` と `hooks/` の分離方針が定義されているため、認証状態や副作用の分離が容易です。
-
-ただし「十分」から「完成」までには以下が必要です。
-
-- テスト（ユニット／統合）と CI の導入
-- Storybook やデザイントークンでの UI 一貫性チェック
-- Amazon Cognito との実運用連携（環境変数管理、セキュアなトークン保管、リフレッシュ戦略の堅牢化）
-- アクセシビリティとレスポンシブ調整の追加検証
-
-総評：基礎（アーキテクチャ、通信基盤、共通コンポーネントの土台）はできています。次はテスト、CI、Cognito 統合を優先して進めると安全にスケールできます。
-
----
-
-## 📝 役割整理（要約・視覚化）
-以下は各ディレクトリの「目的」と「実装ルール」を短くまとめたものです。
-
-- `api/` — インフラ層。axios インスタンス、インターセプター、共通ヘッダー、refresh token 処理を置く。UI を含めない。
-- `assets/` — 静的リソース（画像・SVG・フォント）。ロジック禁止。
-- `components/` — ドメイン非依存の共通UI（Button, Logo, Modal など）。業務ロジックを持たない。
-- `contexts/` — React Context 定義のみ。状態共有は Hook に分離。
-- `features/` — 機能単位で完結（api, components, hooks, screens を内包）。
-- `hooks/` — 全体で使える汎用 Hook。feature 依存禁止。
-- `layouts/` — 画面骨組み（Header, Sidebar, Footer）。Screen に骨組みを書かない。
-- `lib/` — 汎用ユーティリティ（date formatter 等）。ビジネスロジック置かない。
-- `routes/` — ルーティング定義。Screen の import のみ。
-- `screens/` — Feature に属さない単発ページ（404 など）。
-- `types/` — 全体共通の型定義。feature 固有型は feature 内に置く。
-
----
-
-もしよければ、次に以下いずれを進めます：
-
-- (A) Cognito 連携のためのトークン管理フロー設計と実装（api client の強化）
-- (B) テストと CI の雛形追加（Jest + GitHub Actions）
-- (C) Storybook 導入で UI コンポーネントのカタログ化
-
-どれを優先しますか？
-# Frontend Architecture Guide
-
-このドキュメントは、React + TypeScript フロントエンドの
-ディレクトリ構成と開発ルールを明確化し、
-チーム開発および機能追加を円滑に進めるための設計指針です。
-
----
-
-# 🎯 設計思想
-
-本プロジェクトは **Feature-Driven Architecture** を採用しています。
-
-- 機能単位でコードを完結させる
-- 責務ごとにディレクトリを分離する
-- UI統一のために軽量Design Systemを導入する
-- スケール（30画面以上）を前提とする
-
----
-
-# 📂 ディレクトリ構成
-src/
-app/
-styles/
-design-system/
-features/
-components/
-contexts/
-hooks/
-layouts/
-routes/
-screens/
-lib/
-api/
-types/
-setupTests.ts
+**Contact / Next steps**
+- If you want, I can:
+  - Scaffold a new `features/new-login` feature following this template.
+  - Create a file template generator (CLI script) to speed up adding screens.
 
 
 ---
-
-# 📁 各ディレクトリの役割
-
----
-
-## 🔹 app/
-
-アプリのエントリ責務。
-
-- App.tsx
-- main.tsx
-- Provider統合
-- ルーティングの起点
-
-アプリ全体を束ねる役割のみを持つ。
-
----
-
-## 🔹 styles/
-
-グローバルCSS管理。
-
-- index.css
-- リセットCSS
-- フォント定義
-
-UIロジックは含めない。
-
----
-
-## 🔹 design-system/
-
-UIの統一を担う軽量Design System。
-design-system/
-components/
-tokens/
-index.ts
-
-
-### components/
-純粋なUI部品（ロジックを持たない）
-
-- Button
-- Input
-- Modal
-
-### tokens/
-デザイン変数
-
-- colors.ts
-- spacing.ts
-
-目的：
-UIの統一と将来的な変更容易性を確保する。
-
----
-
-## 🔹 features/
-
-本プロジェクトの中核。
-
-機能単位で完結させる。
-
-例：
-features/login/
-api/
-components/
-hooks/
-screens/
-
-
-### api/
-その機能専用のAPI処理
-
-### components/
-機能専用UI
-
-### hooks/
-機能専用ロジック
-
-### screens/
-画面コンポーネント
-
-特徴：
-- 機能削除が安全
-- 影響範囲が明確
-- チーム開発で衝突しにくい
-
----
-
-## 🔹 components/
-
-ドメイン非依存の共通UI部品。
-
-例：
-components/
-auth/
-logo/
-
-
-Design Systemとは違い、
-多少の業務ロジックを含む場合がある。
-
----
-
-## 🔹 contexts/
-
-React Context定義専用。
-
-- AuthContext
-- ThemeContext
-- SidebarContext
-
-ContextとHookは分離する。
-
----
-
-## 🔹 hooks/
-
-アプリ全体で使える共通Hook。
-
-例：
-
-- useAuth
-- useDebounce
-
-featureに依存しないもののみ。
-
----
-
-## 🔹 layouts/
-
-画面構造を司る。
-
-例：
-
-- DefaultLayout.tsx
-- Header
-- Sidebar
-- Footer
-
-画面実装に直接レイアウトを持たせない。
-
----
-
-## 🔹 routes/
-
-ルーティング定義専用。
-
-- react-router設定
-- ProtectedRoute
-- RouteConfig
-
-画面実装とは責務を分ける。
-
----
-
-## 🔹 screens/
-
-Featureに属さない単発ページ。
-
-例：
-
-- NotFoundScreen
-- MaintenanceScreen
-
----
-
-## 🔹 lib/
-
-ユーティリティ・クライアント類。
-
-例：
-
-- date formatter
-- storage helper
-- firebase client
-
-肥大化しやすいため早期分離。
-
----
-
-## 🔹 api/
-
-アプリ共通APIクライアント。
-
-- axiosラッパー
-- interceptor
-- 認証ヘッダー付与
-- firebase連携
-
-例：
-
-```ts
-export const apiSignOut = ...
-
-🔹 types/
-
-アプリ全体で共有する型定義。
-
-API Response
-
-Domain Model
-
-共通Interface
-テスト戦略
-
-テストは「各機能の横」に配置する。
-
-例：
-
-LoginForm.tsx
-LoginForm.test.tsx
-
-理由：
-
-機能削除時にテストも安全に削除可能
-
-影響範囲が明確
-
-保守性が高い
-
-別に tests/ ディレクトリは作らない。
+Generated documentation replaces previous README content and follows the repository conventions specified.
