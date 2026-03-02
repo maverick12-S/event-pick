@@ -5,7 +5,7 @@
 // =============================================
 
 import React from 'react';
-import Header from '../../../../../components/Header/Header';
+// Header/Footer are provided by BaseLayout; avoid duplicate rendering here
 import LoginForm from '../LoginForm';
 import { useLogin } from '../../../api/hooks/useLogin';
 import styles from './LoginScreen.module.css';
@@ -25,32 +25,22 @@ const LoginScreen: React.FC = () => {
     }
     
   return (
-    // 画面全体のラッパー（背景画像をここに適用）
-    <div className={styles.pageWrapper}>
+    <>
+      <div className={styles.titleSection}>
+        <h1>企業ログイン</h1>
+        <p className={styles.subtitle}>拠点アカウントでログインしてください</p>
+      </div>
 
-      {/* ========== ヘッダーバー ========== */}
-      <Header />
-
-      {/* ========== メインコンテンツ（中央寄せ） ========== */}
-      <main className={styles.main}>
-        {/* タイトルセクション（中央寄せ） */}
-        <div className={styles.titleSection}>
-          <h1>企業ログイン</h1>
-          <p className={styles.subtitle}>拠点アカウントでログインしてください</p>
-        </div>
-
-        {/* フロストガラスカード */}
-        <div className={styles.card}>
-          <LoginForm
-            isLoading={isLoading}
-            error={error}
-            onSubmit={login}
-            onPasswordReset={handlePasswordReset}
-            onNewAccount={handleNewAccount}
-          />
-        </div>
-      </main>
-    </div>
+      <div className={styles.card}>
+        <LoginForm
+          isLoading={isLoading}
+          error={error}
+          onSubmit={login}
+          onPasswordReset={handlePasswordReset}
+          onNewAccount={handleNewAccount}
+        />
+      </div>
+    </>
   );
 };
 

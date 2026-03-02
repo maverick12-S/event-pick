@@ -1,21 +1,23 @@
 .header {
   position: fixed;
-  top: 20px; /* 画面上部から20px下に配置 */
-  left: 30px; /* 左右に20pxの余白 */
+  top: 20px;
+  left: 30px;
   right: 30px;
-  height: calc(100vh / 8 + 20px); /* 画面高さの1/8 に上下合計で約20px増やす（上下それぞれ約10px分） */
+  height: calc(100vh / 8 + 20px);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px; /* 左右パディングを20pxに揃える */
-  padding-right: 36px; /* 右側の余白を広げて日時と枠の距離を確保 */
-  background: rgba(39, 43, 54, 0.42);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  border-bottom: 1px solid rgba(36, 30, 30, 0.06);
+  padding: 0 20px;
+  padding-right: 36px;
+  /* 落ち着いたフロストガラス風に戻す */
+  background: rgba(32, 37, 51, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   box-sizing: border-box;
   z-index: 60;
-  border-radius: 8px; /* 角を丸めて浮かせる見た目に */
+  opacity: 0.9;
+  border-radius: 8px;
 }
 
 .left {

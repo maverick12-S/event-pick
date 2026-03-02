@@ -14,7 +14,7 @@ const Logo:React.FC<LogoProps> = ({ className }) => {
     return (
         <div className={`${styles.logoWrapper} ${className ?? ''}`}>
             <img src={logoImage} alt="Logo" className={styles.logoImage} />
-            <span className={styles.logoText}>EventPick</span>
+            <span className={styles.logoText}>Event Pick</span>
         </div>
     );
 };

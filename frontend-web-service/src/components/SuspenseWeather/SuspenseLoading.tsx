@@ -1,4 +1,6 @@
 import React, { Suspense } from 'react';
+import bg from '../../assets/images/login-bg.png';
+import styles from '../../features/login/components/LoginForm/screens/LoginScreen.module.css';
 
 // API用URL
 const url =
@@ -25,7 +27,6 @@ const fetchWeatherData = async (): Promise<WeatherData> => {
 // コンポーネント描画処理
 const WeatherDataComponent: React.FC = () => {
   if (!weatherData) {
-    // Promiseをthrowして Suspense に委ねる
     throw fetchWeatherData();
   }
 
@@ -49,19 +50,40 @@ const SuspenseLoading: React.FC = () => {
   return (
     <Suspense
       fallback={
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: '100vw',
-          height: '100vh',
-          background: '#0d1b2a',
-          color: '#fff',
-          zIndex: 9999,
-        }}>
-          <h1>Loading...</h1>
+        <div
+          className={styles.pageWrapper}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundImage: `url(${bg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            backgroundColor: '#0d1b2a',
+            color: '#fff',
+            zIndex: 9999,
+          }}
+        >
+          <div style={{
+            minWidth: 200,
+            maxWidth: '70%',
+            height: 56,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(255,255,255,0.08)',
+            color: '#fff',
+            borderRadius: 10,
+            border: '1px solid rgba(255,255,255,0.12)',
+            boxShadow: '0 6px 20px rgba(2,6,23,0.45)',
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+            fontSize: 16,
+            fontWeight: 600,
+          }}>Loading・・・ </div>
         </div>
       }
     >
