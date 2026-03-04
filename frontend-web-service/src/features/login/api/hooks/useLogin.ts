@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../authApi';
-import type { LoginRequest, Realm } from '../../../types/auth';
+import type { LoginRequest } from '../../../types/auth';
 
 export const useLogin = () => {
     const [isLoading, setIsLoading] = useState(false);

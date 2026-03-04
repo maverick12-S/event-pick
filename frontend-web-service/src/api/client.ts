@@ -19,7 +19,7 @@ export const apiClient: AxiosInstance = axios.create({
     },
 });
 
-function log(...args: any[]) {
+function log(...args: unknown[]) {
     if (API_DEBUG) console.debug('[api]', ...args);
 }
 
@@ -29,7 +29,10 @@ apiClient.interceptors.request.use(
         // storage 戦略によってトークン付与方法を変える
         if (!tokenService.isUsingCookies()) {
             const token = tokenService.getAccessToken();
-            if (token) config.headers = config.headers ?? {}, config.headers.Authorization = `Bearer ${token}`;
+            if (token) {
+                config.headers = config.headers ?? {};
+                (config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
+            }
         } else {
             // httpOnly cookie の場合は cookie が自動送信される想定（ブラウザの同一サイトポリシーに注意）
         }
@@ -79,13 +82,14 @@ async function doRefresh(): Promise<string | null> {
                 tokenService.setRefreshToken(data.refresh_token ?? null);
                 return data.access_token ?? null;
             }
-        } catch (err) {
-            log('refresh failed', err);
-            tokenService.clear();
-            // 強制ログアウト
-            window.location.href = '/login';
-            return null;
-        } finally {
+        } catch (err: unknown) {
+                log('refresh failed', err);
+                console.error(err);
+                tokenService.clear();
+                // 強制ログアウト
+                window.location.href = '/login';
+                return null;
+            } finally {
             isRefreshing = false;
             refreshPromise = null;
         }
@@ -122,9 +126,10 @@ apiClient.interceptors.response.use(
                     // 既にリフレッシュが終わっていれば通知
                     if (!isRefreshing) onRefreshed(newToken);
                 });
-            } catch (err) {
-                return Promise.reject(err);
-            }
+            } catch (err: unknown) {
+                        console.error(err);
+                        return Promise.reject(err);
+                    }
         }
 
         // 共通エラーハンドリングの例（必要に応じて拡張）

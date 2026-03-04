@@ -5,6 +5,7 @@
 // =============================================
 
 import React, { useState } from 'react';
+import { AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
 import type { LoginRequest } from '../../../../types/auth';
 import styles from './LoginForm.module.css';
 
@@ -27,8 +28,19 @@ const LoginForm: React.FC<LoginFormProps> = ({
     const [realm, setRealm] = useState('');
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [fieldErrors, setFieldErrors] = useState<{[k:string]: string | null}>({});
+    
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        // client-side validation: mark empty fields
+        const errs: {[k:string]: string|null} = {};
+        if (!realm) errs.realm = '入力してください';
+        if (!username) errs.username = '入力してください';
+        if (!password) errs.password = '入力してください';
+        setFieldErrors(errs);
+        const hasErr = Object.keys(errs).length > 0;
+        if (hasErr) return;
         onSubmit({ realm, username, password });
     };
     return (
@@ -46,10 +58,10 @@ const LoginForm: React.FC<LoginFormProps> = ({
                 <input
                     id="realm"
                     type="text"
-                    className={styles.input}
+                    className={`${styles.input} ${fieldErrors.realm ? styles.inputInvalid : ''}`}
                     placeholder="拠点レルム"
                     value={realm}
-                    onChange={(e) => setRealm(e.target.value)}
+                    onChange={(e) => { setRealm(e.target.value); if (fieldErrors.realm) setFieldErrors({...fieldErrors, realm: null}); }}
                     autoComplete="realm"
                     required
                 />
@@ -60,28 +72,38 @@ const LoginForm: React.FC<LoginFormProps> = ({
                 <input
                     id="username"
                     type="text"
-                    className={styles.input}
+                    className={`${styles.input} ${fieldErrors.username ? styles.inputInvalid : ''}`}
                     placeholder="拠点アカウントID"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    onChange={(e) => { setUsername(e.target.value); if (fieldErrors.username) setFieldErrors({...fieldErrors, username: null}); }}
                     autoComplete="username"
                     required
                 />
             </div>
 
             {/* パスワード */}
-            <div className={styles.fieldGroup}>
-                <input
-                    id="password"
-                    type="password"
-                    className={styles.input}
-                    placeholder="パスワード"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    autoComplete="current-password"
-                    required
-                />
-            </div>
+                <div className={styles.fieldGroup}>
+                    <div className={styles.fieldWithToggle}>
+                        <input
+                            id="password"
+                            type={showPassword ? 'text' : 'password'}
+                            className={`${styles.input} ${fieldErrors.password ? styles.inputInvalid : ''}`}
+                            placeholder="パスワード"
+                            value={password}
+                            onChange={(e) => { setPassword(e.target.value); if (fieldErrors.password) setFieldErrors({...fieldErrors, password: null}); }}
+                            autoComplete="current-password"
+                            required
+                        />
+                        <button
+                            type="button"
+                            aria-label={showPassword ? 'パスワードを非表示' : 'パスワードを表示'}
+                            className={styles.toggleButton}
+                            onClick={() => setShowPassword((s) => !s)}
+                        >
+                            {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
+                        </button>
+                    </div>
+                </div>
 
             {/* ログインボタン */}
             <button

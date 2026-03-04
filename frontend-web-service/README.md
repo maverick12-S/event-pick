@@ -1,83 +1,108 @@
-**Project Overview**
-- **Purpose:**: Frontend for EventPick — structured for scalable features and easy screen creation.
-- **Design/Specs:**: Do not change visual design or behavior in feature implementations; keep styles and UX intact.
+Project の概要
 
-**Folder Structure (current, high-level)**
-- **api**: アプリ共通の通信基盤（axios instance, interceptor, refresh token）。インフラ層、UIを含まない。
-- **assets**: 画像・SVG・フォントなどの静的リソース。ロジックやコンポーネントは置かない。
-- **components**: ドメイン非依存の共通UI（Button, Logo, Modal, Input）。業務ロジックを持たない。
-- **contexts**: React Context 定義（AuthContext, ThemeContext）。ロジックは hooks に分離。
-- **features**: 機能単位で完結するフォルダ（例: features/login）。内部に api, components, hooks, screens を持つ。
-- **hooks**: アプリ全体で使う再利用フック（useAuth, useDebounce）。feature 依存禁止。
-- **layouts**: 画面骨組み（BaseLayout, Header, Footer）。Screen に骨組みを書かない。
-- **lib**: 汎用ユーティリティ（date formatter, storage helper）。ビジネスロジックを含めない。
-- **routes**: ルーティング定義と ProtectedRoute。
-- **screens**: feature に属さない単発ページ（404 等）。
-- **types**: アプリ共通型定義。feature 固有型は feature 内に置く。
-- **app**: App 組み立て層（App.tsx など）。
-- **styles**: グローバル CSS（index.css, app.css）。
-- **main.tsx**: エントリーポイント（Provider ラップ、グローバル CSS 読み込み）。
+- 目的: EventPick のフロントエンド — 機能拡張がしやすく、画面追加が容易な構成。
+- デザイン/仕様: 機能実装時に視覚デザインや挙動を変更しないこと。既存のスタイルと UX は維持してください。
 
-**依存の流れ（守ること）**
-- main.tsx → app/ → layouts/ → routes/ → features/ → components/hooks/api/lib
-- 一方向依存を維持し、feature から上位へ依存しない。
+フォルダ構成（概要）
 
-**How to add a new Login-like screen (step-by-step)**
-- **1. Create feature folder:**: Create `features/yourFeature` with subfolders: `api`, `components`, `hooks`, `screens`.
-- **2. API shim:**: Add `features/yourFeature/api/index.ts` for feature-specific calls or use global `api` for infra-level logic.
-- **3. Component(s):**: Put UI bits in `features/yourFeature/components` as CSS Modules (`*.module.css`) and TSX components.
-- **4. Screen:**: Add `features/yourFeature/screens/YourScreen.tsx` that exports the page layout only (no global header/footer).
-- **5. Hook:**: Implement feature logic in `features/yourFeature/hooks/useYourFeature.ts` and keep async calls in `api`.
-- **6. Route:**: Register route in `routes/index.tsx` as a lazy-loaded component and wrap with `Suspense` + `SuspenseLoading`.
-- **7. Styles:**: Use a component-level CSS Module. Avoid touching global styles unless necessary.
-- **8. Test locally:**: Run `npm run dev` and verify layout inside the app's BaseLayout (header/footer/background provided by layout).
+- `api`: アプリ共通の通信基盤（axios インスタンス、インターセプター、リフレッシュトークン処理）。インフラ層であり UI を含みません。
+- `assets`: 画像・SVG・フォントなどの静的リソース。ロジックやコンポーネントは置かないでください。
+- `components`: ドメイン非依存の共通 UI（Button、Logo、Modal、Input など）。業務ロジックを持たせないこと。
+- `contexts`: React Context 定義（例: `AuthContext`、`ThemeContext`）。状態共有の器で、ロジックは hooks に分離します。
+- `features`: 機能単位で完結するフォルダ（例: `features/login`）。内部に `api`、`components`、`hooks`、`screens` を持ちます。
+- `hooks`: アプリ全体で使う再利用可能なロジック（例: `useAuth`、`useDebounce`）。feature 依存を避けること。
+- `layouts`: 画面の骨組み（例: `BaseLayout`、`Header`、`Footer`）。Screen に骨組みを直接書かないこと。
+- `lib`: 汎用ユーティリティ（date フォーマッタ、storage helper など）。ビジネスロジックは置かない。
+- `routes`: ルーティング定義（`react-router` 設定、ProtectedRoute 等）。Screen のみを import する。
+- `screens`: feature に属さない単発ページ（404、500 等）。
+- `types`: アプリ全体で使う共通型定義。feature 固有型は feature 内に置く。
+- `app`: アプリの組み立て層（`App.tsx` など）。ビジネスロジックは書かない。
+- `styles`: グローバル CSS（`index.css`、`app.css`）を管理。
+- `main.tsx`: エントリーポイント。React の起動、Provider のラップ、グローバル CSS 読み込みを担当。
 
-**Code templates (minimal)**
-- **Feature screen skeleton:**
-  - **File:** features/yourFeature/screens/YourScreen.tsx
-  - **Code:**
-    import React from 'react';
-    import styles from './YourScreen.module.css';
-    import YourComponent from '../components/YourComponent';
+依存の流れ（守ること）
 
-    const YourScreen: React.FC = () => {
-      return (
-        <>
-          <div className={styles.titleSection}>...</div>
-          <div className={styles.card}><YourComponent /></div>
-        </>
-      );
-    };
-    export default YourScreen;
+main.tsx → app/ → layouts/ → routes/ → features/ → components/hooks/api/lib
 
-- **Add route (routes/index.tsx):**
-  - Use lazy import and SuspenseFallback:
-    {
-      path: '/your',
-      element: <Suspense fallback={<SuspenseLoading />}><YourScreen /></Suspense>
-    }
+一方向依存を維持し、feature から上位へ依存しないこと。
 
-**Best practices / Efficiency tips**
-- **Small PRs:**: One screen or one feature per PR.
-- **Reuse components:**: If a UI element could be shared, move it to `components/` instead of duplicating.
-- **Keep styles local:**: Prefer CSS Modules; keep global CSS minimal.
-- **Separation of concerns:**: Contexts = provider only; hooks = logic; components = UI.
-- **Templates:**: Copy the `features/login` structure when creating similar features to reduce setup time.
-- **Dev server checks:**: Use `npm run dev` and DevTools Network/Elements when debugging backgrounds or assets.
+ログイン風の新規画面を追加する手順（ステップ）
 
-**On assets and background images**
-- Prefer `public/` for images that must be reachable via absolute path at runtime.
-- For imports that go through bundler, place images under `src/assets` and import them for guaranteed resolution.
+1) feature フォルダ作成
+- `features/yourFeature/` を作成し、サブフォルダ `api`、`components`、`hooks`、`screens` を追加します。
 
-**When to change files**
-- **UI/design changes:**: Only after design approval — do not alter current styles while adding screens.
-- **Refactor:**: Keep behavior consistent; split into smaller commits and document reasons.
+2) API 層
+- `features/yourFeature/api/index.ts` を作成し、feature 固有の API 呼び出しを実装します。共通の axios インスタンスや interceptor、認証処理は `src/api` に置き、feature から利用してください。
 
-**Contact / Next steps**
-- If you want, I can:
-  - Scaffold a new `features/new-login` feature following this template.
-  - Create a file template generator (CLI script) to speed up adding screens.
+3) コンポーネント
+- UI 部品は `features/yourFeature/components` に入れ、CSS Modules（`*.module.css`）でスタイルを管理します。
 
+4) フック（ロジック）
+- `features/yourFeature/hooks/useYourFeature.ts` にロジックを実装します。非同期処理や API 呼び出しはここで完結させ、UI は props で受け取るだけにします。
+
+5) スクリーン
+- `features/yourFeature/screens/YourScreen.tsx` を作成し、画面の本体（タイトル、カードなど）だけを返すようにします。ヘッダー・フッター・背景などは `BaseLayout` が提供します。
+
+6) ルーティング追加
+- `routes/index.tsx` に lazy ロードでルートを追加します。例:
+
+```tsx
+const YourScreen = lazy(() => import('../features/yourFeature/screens/YourScreen'));
+{
+  path: '/your',
+  element: <Suspense fallback={<SuspenseLoading />}><YourScreen /></Suspense>
+}
+```
+
+7) スタイル
+- コンポーネント単位で CSS Module を使用し、グローバルスタイルは可能な限り触らないこと。
+
+8) ローカルテスト
+- `npm run dev`（または `yarn dev`）で動作確認を行い、`BaseLayout` 内でヘッダー／フッター／背景との整合を確認してください。
+
+コードテンプレート（最小）
+
+- `features/yourFeature/screens/YourScreen.tsx` の例:
+
+```tsx
+import React from 'react';
+import styles from './YourScreen.module.css';
+import YourComponent from '../components/YourComponent';
+
+const YourScreen: React.FC = () => {
+  return (
+    <>
+      <div className={styles.titleSection}>タイトル</div>
+      <div className={styles.card}><YourComponent /></div>
+    </>
+  );
+};
+export default YourScreen;
+```
+
+運用上のベストプラクティス
+
+- 小さな PR を心がける（1 画面 / 1 機能ごと）。
+- 再利用可能な UI は `components/` に切り出す。
+- スタイルは局所化（CSS Modules）し、グローバル CSS は最小限に留める。
+- Context には状態共有の責務のみを持たせ、ロジックは hooks に分離する。
+- `features/login` の構成をコピーして新機能を作ると初期セットアップが速くなる。
+
+アセットと背景画像に関して
+
+- 実行時に絶対パスで参照する必要がある画像は `public/` に置くことを推奨します。
+- バンドラ経由で確実に解決したい場合は `src/assets` に置き、import を使って参照してください。
+
+変更タイミングのルール
+
+- UI / デザインの変更はデザイナー承認後に行うこと。
+- リファクタは振る舞いを壊さないよう小さいコミットで行い、理由をドキュメントすること。
+
+次のステップ（提案）
+
+- 要望があれば以下を自動で行います:
+  - `features/new-login` をテンプレートに従ってスキャフォールド作成
+  - 画面追加のテンプレートジェネレータ（CLI）の作成
 
 ---
-Generated documentation replaces previous README content and follows the repository conventions specified.
+この README はリポジトリの方針に合わせて日本語に差し替えられました。

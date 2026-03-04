@@ -1,0 +1,218 @@
+/* SignupScreen.css */
+/* =========================================================
+   signup-card  ── ガラスモーフィズムカード
+   ========================================================= */
+
+/* ---- カード本体 ---- */
+.signup-card {
+  /* Login と同様のカード幅・パディングに合わせる */
+  width: 100%;
+  max-width: 760px;
+  padding: 36px 32px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+  color: #ffffff;
+}
+
+/* ---- タイトル ---- */
+.signup-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+  text-align: center;
+  letter-spacing: 0.05em;
+  margin-bottom: 20px;
+}
+
+/* ---- エラー表示 ---- */
+.signup-error {
+  background: rgba(255, 100, 80, 0.15);
+  border: 1px solid rgba(255, 100, 80, 0.4);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #ff8070;
+  margin-bottom: 12px;
+}
+
+/* ---- フォーム全体 ---- */
+.signup-form {
+  width: 100%;
+}
+
+/* ---- フィールドコンテナ ---- */
+.signup-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ---- ラベル ---- */
+.signup-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+  letter-spacing: 0.03em;
+  margin-bottom: -4px; /* gap と合わせて隙間を詰める */
+}
+
+/* ---- 入力欄（共通） ---- */
+
+/* 入力欄は LoginForm と同じ見た目に合わせる（高さ・フォント統一） */
+/* 入力欄は共通の `LoginForm.module.css` の `.input` を利用します。 */
+/* ---- ファイルインput ---- */
+/* ---- ファイル input ---- */
+/* ---- アクション（幅いっぱい） ---- */
+/* ---- アクション（幅いっぱい） ---- */
+/* ---- アクション（幅いっぱい） ---- */
+/* ---- アクション（幅いっぱい） ---- */
+
+/* ---- ファイルインput ---- */
+.signup-file {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.signup-file:hover {
+  border-color: rgba(100, 160, 255, 0.5);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ---- ファイル名表示 ---- */
+.signup-filename {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+  padding-left: 4px;
+}
+
+/* ---- アクションボタン群 ---- */
+.signup-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+/* ---- 登録するボタン ---- */
+
+/* 登録ボタンは Login のブランドブルーに合わせる */
+.signup-submit {
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(180deg, #0a66ff, #0052cc);
+  color: #ffffff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.18s ease, filter 0.18s ease;
+  margin-top: 8px;
+  box-shadow: 0 8px 20px rgba(10, 86, 255, 0.18);
+}
+
+.signup-submit:hover:not(:disabled) {
+  background: linear-gradient(
+    135deg,
+    rgba(140, 165, 210, 0.65) 0%,
+    rgba(100, 125, 180, 0.75) 100%
+  );
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  transform: translateY(-1px);
+}
+
+.signup-submit:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.signup-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ---- ログイン画面へ戻るボタン ---- */
+.signup-cancel {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 2px;
+}
+
+.signup-cancel:hover { color: #ffffff; }
+
+/* ---- レスポンシブ対応 ---- */
+@media (max-width: 600px) {
+  .signup-card {
+    padding: 24px 20px;
+    border-radius: 12px;
+    margin: 0 12px;
+  }
+
+  .signup-title {
+    font-size: 20px;
+  }
+}
+
+/* ---- 2カラムレイアウト（会社コード上部、左右に会社情報を並べる） ---- */
+.signup-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 22px;
+  align-items: start;
+}
+
+.signup-full {
+  grid-column: 1 / -1;
+}
+
+.signup-file {
+  grid-column: 1 / -1;
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  .signup-grid {
+    grid-template-columns: 1fr;
+  }
+  .signup-file {
+    grid-column: auto;
+  }
+}
+
+/* ファイル用のラッパー（ラベルと input をまとめて幅いっぱいにする） */
+.signup-file-wrapper {
+  grid-column: 1 / -1;
+}
+
+/* アクション群も幅いっぱいに広げる */
+.signup-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+/* 各カラム内のラベルと input の間隔を確保 */
+.signup-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* page-level enter/exit animations are provided by src/styles/pageTransitions.css */

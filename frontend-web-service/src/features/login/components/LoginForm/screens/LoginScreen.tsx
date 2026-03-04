@@ -5,25 +5,24 @@
 // =============================================
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 // Header/Footer are provided by BaseLayout; avoid duplicate rendering here
 import LoginForm from '../LoginForm';
 import { useLogin } from '../../../api/hooks/useLogin';
 import styles from './LoginScreen.module.css';
 
 const LoginScreen: React.FC = () => {
+    const navigate = useNavigate();
     const {isLoading, error, login} = useLogin();
-  
 
     const handlePasswordReset = () => {
-        // 【TO_DO】パスワードリセット画面へ遷移
-        console.log('パスワードリセット画面へ遷移');
+        navigate('/password-reset');
     }
 
     const handleNewAccount = () => {
-        // 【TO_DO】新規アカウント作成画面へ遷移
-        console.log('新規アカウント作成画面へ遷移');
+      navigate('/signup');
     }
-    
+
   return (
     <>
       <div className={styles.titleSection}>
