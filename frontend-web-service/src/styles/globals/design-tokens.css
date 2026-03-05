@@ -1,0 +1,140 @@
+/* ============================================================
+   EventPick Design Tokens
+   ============================================================
+   全画面共通の CSS カスタムプロパティ定義。
+   ここを変更するだけで全体のデザインが統一更新できます。
+   ============================================================ */
+
+:root {
+  /* --------------------------------------------------
+     Brand Colors
+     -------------------------------------------------- */
+  --color-brand-primary:      #0a66ff;
+  --color-brand-primary-dark: #0052cc;
+  --color-brand-primary-glow: rgba(10, 86, 255, 0.28);
+
+  /* --------------------------------------------------
+     Background Palette (dark navy theme)
+     -------------------------------------------------- */
+  --color-bg-base:   #071020;  /* page background */
+  --color-bg-mid:    #0b2a4a;
+  --color-bg-end:    #133a66;
+  --color-bg-header: rgba(32, 37, 51, 0.55);
+  --color-bg-footer: rgba(1, 5, 15, 0.55);
+
+  /* --------------------------------------------------
+     Glass / Frosted Card
+     -------------------------------------------------- */
+  --glass-bg:            rgba(255, 255, 255, 0.12);
+  --glass-bg-hover:      rgba(255, 255, 255, 0.16);
+  --glass-border:        rgba(255, 255, 255, 0.22);
+  --glass-blur:          16px;
+  --glass-shadow:        0 10px 40px rgba(0, 0, 0, 0.45);
+  --glass-border-radius: 12px;
+
+  /* --------------------------------------------------
+     Form / Input
+     -------------------------------------------------- */
+  --input-bg:           rgba(255, 255, 255, 0.08);
+  --input-bg-focus:     rgba(255, 255, 255, 0.15);
+  --input-border:       rgba(255, 255, 255, 0.25);
+  --input-border-focus: rgba(255, 255, 255, 0.6);
+  --input-border-error: rgba(220, 53, 69, 0.9);
+  --input-color:        #ffffff;
+  --input-placeholder:  rgba(255, 255, 255, 0.45);
+  --input-padding-v:    14px;
+  --input-padding-h:    18px;
+  --input-font-size:    1rem;
+  --input-border-radius: 10px;
+
+  /* --------------------------------------------------
+     Typography
+     -------------------------------------------------- */
+  --font-family-base: system-ui, -apple-system, 'Hiragino Sans', 'Yu Gothic UI',
+                      'Meiryo', Avenir, Helvetica, Arial, sans-serif;
+
+  --text-primary:    #ffffff;
+  --text-secondary:  rgba(255, 255, 255, 0.75);
+  --text-muted:      rgba(255, 255, 255, 0.55);
+  --text-link:       rgba(255, 255, 255, 0.65);
+
+  --font-size-xs:  0.75rem;   /* 12px */
+  --font-size-sm:  0.875rem;  /* 14px */
+  --font-size-md:  1rem;      /* 16px */
+  --font-size-lg:  1.125rem;  /* 18px */
+  --font-size-xl:  1.5rem;    /* 24px */
+  --font-size-2xl: 2rem;      /* 32px */
+  --font-size-3xl: 2.5rem;    /* 40px */
+
+  --font-weight-normal:  400;
+  --font-weight-medium:  500;
+  --font-weight-semibold:600;
+  --font-weight-bold:    700;
+  --font-weight-extrabold: 800;
+
+  /* --------------------------------------------------
+     Spacing Scale (4px base)
+     -------------------------------------------------- */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-7:  28px;
+  --space-8:  32px;
+  --space-9:  36px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* --------------------------------------------------
+     Border Radius
+     -------------------------------------------------- */
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-full: 9999px;
+
+  /* --------------------------------------------------
+     Transition
+     -------------------------------------------------- */
+  --transition-fast:   0.12s ease;
+  --transition-normal: 0.2s ease;
+  --transition-slow:   0.3s ease;
+  --page-easing:       cubic-bezier(0.2, 0.9, 0.3, 1);
+  --page-duration:     280ms;
+
+  /* --------------------------------------------------
+     Z-index Layers
+     -------------------------------------------------- */
+  --z-background: 0;
+  --z-overlay:    1;
+  --z-content:    10;
+  --z-header:     60;
+  --z-modal:      100;
+  --z-toast:      200;
+
+  /* --------------------------------------------------
+     Error / State Colors
+     -------------------------------------------------- */
+  --color-error:        rgba(220, 53, 69, 0.2);
+  --color-error-border: rgba(220, 53, 69, 0.5);
+  --color-error-text:   #ff8a8a;
+  --color-error-glow:   rgba(220, 53, 69, 0.12);
+
+  /* --------------------------------------------------
+     Backdrop (Header / Footer blur)
+     -------------------------------------------------- */
+  --backdrop-blur: blur(8px);
+  --backdrop-blur-heavy: blur(16px);
+
+  /* --------------------------------------------------
+     Layout Dimensions
+     -------------------------------------------------- */
+  --header-height:     72px;   /* ヘッダーの実高さ */
+  --card-max-width:    400px;  /* 標準フォームカード */
+  --card-wide-max-width: 780px; /* Signup等のワイドカード */
+  --content-padding:   var(--space-6);   /* ページ左右パディング */
+}

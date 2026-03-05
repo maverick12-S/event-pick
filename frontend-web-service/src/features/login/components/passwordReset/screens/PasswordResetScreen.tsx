@@ -1,8 +1,15 @@
+/**
+ * PasswordResetScreen
+ * ─────────────────────────────────────────────
+ * パスワードリセット画面。
+ * 登録メールアドレスを入力して MFA 画面へ遷移。
+ */
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styles from '../../LoginForm/screens/LoginScreen.module.css';
-import formStyles from '../../LoginForm/LoginForm.module.css';
-import '../../../../../../src/styles/pageTransitions.css';
+import { AuthPageLayout, FormCard } from '../../../../../components/ui';
+import { fieldStyles } from '../../../../../components/ui/FormField/FormField';
+import { Button, LinkButton, LinkGroup } from '../../../../../components/ui/Button/Button';
 
 const PasswordResetScreen: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -18,7 +25,6 @@ const PasswordResetScreen: React.FC = () => {
     try {
       // TODO: 実際の API を呼ぶ
       await new Promise((r) => setTimeout(r, 600));
-      // 成功時は多要素認証画面へ遷移（実運用ではトークン等を渡す場合があります）
       navigate('/mfa', { state: { from: 'password-reset', email } });
     } catch (err: unknown) {
       console.error(err);
@@ -29,33 +35,45 @@ const PasswordResetScreen: React.FC = () => {
   };
 
   return (
-    <>
-      <div className={styles.titleSection}>
-        <h1>パスワードをリセット</h1>
-        <p className={styles.subtitle}>登録メールアドレスを入力してください</p>
-      </div>
+    <AuthPageLayout
+      title="パスワードをリセット"
+      subtitle="登録メールアドレスを入力してください"
+    >
+      <FormCard>
+        <form className={fieldStyles.form} onSubmit={handleSubmit} noValidate>
+          {error && (
+            <div className={fieldStyles.errorBanner} role="alert">
+              {error}
+            </div>
+          )}
 
-      <div className={`${styles.card} page-enter`}>
-        <form className={formStyles.form} onSubmit={handleSubmit} noValidate>
-          {error && <div className={formStyles.errorBanner}>{error}</div>}
-          <div className={formStyles.fieldGroup}>
+          <div className={fieldStyles.fieldGroup}>
+            <label className={fieldStyles.label} htmlFor="reset-email">メールアドレス</label>
             <input
+              id="reset-email"
               type="email"
-              className={formStyles.input}
-              placeholder="メールアドレス"
+              className={fieldStyles.input}
+              placeholder="登録済みメールアドレス"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (error) setError(null);
+              }}
+              autoComplete="email"
               required
             />
           </div>
 
-          <button className={formStyles.submitButton} type="submit" disabled={loading}>{loading ? '送信中…' : '送信'}</button>
-          <div className={formStyles.links}>
-            <button type="button" className={formStyles.linkButton} onClick={() => navigate('/login')}>ログイン画面へ戻る</button>
-          </div>
+          <Button type="submit" loading={loading}>
+            {loading ? '送信中…' : '送信'}
+          </Button>
+
+          <LinkGroup>
+            <LinkButton onClick={() => navigate('/login')}>ログイン画面へ戻る</LinkButton>
+          </LinkGroup>
         </form>
-      </div>
-    </>
+      </FormCard>
+    </AuthPageLayout>
   );
 };
 

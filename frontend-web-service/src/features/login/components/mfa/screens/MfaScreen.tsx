@@ -1,9 +1,31 @@
+/**
+ * MfaScreen
+ * ─────────────────────────────────────────────
+ * 多要素認証画面。
+ * 共通UIコンポーネント (AuthPageLayout / FormCard / fieldStyles / Button) を使用。
+ */
+
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import styles from '../../LoginForm/screens/LoginScreen.module.css';
-import formStyles from '../../LoginForm/LoginForm.module.css';
-import '../../../../../../src/styles/pageTransitions.css';
-import './MfaScreen.css';
+import { AuthPageLayout, FormCard } from '../../../../../components/ui';
+import { fieldStyles } from '../../../../../components/ui/FormField/FormField';
+import { Button, LinkButton, LinkGroup } from '../../../../../components/ui/Button/Button';
+
+/* ---- インフォカード用スタイル ---- */
+const infoCardStyle: React.CSSProperties = {
+  background: 'rgba(10, 20, 50, 0.55)',
+  backdropFilter: 'blur(8px)',
+  WebkitBackdropFilter: 'blur(8px)',
+  border: '1px solid rgba(255, 255, 255, 0.06)',
+  borderRadius: '10px',
+  padding: '12px 16px',
+  color: 'rgba(255, 255, 255, 0.9)',
+  fontSize: '0.9rem',
+  lineHeight: '1.6',
+  width: '100%',
+  maxWidth: '400px',
+  boxSizing: 'border-box' as const,
+};
 
 const MfaScreen: React.FC = () => {
   const location = useLocation();
@@ -24,16 +46,15 @@ const MfaScreen: React.FC = () => {
     try {
       // TODO: 実際の認証 API を呼ぶ
       await new Promise((r) => setTimeout(r, 600));
-      // 成功時の遷移先は遷移元によって変える
-        const src = (location.state || {}) as { from?: string; email?: string; signupData?: unknown };
-        const from = src.from;
-        if (from === 'signup') {
-          navigate('/signup', { state: { mfaPassed: true, signupData: src.signupData } });
-        } else if (from === 'password-reset') {
-          navigate('/password-change', { state: { mfaPassed: true, email: src.email } });
-        } else {
-          navigate('/login', { state: { mfaPassed: true } });
-        }
+      const src = (location.state || {}) as { from?: string; email?: string; signupData?: unknown };
+      const from = src.from;
+      if (from === 'signup') {
+        navigate('/signup', { state: { mfaPassed: true, signupData: src.signupData } });
+      } else if (from === 'password-reset') {
+        navigate('/password-change', { state: { mfaPassed: true, email: src.email } });
+      } else {
+        navigate('/login', { state: { mfaPassed: true } });
+      }
     } catch (err: unknown) {
       console.error(err);
       setError('認証に失敗しました');
@@ -43,43 +64,54 @@ const MfaScreen: React.FC = () => {
   };
 
   return (
-    <>
-      <div className={styles.titleSection}>
-        <h1>多要素認証</h1>
-        <p className={styles.subtitle}>認証コードを入力してください</p>
-      </div>
+    <AuthPageLayout title="多要素認証" subtitle="認証コードを入力してください">
+      <FormCard>
+        <form className={fieldStyles.form} onSubmit={handleSubmit} noValidate>
+          {error && (
+            <div className={fieldStyles.errorBanner} role="alert">
+              {error}
+            </div>
+          )}
 
-      <div className={`${styles.card} page-enter`}>
-
-        {/* 説明カードは下に移動 */}
-
-        <form className={formStyles.form} onSubmit={handleSubmit} noValidate>
-          {error && <div className={formStyles.errorBanner}>{error}</div>}
-          <div className={formStyles.fieldGroup}>
+          <div className={fieldStyles.fieldGroup}>
+            <label className={fieldStyles.label} htmlFor="mfa-code">認証コード</label>
             <input
+              id="mfa-code"
               type="text"
-              className={`${formStyles.input} ${fieldError ? formStyles.inputInvalid : ''}`}
-              placeholder="認証コード"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              className={`${fieldStyles.input} ${fieldError ? fieldStyles.inputInvalid : ''}`}
+              placeholder="6桁の認証コード"
               value={code}
-              onChange={(e) => { setCode(e.target.value); if (fieldError) setFieldError(null); }}
+              onChange={(e) => {
+                setCode(e.target.value);
+                if (fieldError) setFieldError(null);
+                if (error) setError(null);
+              }}
               required
             />
+            {fieldError && (
+              <span className={fieldStyles.fieldError} role="alert">{fieldError}</span>
+            )}
           </div>
 
-          <button className={formStyles.submitButton} type="submit" disabled={loading}>{loading ? '認証中…' : '認証'}</button>
-          <div className={formStyles.links}>
-            <button type="button" className={formStyles.linkButton} onClick={() => navigate('/login')}>ログイン画面へ戻る</button>
-          </div>
+          <Button type="submit" loading={loading}>
+            {loading ? '認証中…' : '認証'}
+          </Button>
+
+          <LinkGroup>
+            <LinkButton onClick={() => navigate('/login')}>ログイン画面へ戻る</LinkButton>
+          </LinkGroup>
         </form>
-      </div>
+      </FormCard>
 
-      {/* 説明カードをカードの外側、下に表示（幅を入力欄と揃える） */}
-      <div>
-        <div className="mfa-info-card">
-          入力されたメールアドレスへ認証コードが送信されています。<br />受信した認証コードを入力してください。
-        </div>
+      {/* 説明インフォカード */}
+      <div style={infoCardStyle}>
+        入力されたメールアドレスへ認証コードが送信されています。
+        <br />
+        受信した認証コードを入力してください。
       </div>
-    </>
+    </AuthPageLayout>
   );
 };
 
