@@ -1,50 +1,98 @@
-import React, { Suspense } from 'react';
-import bg from '../../assets/images/login-bg.png';
-
 /**
  * SuspenseLoading
  * ─────────────────────────────────────────────
  * lazy import 中に表示するフォールバックUI。
- * 背景画像 + Loading インジケーターのみ。
- * ※ 天気API取得は削除（外部依存によりLoadingが解決しない問題を修正）
+ * ログイン画面と同じ背景・ヘッダー・フッターを維持し、
+ * 中央に「読み込み中」インジケーターを表示。
  */
+
+import React, { Suspense } from 'react';
+import bg from '../../assets/images/login-bg.png';
+import Header from '../Header/Header';
+import Footer from '../Footer/Footer';
+import { CircularProgress, Box, Typography } from '@mui/material';
 
 const LoadingFallback: React.FC = () => (
   <div
     style={{
-      position: 'fixed',
-      inset: 0,
       display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
+      flexDirection: 'column',
+      minHeight: '100dvh',
       backgroundImage: `url(${bg})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
+      backgroundAttachment: 'fixed',
       backgroundRepeat: 'no-repeat',
       backgroundColor: '#071020',
-      zIndex: 9999,
     }}
   >
+    {/* ダークオーバーレイ */}
     <div
       style={{
-        minWidth: 200,
-        maxWidth: '70%',
-        height: 56,
+        position: 'fixed',
+        inset: 0,
+        background: 'linear-gradient(160deg, rgba(7,16,32,0.7) 0%, rgba(11,42,74,0.6) 60%, rgba(7,16,32,0.75) 100%)',
+        pointerEvents: 'none',
+        zIndex: 0,
+      }}
+    />
+
+    {/* ヘッダー */}
+    <div style={{ position: 'relative', zIndex: 10 }}>
+      <Header />
+    </div>
+
+    {/* メインコンテンツ：読み込み中 */}
+    <Box
+      component="main"
+      sx={{
+        flex: '1 0 auto',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'rgba(255,255,255,0.08)',
-        color: '#fff',
-        borderRadius: 10,
-        border: '1px solid rgba(255,255,255,0.12)',
-        boxShadow: '0 6px 20px rgba(2,6,23,0.45)',
-        backdropFilter: 'blur(6px)',
-        WebkitBackdropFilter: 'blur(6px)',
-        fontSize: 16,
-        fontWeight: 600,
+        position: 'relative',
+        zIndex: 1,
+        py: 8,
       }}
     >
-      Loading・・・
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 2,
+          background: 'rgba(255,255,255,0.08)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255,255,255,0.14)',
+          borderRadius: '14px',
+          boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
+          px: 5,
+          py: 4,
+          minWidth: 220,
+        }}
+      >
+        <CircularProgress
+          size={36}
+          thickness={3.5}
+          sx={{ color: 'rgba(255,255,255,0.75)' }}
+        />
+        <Typography
+          sx={{
+            color: 'rgba(255,255,255,0.85)',
+            fontWeight: 600,
+            fontSize: '0.95rem',
+            letterSpacing: '0.04em',
+          }}
+        >
+          読み込み中…
+        </Typography>
+      </Box>
+    </Box>
+
+    {/* フッター */}
+    <div style={{ position: 'relative', zIndex: 10 }}>
+      <Footer />
     </div>
   </div>
 );
