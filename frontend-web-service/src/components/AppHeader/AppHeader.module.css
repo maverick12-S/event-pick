@@ -31,6 +31,11 @@
   flex: 1;
 }
 
+.logo {
+  display: inline-flex;
+  width: auto;
+}
+
 /* ---- 中央: 日付・時刻 ---- */
 .center {
   display: flex;

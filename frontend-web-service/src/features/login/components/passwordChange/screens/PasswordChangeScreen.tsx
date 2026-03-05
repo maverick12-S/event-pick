@@ -55,12 +55,12 @@ const PasswordChangeScreen: React.FC = () => {
       subtitle="新しいパスワードを設定してください"
     >
       <Card elevation={0}>
-        <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+        <CardContent sx={{ p: { xs: 4.5, sm: 5.5 } }}>
           <Box
             component="form"
             onSubmit={handleSubmit}
             noValidate
-            sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}
+            sx={{ display: 'flex', flexDirection: 'column', gap: 3.25 }}
           >
             {error && <Alert severity="error" sx={{ borderRadius: 2 }}>{error}</Alert>}
 

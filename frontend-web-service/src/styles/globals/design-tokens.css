@@ -133,7 +133,7 @@
   /* --------------------------------------------------
      Layout Dimensions
      -------------------------------------------------- */
-  --header-height:     72px;   /* ヘッダーの実高さ */
+  --header-height:     150px;   /* ヘッダーの実高さ */
   --card-max-width:    400px;  /* 標準フォームカード */
   --card-wide-max-width: 780px; /* Signup等のワイドカード */
   --content-padding:   var(--space-6);   /* ページ左右パディング */

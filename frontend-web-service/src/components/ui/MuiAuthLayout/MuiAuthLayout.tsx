@@ -37,7 +37,7 @@ const MuiAuthLayout: React.FC<MuiAuthLayoutProps> = ({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'flex-start',
+        justifyContent: 'center',
         minHeight: 'calc(100dvh - var(--header-height, 72px) - 60px)',
         py: { xs: 4, sm: 5 },
         px: 2,
@@ -51,7 +51,7 @@ const MuiAuthLayout: React.FC<MuiAuthLayoutProps> = ({
         sx={{
           textAlign: 'center',
           width: '100%',
-          maxWidth: wide ? 800 : 420,
+          maxWidth: wide ? 920 : 540,
         }}
       >
         <Typography
@@ -79,7 +79,7 @@ const MuiAuthLayout: React.FC<MuiAuthLayoutProps> = ({
       <Grid
         container
         justifyContent="center"
-        sx={{ width: '100%', maxWidth: wide ? 800 : 420 }}
+        sx={{ width: '100%', maxWidth: wide ? 860 : 480 }}
       >
         <Grid size={12}>
           {children}

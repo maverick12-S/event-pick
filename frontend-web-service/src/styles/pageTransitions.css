@@ -1,36 +1,45 @@
 :root {
-  --page-easing: cubic-bezier(.2,.9,.3,1);
-  --page-duration: 280ms;
+  --page-easing: cubic-bezier(0.22, 1, 0.36, 1);
+  --page-duration: 320ms;
 }
 
-@keyframes pageEnter {
-  from {
-    transform: scale(0.98);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
+.page-stage {
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity var(--page-duration) var(--page-easing),
+    transform var(--page-duration) var(--page-easing);
+  will-change: opacity, transform;
+  backface-visibility: hidden;
+}
+
+.page-stage.is-enter {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.route-loading-bar {
+  position: sticky;
+  top: var(--header-height, 72px);
+  z-index: 70;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(145, 210, 255, 0.15), rgba(145, 210, 255, 0.95), rgba(145, 210, 255, 0.15));
+  animation: routeBarPulse 900ms ease-in-out infinite;
+}
+
+@keyframes routeBarPulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-stage {
     opacity: 1;
+    transform: none;
+    transition: none;
   }
-}
 
-@keyframes pageExit {
-  from {
-    transform: scale(1);
-    opacity: 1;
+  .route-loading-bar {
+    animation: none;
   }
-  to {
-    transform: scale(0.98);
-    opacity: 0;
-  }
-}
-
-.page-enter {
-  transform-origin: top center;
-  animation: pageEnter var(--page-duration) var(--page-easing) both;
-}
-
-.page-exit {
-  transform-origin: top center;
-  animation: pageExit calc(var(--page-duration) * 0.8) var(--page-easing) both;
 }

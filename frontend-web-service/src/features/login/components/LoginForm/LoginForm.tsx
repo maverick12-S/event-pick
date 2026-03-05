@@ -59,12 +59,12 @@ const LoginForm: React.FC<LoginFormProps> = ({
 
   return (
     <Card elevation={0}>
-      <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+      <CardContent sx={{ p: { xs: 4.5, sm: 5.5 } }}>
         <Box
           component="form"
           onSubmit={handleSubmit}
           noValidate
-          sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}
+          sx={{ display: 'flex', flexDirection: 'column', gap: 3.25 }}
         >
           {/* エラーバナー */}
           {error && (
@@ -156,7 +156,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
               underline="hover"
               sx={{ fontSize: '0.85rem', color: 'text.secondary', cursor: 'pointer' }}
             >
-              パスワード回復をする
+              パスワードお忘れですか？
             </Link>
             <Link
               component="button"
@@ -165,7 +165,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
               underline="hover"
               sx={{ fontSize: '0.85rem', color: 'text.secondary', cursor: 'pointer' }}
             >
-              パスワードログアウト
+              新規アカウント作成
             </Link>
           </Stack>
         </Box>
