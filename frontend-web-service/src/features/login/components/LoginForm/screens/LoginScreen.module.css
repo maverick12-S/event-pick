@@ -1,143 +1,64 @@
-/* =============================================
-   🎯 背景画像の重要ポイント
-   background-size: cover  → アスペクト比を保ちながら全体を覆う
-   background-position: center → 中心基準でトリミングされる
-   画面を縮小 → 画像は切り取られる（はみ出した部分が消える）
-   ============================================= */
+/* ============================================================
+   LoginScreen.module.css
+   ============================================================
+   ※ 旧スタイルはここに残しつつ、共通コンポーネントに移行済み。
+      BaseLayout の main > Outlet が AuthPageLayout を包む構造なので
+      このファイルは後方互換のために保持します。
+      新規画面は AuthPageLayout + FormCard + FormField を使用してください。
+   ============================================================ */
 
-.pageWrapper {
-  position: relative;
-  width: 100vw;   /* viewport width = 画面幅100% */
-  height: 100vh;  /* viewport height = 画面高さ100% */
-  overflow: hidden; /* はみ出た背景を隠す */
-
-  /* 画像をベースに表示（画像が主役） */
-  background-image: url('/src/assets/images/login-bg.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-
-  /* 背景を少し暗くしてテキストを読みやすく */
-  isolation: isolate;
-}
-
-/* 背景画像を薄く表示（下層） */
-.pageWrapper::before {
-  /* スポットハイライトや淡い反射を上に重ねる（画像は下地） */
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image:
-    radial-gradient(900px 320px at 80% 8%, rgba(255,255,255,0.06), transparent 12%),
-    radial-gradient(700px 300px at 18% 20%, rgba(255,255,255,0.02), transparent 10%);
-  z-index: 0;
-  pointer-events: none;
-}
-
-/* 背景オーバーレイ（画像とベースの上に重ねて色を濃くする） */
-.pageWrapper::after {
-  content: '';
-  position: absolute;
-  inset: 0; /* top/right/bottom/left = 0 の省略形 */
-  /* 多層のグラデーションでリッチな色被せを実現
-     - 下層に暖色・寒色の混合で深みを与え
-     - 中間に縦横のソフトな暗がり（ビネット）を入れ
-     - 上層にスポットのハイライトを薄く乗せる */
-  /* 暗めのオーバーレイにして背景を引き締める */
-  background-image:
-    radial-gradient(800px 240px at 82% 8%, rgba(255,255,255,0.04), transparent 12%),
-    radial-gradient(60% 40% at 50% 95%, rgba(0,0,0,0.5), transparent 35%),
-    linear-gradient(135deg, rgba(6, 10, 18, 0.78), rgba(10, 18, 28, 0.78));
-  background-blend-mode: overlay, multiply, normal;
-  /* かすかなテクスチャを追加（必要ならコメント解除して調整） */
-  /* background-image: url('/src/assets/images/noise.png'), ...; */
-  z-index: 1;
-  pointer-events: none;
-}
-
-/* ========== ヘッダーバー ========== */
-.header {
-  position: relative;
-  z-index: 10; /* 背景オーバーレイより前面に */
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 24px;
-  background: rgba(10, 20, 50, 0.55);
-  backdrop-filter: blur(8px);       /* ← フロストガラス効果 */
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.headerRight {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 0.9rem;
-}
-
+/* 後方互換用エイリアス (既存コードが参照している場合のみ) */
+.pageWrapper,
+.header,
+.headerRight,
 .headerDate,
-.headerTime {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-variant-numeric: tabular-nums; /* 数字の幅を固定（時刻のガタつき防止） */
-}
+.headerTime,
+.main { /* no-op */ }
 
-/* ========== メインコンテンツ ========== */
-.main {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  flex-direction: column; /* タイトルをカードの上に積む */
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-  /* ヘッダー分を差し引いた残り高さ。ヘッダーを固定にしたので余白を多めに取る */
-  height: calc(100vh - 64px);
-}
-
-/* ===== タイトルセクション ===== */
+/* タイトルセクション – AuthPageLayout.module.css に統合済み */
 .titleSection {
   text-align: center;
   color: #fff;
-  margin-bottom: 12px;
-  margin-top: 100px; /* ヘッダーとの間に余白を作る（以前の -36px から変更） */
+  width: 100%;
+  max-width: 400px;
 }
 
 .titleSection h1 {
-  font-size: 2.6rem;
+  font-size: clamp(1.8rem, 5vw, 2.5rem);
   font-weight: 700;
   margin: 0 0 8px 0;
-  letter-spacing: 1px;
+  letter-spacing: 0.02em;
 }
 
 .titleSection .subtitle {
-  font-size: 1rem;
-  color: rgba(255,255,255,0.75);
+  font-size: clamp(0.875rem, 2vw, 1rem);
+  color: rgba(255, 255, 255, 0.75);
   margin: 0;
 }
 
-/* フロストガラスカード */
+/* フロストガラスカード – FormCard.module.css に統合済み */
 .card {
   width: 100%;
-  max-width: 380px;
+  max-width: 400px;
   padding: 36px 32px;
   border-radius: 12px;
-  /* 少し明るめのフロストにしてフォーム視認性を向上 */
-  background: rgba(255, 255, 255, 0.12);     /* 明るめの半透明 */
+  background: rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.22);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+  box-sizing: border-box;
+  animation: cardEnter 280ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
 }
 
-/* レスポンシブ対応 */
+@keyframes cardEnter {
+  from { transform: scale(0.98) translateY(8px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+
 @media (max-width: 480px) {
   .card {
     margin: 0 16px;
     padding: 28px 20px;
   }
 }
-
-/* Footer は components/Footer に分離済み */

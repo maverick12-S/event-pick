@@ -1,0 +1,49 @@
+/* ============================================================
+   Background / PageWrapper
+   ============================================================
+   ページ全体の背景。
+   ・overflow: auto → スクロール可能
+   ・背景は fixed attachment でスクロール時も動かない
+   ============================================================ */
+
+.pageWrapper {
+  /* スクロール可能なルートラッパー */
+  min-height: 100dvh;          /* dynamic viewport height */
+  width: 100%;
+  overflow-x: hidden;          /* 横スクロール抑止 */
+  display: flex;
+  flex-direction: column;
+
+  /* 背景画像 (バンドラ経由で inline style で上書きされる) */
+  background-image: url('/src/assets/images/login-bg.png');
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-attachment: fixed; /* ← スクロール時に背景は固定 */
+  isolation: isolate;
+}
+
+/* スポットハイライト（下層） */
+.pageWrapper::before {
+  content: '';
+  position: fixed;            /* fixedにしてスクロール時も同位置 */
+  inset: 0;
+  background-image:
+    radial-gradient(900px 320px at 80% 8%, rgba(255, 255, 255, 0.06), transparent 12%),
+    radial-gradient(700px 300px at 18% 20%, rgba(255, 255, 255, 0.02), transparent 10%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 色被せオーバーレイ（上層） */
+.pageWrapper::after {
+  content: '';
+  position: fixed;            /* fixedにしてスクロール時も同位置 */
+  inset: 0;
+  background-image:
+    radial-gradient(800px 240px at 82% 8%, rgba(255, 255, 255, 0.04), transparent 12%),
+    radial-gradient(60% 40% at 50% 95%, rgba(0, 0, 0, 0.5), transparent 35%),
+    linear-gradient(135deg, rgba(6, 10, 18, 0.78), rgba(10, 18, 28, 0.78));
+  z-index: 1;
+  pointer-events: none;
+}

@@ -1,0 +1,89 @@
+/* ============================================================
+   Button / LinkButton
+   ============================================================ */
+
+/* ---- プライマリボタン ---- */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 14px var(--space-5);
+  border-radius: var(--input-border-radius);
+  border: none;
+  background: linear-gradient(180deg, var(--color-brand-primary), var(--color-brand-primary-dark));
+  color: var(--text-primary);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  font-family: var(--font-family-base);
+  cursor: pointer;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-normal),
+    filter var(--transition-normal),
+    opacity var(--transition-normal);
+  margin-top: var(--space-2);
+  box-shadow: 0 8px 20px rgba(10, 86, 255, 0.18);
+  letter-spacing: 0.01em;
+}
+
+.button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 32px var(--color-brand-primary-glow),
+              0 0 16px rgba(10, 86, 255, 0.14);
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(10, 86, 255, 0.2);
+}
+
+.button:focus-visible {
+  outline: 3px solid rgba(10, 86, 255, 0.4);
+  outline-offset: 2px;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ---- サイズバリアント ---- */
+.buttonSm {
+  padding: 10px var(--space-4);
+  font-size: var(--font-size-sm);
+}
+
+/* ---- リンクボタン ---- */
+.linkButton {
+  background: none;
+  border: none;
+  color: var(--text-link);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family-base);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: var(--space-1) var(--space-1);
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-normal);
+  line-height: 1.4;
+}
+
+.linkButton:hover {
+  color: var(--text-primary);
+}
+
+.linkButton:focus-visible {
+  outline: 2px solid rgba(100, 160, 255, 0.4);
+  outline-offset: 2px;
+}
+
+/* ---- リンクコンテナ (複数のlinkButtonを縦並び) ---- */
+.linkGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
