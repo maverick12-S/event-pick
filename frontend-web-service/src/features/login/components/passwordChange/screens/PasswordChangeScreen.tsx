@@ -1,151 +1,157 @@
 /**
- * PasswordChangeScreen
- * ─────────────────────────────────────────────
- * パスワード変更画面。
- * 新しいパスワードを設定してログイン画面へ遷移。
+ * PasswordChangeScreen — MUI リファクタ版
+ * 新しいパスワードの設定画面。
  */
 
 import React, { useState } from 'react';
-import { AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
 import { useNavigate } from 'react-router-dom';
-import { AuthPageLayout, FormCard } from '../../../../../components/ui';
-import { fieldStyles } from '../../../../../components/ui/FormField/FormField';
-import { Button, LinkButton, LinkGroup } from '../../../../../components/ui/Button/Button';
+import {
+  Box, Card, CardContent, TextField, Button,
+  Alert, Link, Stack, InputAdornment, IconButton,
+} from '@mui/material';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import MuiAuthLayout from '../../../../../components/ui/MuiAuthLayout/MuiAuthLayout';
 
 const PasswordChangeScreen: React.FC = () => {
-  const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<{ password?: string | null; confirm?: string | null }>({});
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
   const navigate = useNavigate();
+  const [password, setPassword]     = useState('');
+  const [confirm, setConfirm]       = useState('');
+  const [showPass, setShowPass]     = useState(false);
+  const [showConf, setShowConf]     = useState(false);
+  const [loading, setLoading]       = useState(false);
+  const [error, setError]           = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ password?: string; confirm?: string }>({});
+
+  const validate = () => {
+    const errs: { password?: string; confirm?: string } = {};
+    if (!password)           errs.password = '新しいパスワードを入力してください';
+    else if (password.length < 8) errs.password = '8文字以上で入力してください';
+    if (!confirm)            errs.confirm  = '確認用パスワードを入力してください';
+    else if (password !== confirm) errs.confirm = 'パスワードが一致しません';
+    return errs;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const errs: { password?: string; confirm?: string } = {};
-    if (!password) errs.password = '入力してください';
-    if (!confirm) errs.confirm = '入力してください';
-    if (password && confirm && password !== confirm) errs.confirm = 'パスワードが一致しません';
-    if (password && password.length < 8) errs.password = 'パスワードは8文字以上にしてください';
+    const errs = validate();
     setFieldErrors(errs);
-    if (Object.keys(errs).length > 0) {
-      const first = Object.values(errs)[0];
-      if (first) setError(first);
-      return;
-    }
+    if (Object.keys(errs).length > 0) return;
     setLoading(true);
     try {
-      // TODO: 実際の API を呼ぶ
       await new Promise((r) => setTimeout(r, 700));
       navigate('/login', { state: { passwordChanged: true } });
-    } catch (err: unknown) {
-      console.error(err);
-      setError('変更に失敗しました');
+    } catch {
+      setError('パスワードの変更中にエラーが発生しました');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <AuthPageLayout
+    <MuiAuthLayout
       title="パスワード変更"
       subtitle="新しいパスワードを設定してください"
     >
-      <FormCard>
-        <form className={fieldStyles.form} onSubmit={handleSubmit} noValidate>
-          {error && (
-            <div className={fieldStyles.errorBanner} role="alert">
-              {error}
-            </div>
-          )}
+      <Card elevation={0}>
+        <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            noValidate
+            sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}
+          >
+            {error && <Alert severity="error" sx={{ borderRadius: 2 }}>{error}</Alert>}
 
-          {/* 新しいパスワード */}
-          <div className={fieldStyles.fieldGroup}>
-            <label className={fieldStyles.label} htmlFor="new-password">新しいパスワード</label>
-            <div className={fieldStyles.fieldWithToggle}>
-              <input
-                id="new-password"
-                type={showPassword ? 'text' : 'password'}
-                className={`${fieldStyles.input} ${fieldErrors.password ? fieldStyles.inputInvalid : ''}`}
-                placeholder="新しいパスワード（8文字以上）"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (fieldErrors.password) setFieldErrors({ ...fieldErrors, password: null });
-                  if (error) setError(null);
-                }}
-                autoComplete="new-password"
-                required
-              />
-              <button
+            {/* 新しいパスワード */}
+            <TextField
+              id="new-password"
+              label="新しいパスワード"
+              placeholder="8文字以上"
+              type={showPass ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setFieldErrors((p) => ({ ...p, password: undefined })); }}
+              error={Boolean(fieldErrors.password)}
+              helperText={fieldErrors.password}
+              autoComplete="new-password"
+              required
+              fullWidth
+              variant="outlined"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label={showPass ? 'パスワードを非表示' : 'パスワードを表示'}
+                      onClick={() => setShowPass((s) => !s)}
+                      edge="end"
+                      size="small"
+                      sx={{ color: 'text.secondary' }}
+                    >
+                      {showPass ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            {/* パスワード確認 */}
+            <TextField
+              id="confirm-password"
+              label="パスワード（確認）"
+              placeholder="同じパスワードを再入力"
+              type={showConf ? 'text' : 'password'}
+              value={confirm}
+              onChange={(e) => { setConfirm(e.target.value); setFieldErrors((p) => ({ ...p, confirm: undefined })); }}
+              error={Boolean(fieldErrors.confirm)}
+              helperText={fieldErrors.confirm}
+              autoComplete="new-password"
+              required
+              fullWidth
+              variant="outlined"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label={showConf ? 'パスワードを非表示' : 'パスワードを表示'}
+                      onClick={() => setShowConf((s) => !s)}
+                      edge="end"
+                      size="small"
+                      sx={{ color: 'text.secondary' }}
+                    >
+                      {showConf ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              fullWidth
+              disabled={loading}
+              size="large"
+            >
+              {loading ? '変更中…' : 'パスワードを変更'}
+            </Button>
+
+            <Stack alignItems="flex-end">
+              <Link
+                component="button"
                 type="button"
-                aria-label={showPassword ? 'パスワードを非表示' : 'パスワードを表示'}
-                className={fieldStyles.toggleButton}
-                onClick={() => setShowPassword((s) => !s)}
+                onClick={() => navigate('/login')}
+                underline="hover"
+                sx={{ fontSize: '0.85rem', color: 'text.secondary', cursor: 'pointer' }}
               >
-                {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
-              </button>
-            </div>
-            {fieldErrors.password && (
-              <span className={fieldStyles.fieldError} role="alert">{fieldErrors.password}</span>
-            )}
-          </div>
-
-          {/* 確認用パスワード */}
-          <div className={fieldStyles.fieldGroup}>
-            <label className={fieldStyles.label} htmlFor="confirm-password">新しいパスワード（確認用）</label>
-            <div className={fieldStyles.fieldWithToggle}>
-              <input
-                id="confirm-password"
-                type={showConfirm ? 'text' : 'password'}
-                className={`${fieldStyles.input} ${fieldErrors.confirm ? fieldStyles.inputInvalid : ''}`}
-                placeholder="パスワードを再入力"
-                value={confirm}
-                onChange={(e) => {
-                  setConfirm(e.target.value);
-                  if (fieldErrors.confirm) setFieldErrors({ ...fieldErrors, confirm: null });
-                  if (error) setError(null);
-                }}
-                autoComplete="new-password"
-                required
-              />
-              <button
-                type="button"
-                aria-label={showConfirm ? '確認パスワードを非表示' : '確認パスワードを表示'}
-                className={fieldStyles.toggleButton}
-                onClick={() => setShowConfirm((s) => !s)}
-              >
-                {showConfirm ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
-              </button>
-            </div>
-            {fieldErrors.confirm && (
-              <span className={fieldStyles.fieldError} role="alert">{fieldErrors.confirm}</span>
-            )}
-          </div>
-
-          {/* ヒントテキスト */}
-          <p style={{
-            margin: 0,
-            fontSize: 'var(--font-size-xs)',
-            color: 'rgba(255,255,255,0.6)',
-            textAlign: 'center',
-          }}>
-            パスワードは8文字以上、英数記号を含むことを推奨します
-          </p>
-
-          <Button type="submit" loading={loading}>
-            {loading ? '変更中…' : '変更する'}
-          </Button>
-
-          <LinkGroup>
-            <LinkButton onClick={() => navigate('/login')}>キャンセル</LinkButton>
-          </LinkGroup>
-        </form>
-      </FormCard>
-    </AuthPageLayout>
+                ログイン画面へ戻る
+              </Link>
+            </Stack>
+          </Box>
+        </CardContent>
+      </Card>
+    </MuiAuthLayout>
   );
 };
 

@@ -1,79 +1,102 @@
 /**
- * PasswordResetScreen
- * ─────────────────────────────────────────────
- * パスワードリセット画面。
- * 登録メールアドレスを入力して MFA 画面へ遷移。
+ * PasswordResetScreen — MUI リファクタ版
+ * パスワードリセット画面。メールアドレス入力 → MFA へ遷移。
  */
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthPageLayout, FormCard } from '../../../../../components/ui';
-import { fieldStyles } from '../../../../../components/ui/FormField/FormField';
-import { Button, LinkButton, LinkGroup } from '../../../../../components/ui/Button/Button';
+import {
+  Box, Card, CardContent, TextField, Button,
+  Alert, Link, Stack,
+} from '@mui/material';
+import MuiAuthLayout from '../../../../../components/ui/MuiAuthLayout/MuiAuthLayout';
 
 const PasswordResetScreen: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const [email, setEmail]     = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState<string | null>(null);
+  const [fieldError, setFieldError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!email) return setError('メールアドレスを入力してください');
+    if (!email.trim()) {
+      setFieldError('メールアドレスを入力してください');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setFieldError('有効なメールアドレスを入力してください');
+      return;
+    }
     setLoading(true);
     try {
-      // TODO: 実際の API を呼ぶ
-      await new Promise((r) => setTimeout(r, 600));
-      navigate('/mfa', { state: { from: 'password-reset', email } });
-    } catch (err: unknown) {
-      console.error(err);
-      setError('送信に失敗しました');
+      await new Promise((r) => setTimeout(r, 700));
+      navigate('/mfa', { state: { from: 'password-reset', email: email.trim() } });
+    } catch {
+      setError('パスワードリセットの送信中にエラーが発生しました');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <AuthPageLayout
-      title="パスワードをリセット"
-      subtitle="登録メールアドレスを入力してください"
+    <MuiAuthLayout
+      title="パスワードリセット"
+      subtitle="登録済みのメールアドレスを入力してください"
     >
-      <FormCard>
-        <form className={fieldStyles.form} onSubmit={handleSubmit} noValidate>
-          {error && (
-            <div className={fieldStyles.errorBanner} role="alert">
-              {error}
-            </div>
-          )}
+      <Card elevation={0}>
+        <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            noValidate
+            sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}
+          >
+            {error && <Alert severity="error" sx={{ borderRadius: 2 }}>{error}</Alert>}
 
-          <div className={fieldStyles.fieldGroup}>
-            <label className={fieldStyles.label} htmlFor="reset-email">メールアドレス</label>
-            <input
+            <TextField
               id="reset-email"
+              label="メールアドレス"
+              placeholder="example@company.com"
               type="email"
-              className={fieldStyles.input}
-              placeholder="登録済みメールアドレス"
               value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                if (error) setError(null);
-              }}
+              onChange={(e) => { setEmail(e.target.value); setFieldError(''); }}
+              error={Boolean(fieldError)}
+              helperText={fieldError}
               autoComplete="email"
               required
+              fullWidth
+              variant="outlined"
             />
-          </div>
 
-          <Button type="submit" loading={loading}>
-            {loading ? '送信中…' : '送信'}
-          </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              fullWidth
+              disabled={loading}
+              size="large"
+            >
+              {loading ? '送信中…' : '認証コードを送信'}
+            </Button>
 
-          <LinkGroup>
-            <LinkButton onClick={() => navigate('/login')}>ログイン画面へ戻る</LinkButton>
-          </LinkGroup>
-        </form>
-      </FormCard>
-    </AuthPageLayout>
+            <Stack alignItems="flex-end">
+              <Link
+                component="button"
+                type="button"
+                onClick={() => navigate('/login')}
+                underline="hover"
+                sx={{ fontSize: '0.85rem', color: 'text.secondary', cursor: 'pointer' }}
+              >
+                ログイン画面へ戻る
+              </Link>
+            </Stack>
+          </Box>
+        </CardContent>
+      </Card>
+    </MuiAuthLayout>
   );
 };
 
