@@ -36,6 +36,31 @@
   gap: 6px;
 }
 
+/* input wrapper when a toggle (eye) is present */
+.fieldWithToggle {
+  position: relative;
+}
+
+.toggleButton {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.8);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+
+.toggleButton:focus {
+  outline: 2px solid rgba(100,160,255,0.18);
+  border-radius: 6px;
+}
+
 .label {
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.8);
@@ -76,6 +101,12 @@
 .select:focus {
   border-color: rgba(255, 255, 255, 0.6);
   background: rgba(255, 255, 255, 0.15);
+}
+
+/* Validation state */
+.inputInvalid {
+  border-color: rgba(220,53,69,0.9) !important;
+  box-shadow: 0 6px 18px rgba(220,53,69,0.12);
 }
 
 /* placeholderの色 */

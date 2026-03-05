@@ -1,0 +1,49 @@
+
+> frontend-web-service@0.0.0 build
+> tsc -b && vite build
+
+src/contexts/AuthContext.tsx(66,5): error TS2322: Type 'NonNullable<NoInfer<TQueryFnData>> | null' is not assignable to type 'AuthUser | null'.
+  Type 'NonNullable<NoInfer<TQueryFnData>>' is not assignable to type 'AuthUser | null'.
+    Type '{}' is missing the following properties from type 'AuthUser': id, username, realm
+src/contexts/AuthContext.tsx(67,30): error TS2339: Property 'isLoading' does not exist on type 'UseMutationResult<LoginResponse, unknown, LoginRequest, unknown>'.
+  Property 'isLoading' does not exist on type 'Override<MutationObserverIdleResult<LoginResponse, unknown, LoginRequest, unknown>, { mutate: UseMutateFunction<LoginResponse, unknown, LoginRequest, unknown>; }> & { ...; }'.
+src/features/login/api/hooks/useLogin.ts(9,35): error TS2307: Cannot find module '../../../types/auth' or its corresponding type declarations.
+src/features/login/hooks/useCurrentUser.ts(8,77): error TS2554: Expected 1-2 arguments, but got 3.
+src/routes/index.tsx(16,33): error TS2322: Type 'Promise<typeof import("/home/maverick/event-pick/frontend-web-service/src/features/login/components/LoginForm/screens/LoginScreen")>' is not assignable to type 'Promise<{ default: ComponentType<unknown>; }>'.
+  Type 'typeof import("/home/maverick/event-pick/frontend-web-service/src/features/login/components/LoginForm/screens/LoginScreen")' is not assignable to type '{ default: ComponentType<unknown>; }'.
+    Types of property 'default' are incompatible.
+      Type 'FC<{}>' is not assignable to type 'ComponentType<unknown>'.
+        Type 'FunctionComponent<{}>' is not assignable to type 'FunctionComponent<unknown>'.
+          Type 'unknown' is not assignable to type '{}'.
+src/routes/index.tsx(20,33): error TS2322: Type 'Promise<typeof import("/home/maverick/event-pick/frontend-web-service/src/features/login/components/signupForm/screens/SignupScreen")>' is not assignable to type 'Promise<{ default: ComponentType<unknown>; }>'.
+  Type 'typeof import("/home/maverick/event-pick/frontend-web-service/src/features/login/components/signupForm/screens/SignupScreen")' is not assignable to type '{ default: ComponentType<unknown>; }'.
+    Types of property 'default' are incompatible.
+      Type 'FC<{}>' is not assignable to type 'ComponentType<unknown>'.
+        Type 'FunctionComponent<{}>' is not assignable to type 'FunctionComponent<unknown>'.
+          Type 'unknown' is not assignable to type '{}'.
+src/routes/index.tsx(24,33): error TS2322: Type 'Promise<typeof import("/home/maverick/event-pick/frontend-web-service/src/features/login/components/passwordReset/screens/PasswordResetScreen")>' is not assignable to type 'Promise<{ default: ComponentType<unknown>; }>'.
+  Type 'typeof import("/home/maverick/event-pick/frontend-web-service/src/features/login/components/passwordReset/screens/PasswordResetScreen")' is not assignable to type '{ default: ComponentType<unknown>; }'.
+    Types of property 'default' are incompatible.
+      Type 'FC<{}>' is not assignable to type 'ComponentType<unknown>'.
+        Type 'FunctionComponent<{}>' is not assignable to type 'FunctionComponent<unknown>'.
+          Type 'unknown' is not assignable to type '{}'.
+src/routes/index.tsx(28,33): error TS2322: Type 'Promise<typeof import("/home/maverick/event-pick/frontend-web-service/src/features/login/components/mfa/screens/MfaScreen")>' is not assignable to type 'Promise<{ default: ComponentType<unknown>; }>'.
+  Type 'typeof import("/home/maverick/event-pick/frontend-web-service/src/features/login/components/mfa/screens/MfaScreen")' is not assignable to type '{ default: ComponentType<unknown>; }'.
+    Types of property 'default' are incompatible.
+      Type 'FC<{}>' is not assignable to type 'ComponentType<unknown>'.
+        Type 'FunctionComponent<{}>' is not assignable to type 'FunctionComponent<unknown>'.
+          Type 'unknown' is not assignable to type '{}'.
+src/routes/index.tsx(32,33): error TS2322: Type 'Promise<typeof import("/home/maverick/event-pick/frontend-web-service/src/features/login/components/passwordChange/screens/PasswordChangeScreen")>' is not assignable to type 'Promise<{ default: ComponentType<unknown>; }>'.
+  Type 'typeof import("/home/maverick/event-pick/frontend-web-service/src/features/login/components/passwordChange/screens/PasswordChangeScreen")' is not assignable to type '{ default: ComponentType<unknown>; }'.
+    Types of property 'default' are incompatible.
+      Type 'FC<{}>' is not assignable to type 'ComponentType<unknown>'.
+        Type 'FunctionComponent<{}>' is not assignable to type 'FunctionComponent<unknown>'.
+          Type 'unknown' is not assignable to type '{}'.
+src/routes/index.tsx(41,35): error TS2322: Type 'Promise<typeof import("/home/maverick/event-pick/frontend-web-service/src/features/dashboard/screens/DashboardScreen")>' is not assignable to type 'Promise<{ default: ComponentType<unknown>; }>'.
+  Type 'typeof import("/home/maverick/event-pick/frontend-web-service/src/features/dashboard/screens/DashboardScreen")' is not assignable to type '{ default: ComponentType<unknown>; }'.
+    Types of property 'default' are incompatible.
+      Type 'FC<{}>' is not assignable to type 'ComponentType<unknown>'.
+        Type 'FunctionComponent<{}>' is not assignable to type 'FunctionComponent<unknown>'.
+          Type 'unknown' is not assignable to type '{}'.
+src/routes/lazyLoad.tsx(9,8): error TS2322: Type '{}' is not assignable to type 'T extends MemoExoticComponent<infer U extends ComponentType<any>> | LazyExoticComponent<infer U extends ComponentType<any>> ? ReactManagedAttributes<...> : ReactManagedAttributes<...>'.
+EXIT:0

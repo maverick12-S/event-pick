@@ -6,7 +6,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../authApi';
-import type { LoginRequest, Realm } from '../../../types/auth';
+import { tokenService } from '../../../../api/tokenService';
+import type { LoginRequest } from '../../../../types/auth';
 
 export const useLogin = () => {
     const [isLoading, setIsLoading] = useState(false);
@@ -20,9 +21,9 @@ export const useLogin = () => {
 
         try {
             const response = await authApi.login(data);
-            // ログイン成功 → トークンを保存してホームへ遷移
-            localStorage.setItem('access_token', response.access_token);
-            localStorage.setItem('refresh_token', response.refresh_token);
+            // ログイン成功 → トークンを tokenService 経由で保存してホームへ遷移
+            tokenService.setAccessToken(response.access_token ?? null);
+            tokenService.setRefreshToken(response.refresh_token ?? null);
             navigate('/home');
         }catch(err: unknown){
             //エラー表示

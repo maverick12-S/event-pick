@@ -1,14 +1,12 @@
-import React, { createContext, useContext, useEffect, ReactNode } from 'react';
-import { useAppDispatch, useAppSelector } from '../store';
-import {
-  loginThunk,
-  logout as logoutAction,
-  initializeAuthThunk,
-  clearError,
-} from '../store/slices/authSlice';
-import type { LoginRequest, AuthUser } from '../types/auth';
+/* eslint-disable react-refresh/only-export-components */
+import React, { createContext, useContext, type ReactNode, useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { authApi } from '../features/login/api/authApi';
+import { tokenService } from '../api/tokenService';
+import { useCurrentUser } from '../features/login/hooks/useCurrentUser';
+import type { LoginRequest, AuthUser, LoginResponse } from '../types/auth';
 
-// ── 公開インターフェース ───────────────────────────
+// 公開インターフェース（既存 API と互換）
 interface AuthContextValue {
   isAuthenticated: boolean;
   user: AuthUser | null;
@@ -22,40 +20,61 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-// ── Provider ──────────────────────────────────────
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const dispatch = useAppDispatch();
-  const { isAuthenticated, user, isLoading, error, isInitialized } =
-    useAppSelector((state) => state.auth);
+  const queryClient = useQueryClient();
+  const [error, setError] = useState<string | null>(null);
+  const meQuery = useCurrentUser();
 
-  // 起動時: localStorageのトークンで認証状態を復元
-  useEffect(() => {
-    dispatch(initializeAuthThunk());
-  }, [dispatch]);
+  const user = (meQuery.data as AuthUser | undefined) ?? null;
+  const isInitialized = !meQuery.isFetching;
+
+  const loginMutation = useMutation<LoginResponse, unknown, LoginRequest>({
+    mutationFn: (data: LoginRequest) => authApi.login(data),
+    onSuccess: (data) => {
+      tokenService.setAccessToken(data.access_token ?? null);
+      tokenService.setRefreshToken(data.refresh_token ?? null);
+      setError(null);
+      queryClient.invalidateQueries({});
+    },
+    onError: (err: unknown) => {
+      console.error('login error', err);
+    },
+  });
 
   const login = async (credentials: LoginRequest): Promise<void> => {
-    const result = await dispatch(loginThunk(credentials));
-    if (loginThunk.rejected.match(result)) {
-      throw new Error(result.payload as string);
+    setError(null);
+    try {
+      await loginMutation.mutateAsync(credentials);
+    } catch (e: unknown) {
+      // mutation が投げたエラーをキャッチして呼び出し元にも伝播
+      const message = e instanceof Error ? e.message : 'ログインに失敗しました';
+      setError(message);
+      throw e;
     }
   };
 
-  // 🚀 Cognito移行時: Auth.signOut() をここに追加するだけ
-  const logout = () => dispatch(logoutAction());
+  const logout = () => {
+    tokenService.clear();
+    // clear local user cache via query client
+    queryClient.clear();
+  };
 
-  const clearAuthError = () => dispatch(clearError());
+  const clearAuthError = () => setError(null);
 
-  return (
-    <AuthContext.Provider value={{
-      isAuthenticated, user, isLoading, error, isInitialized,
-      login, logout, clearAuthError,
-    }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const value: AuthContextValue = {
+    isAuthenticated: Boolean(tokenService.getAccessToken()),
+    user,
+    isLoading: loginMutation.isPending,
+    error,
+    isInitialized,
+    login,
+    logout,
+    clearAuthError,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// ── カスタムhook ──────────────────────────────────
 export const useAuth = (): AuthContextValue => {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth は AuthProvider 内で使用してください');
