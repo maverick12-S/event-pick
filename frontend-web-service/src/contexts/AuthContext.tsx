@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, ReactNode, useState } from 'react';
+import React, { createContext, useContext, type ReactNode, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { authApi } from '../features/login/api/authApi';
 import { tokenService } from '../api/tokenService';
@@ -25,26 +25,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [error, setError] = useState<string | null>(null);
   const meQuery = useCurrentUser();
 
-  const user = meQuery.data ?? null;
+  const user = (meQuery.data as AuthUser | undefined) ?? null;
   const isInitialized = !meQuery.isFetching;
 
-  const loginMutation = useMutation<LoginResponse, unknown, LoginRequest>(
-    (data) => authApi.login(data),
-    {
-      onSuccess: (data) => {
-        // token 保存
-        tokenService.setAccessToken(data.access_token ?? null);
-        tokenService.setRefreshToken(data.refresh_token ?? null);
-        // ユーザー情報があればセット（APIが返さない場合は null のまま）
-        // setUser({ id: '', username: '', realm: '' });
-        setError(null);
-        queryClient.invalidateQueries();
-      },
-      onError: (err: unknown) => {
-          console.error('login error', err);
-        },
-    }
-  );
+  const loginMutation = useMutation<LoginResponse, unknown, LoginRequest>({
+    mutationFn: (data: LoginRequest) => authApi.login(data),
+    onSuccess: (data) => {
+      tokenService.setAccessToken(data.access_token ?? null);
+      tokenService.setRefreshToken(data.refresh_token ?? null);
+      setError(null);
+      queryClient.invalidateQueries({});
+    },
+    onError: (err: unknown) => {
+      console.error('login error', err);
+    },
+  });
 
   const login = async (credentials: LoginRequest): Promise<void> => {
     setError(null);
@@ -60,7 +55,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = () => {
     tokenService.clear();
-    setUser(null);
+    // clear local user cache via query client
     queryClient.clear();
   };
 
@@ -69,7 +64,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const value: AuthContextValue = {
     isAuthenticated: Boolean(tokenService.getAccessToken()),
     user,
-    isLoading: loginMutation.isLoading,
+    isLoading: loginMutation.isPending,
     error,
     isInitialized,
     login,
