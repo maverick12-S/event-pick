@@ -1,0 +1,86 @@
+/* ============================================================
+   SignupScreen.module.css
+   ============================================================
+   SignupScreen 固有のレイアウトスタイル。
+   共通スタイル (fieldStyles) と組み合わせて使用。
+   ============================================================ */
+
+/* ---- 2カラムグリッド ---- */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4, 16px) var(--space-5, 20px);
+  align-items: start;
+  width: 100%;
+}
+
+/* 全幅セル */
+.fullWidth {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+}
+
+/* 通常セル */
+.grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+}
+
+/* アクション領域 (全幅) */
+.actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 12px);
+  margin-top: var(--space-2, 8px);
+}
+
+/* 必須マーク */
+.required {
+  color: rgba(255, 120, 120, 0.9);
+  margin-left: 2px;
+}
+
+/* ---- 完了画面 ---- */
+.completedWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4, 16px);
+  padding: var(--space-7, 28px) var(--space-2, 8px);
+  text-align: center;
+}
+
+.completedTitle {
+  font-size: clamp(1.25rem, 3vw, 1.5rem);
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.completedBody {
+  font-size: var(--font-size-md, 1rem);
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.7;
+  margin: 0;
+}
+
+.completedEmail {
+  font-weight: 600;
+  color: rgba(150, 190, 255, 0.95);
+}
+
+/* ---- レスポンシブ: 600px以下は1カラム ---- */
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fullWidth,
+  .actions {
+    grid-column: auto;
+  }
+}

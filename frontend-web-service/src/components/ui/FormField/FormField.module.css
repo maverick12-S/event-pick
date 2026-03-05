@@ -1,0 +1,169 @@
+/* ============================================================
+   FormField / Input / Select
+   ============================================================
+   フォームフィールドの共通スタイル定義。
+   ラベル・インプット・エラー・トグルボタンをセットで管理。
+   ============================================================ */
+
+/* ---- フォーム全体 ---- */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);    /* 16px */
+  width: 100%;
+}
+
+/* ---- フィールドグループ (ラベル + input + エラー) ---- */
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);    /* 4px */
+}
+
+/* ---- ラベル ---- */
+.label {
+  font-size: var(--font-size-xs);  /* 12px */
+  font-weight: var(--font-weight-semibold);
+  color: rgba(255, 255, 255, 0.8);
+  letter-spacing: 0.03em;
+}
+
+/* ---- input / select 共通 ---- */
+.input,
+.select {
+  width: 100%;
+  padding: var(--input-padding-v) var(--input-padding-h);  /* 14px 18px */
+  border-radius: var(--input-border-radius);
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--input-color);
+  font-size: var(--input-font-size);
+  font-family: var(--font-family-base);
+  outline: none;
+  transition:
+    border-color var(--transition-normal),
+    background var(--transition-normal),
+    box-shadow var(--transition-normal);
+  box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+/* select 用カスタム矢印 */
+.select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='10' viewBox='0 0 12 8'%3E%3Cpath fill='%23ffffff' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 18px center;
+  background-size: 12px;
+  padding-right: 48px;
+  /* select は背景画像と色を合成 */
+  background-color: var(--input-bg);
+}
+
+.select option {
+  background: #1a2a4a;
+  color: #ffffff;
+}
+
+/* フォーカス */
+.input:focus,
+.select:focus {
+  border-color: var(--input-border-focus);
+  background: var(--input-bg-focus);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
+}
+
+/* バリデーションエラー */
+.inputInvalid {
+  border-color: var(--input-border-error) !important;
+  box-shadow: 0 0 0 3px var(--color-error-glow);
+}
+
+/* プレースホルダー */
+.input::placeholder,
+.select::placeholder {
+  color: var(--input-placeholder);
+}
+
+/* ---- パスワード表示トグルボタン ---- */
+.fieldWithToggle {
+  position: relative;
+}
+
+.toggleButton {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-normal);
+  font-size: 1.2rem;
+}
+
+.toggleButton:hover {
+  color: var(--text-primary);
+}
+
+.toggleButton:focus-visible {
+  outline: 2px solid rgba(100, 160, 255, 0.4);
+}
+
+/* パスワード入力時はトグルボタンの右余白を確保 */
+.fieldWithToggle .input {
+  padding-right: 48px;
+}
+
+/* ---- エラーバナー ---- */
+.errorBanner {
+  background: var(--color-error);
+  border: 1px solid var(--color-error-border);
+  border-radius: var(--radius-sm);
+  padding: 10px var(--space-4);
+  color: var(--color-error-text);
+  font-size: var(--font-size-sm);
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* ---- インラインフィールドエラー ---- */
+.fieldError {
+  font-size: var(--font-size-xs);
+  color: var(--color-error-text);
+  margin-top: var(--space-1);
+}
+
+/* ---- ファイルインput ---- */
+.fileInput {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px dashed rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+  transition:
+    border-color var(--transition-normal),
+    background var(--transition-normal);
+}
+
+.fileInput:hover {
+  border-color: rgba(100, 160, 255, 0.5);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.fileName {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-top: var(--space-1);
+  padding-left: var(--space-1);
+}
