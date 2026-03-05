@@ -4,6 +4,7 @@ import Header from '../components/Header/Header';
 import Footer from '../components/Footer/Footer';
 import Background from '../components/Background/Background';
 import styles from '../features/login/components/LoginForm/screens/LoginScreen.module.css';
+// SubHeader removed
 
 const BaseLayout: React.FC = () => {
 	return (

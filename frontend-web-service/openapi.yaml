@@ -1,0 +1,188 @@
+openapi: 3.0.3
+info:
+  title: EventPick API
+  version: 1.0.0
+  description: |
+    EventPick API — フロントエンド要件に合わせた簡易 OpenAPI 仕様。
+    全APIは共通レスポンスラッパーを返却し、JWT Bearer 認証を使用します。
+servers:
+  - url: https://api.eventpick.jp
+
+security:
+  - bearerAuth: []
+
+paths: {}
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    PaginationLimit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 40
+      description: 1ページ件数（デフォルト: 40）
+    PaginationPage:
+      name: page
+      in: query
+      schema:
+        type: integer
+        default: 1
+      description: ページ番号（1から開始）
+
+  responses:
+    RateLimitHeaders:
+      description: Rate limit headers
+      headers:
+        X-RateLimit-Limit:
+          description: リクエスト上限
+          schema:
+            type: integer
+        X-RateLimit-Remaining:
+          description: 残りリクエスト数
+          schema:
+            type: integer
+        X-RateLimit-Reset:
+          description: リセット時刻（UNIX秒）
+          schema:
+            type: integer
+
+  schemas:
+    CommonResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: 成功フラグ
+        data:
+          description: 成功時はオブジェクト、失敗時は null
+          nullable: true
+          type: object
+        error:
+          nullable: true
+          $ref: '#/components/schemas/ErrorPayload'
+        timestamp:
+          type: string
+          format: date-time
+          description: レスポンス生成時刻（UTC ISO8601）
+
+    ErrorPayload:
+      type: object
+      properties:
+        code:
+          type: string
+          description: エラーコード（E1xxx〜）
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: string
+
+    Paging:
+      type: object
+      properties:
+        limit:
+          type: integer
+        hasNext:
+          type: boolean
+        nextCursor:
+          type: string
+
+    PaginatedList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+        pagination:
+          $ref: '#/components/schemas/Paging'
+
+    EventStatus:
+      type: string
+      enum: [DRAFT, PUBLISHED, HIDDEN, DELETED]
+      description: イベント公開状態
+
+    Roles:
+      type: string
+      enum: [ORGANIZATION_OWNER, ORGANIZATION_ADMIN, ROOT, IMADMIN]
+
+    DateOnly:
+      type: string
+      format: date
+      description: Date in YYYY-MM-DD (UTC)
+
+    DateTimeUTC:
+      type: string
+      format: date-time
+      description: UTC ISO8601 datetime, e.g. 2026-02-16T10:30:00Z
+
+    RateLimitInfo:
+      type: object
+      properties:
+        limit:
+          type: integer
+        remaining:
+          type: integer
+        reset:
+          type: integer
+
+  examples:
+    SuccessExample:
+      summary: 共通成功レスポンス例
+      value:
+        success: true
+        data: { }
+        error: null
+        timestamp: '2026-02-16T10:30:00Z'
+    ErrorExample:
+      summary: 共通エラーレスポンス例
+      value:
+        success: false
+        data: null
+        error:
+          code: E1001
+          message: '認証に失敗しました'
+          details: []
+        timestamp: '2026-02-16T10:30:00Z'
+
+  # 共通のエラーコード一覧（説明用）
+  x-error-codes:
+    - code: E1001
+      title: 認証失敗
+    - code: E1002
+      title: トークン期限切れ
+    - code: E1003
+      title: 権限不足
+    - code: E2001
+      title: 必須パラメータ不足
+    - code: E3001
+      title: チケット不足
+    - code: E3002
+      title: ステータス遷移不正
+
+  # レスポンス例: ページネーション付きリスト
+  x-sample-responses:
+    PaginatedEvents:
+      summary: イベント一覧（ページネーション付き）
+      value:
+        success: true
+        data:
+          items: []
+          pagination:
+            limit: 40
+            hasNext: true
+            nextCursor: '2025-01-21T18:22:11Z'
+        error: null
+        timestamp: '2026-02-16T10:30:00Z'
+
+  # レート制限（説明用）
+  x-rate-limit:
+    limit_per_hour: 1000

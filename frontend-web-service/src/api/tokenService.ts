@@ -36,7 +36,9 @@ export const tokenService = {
     try {
       localStorage.removeItem(ACCESS_KEY);
       localStorage.removeItem(REFRESH_KEY);
-    } catch (_) {}
+    } catch (err: unknown) {
+      console.error('tokenService.clear error', err);
+    }
   }
 };
 

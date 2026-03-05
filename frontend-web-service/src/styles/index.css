@@ -83,3 +83,38 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* ===== Prevent showing text caret on non-editable elements ===== */
+/* Some browsers may show a caret if non-input elements are focused; ensure only inputs/textareas/contenteditable show caret */
+*:not(input):not(textarea):not([contenteditable="true"]) {
+  caret-color: transparent !important;
+}
+
+input, textarea, [contenteditable="true"] {
+  caret-color: auto !important;
+}
+
+/* Hide browser's built-in password reveal/eye controls across browsers */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none !important;
+}
+
+/* Chrome / Edge (Blink) - attempts to target decoration buttons */
+input[type="password"]::-webkit-textfield-decoration-container,
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input::-webkit-credentials-auto-fill-button {
+  display: none !important;
+  -webkit-appearance: none !important;
+}
+
+/* Some WebKit builds expose a 'reveal' pseudo-element */
+input[type="password"]::-webkit-reveal {
+  display: none !important;
+}
+
+/* Fallback: remove native appearance which can hide built-in icons */
+input[type="password"] {
+  -webkit-appearance: none;
+  appearance: none;
+}
