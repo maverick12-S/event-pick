@@ -12,14 +12,16 @@
 }
 
 .logoImage {
-  width: 70px; /* +3px */
-  height: 70px; /* +3px */
+  /* 幅を clmap で制御：最小56px、画面に応じて拡大、最大120px */
+  width: clamp(90px, 10vw, 60px);
+  height: auto;
   object-fit: contain;
 }
 
 .logoText {
-  font-size: calc(2.5rem + 10px); /* 縦方向に約+3px相当 */
   font-weight: 800;
   color: #ffffff;
   letter-spacing: 0.02em;
+  /* ロゴ文字を少し大きめに：最小/推奨/最大 */
+  font-size: clamp(3.8rem, 2.8vw, 1.8rem);
 }

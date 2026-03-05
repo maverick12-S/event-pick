@@ -9,6 +9,9 @@ import { authApi } from '../authApi';
 import { tokenService } from '../../../../api/tokenService';
 import type { LoginRequest } from '../../../../types/auth';
 
+// Vite 環境変数でモック認証を有効にできます
+const USE_MOCK_AUTH = import.meta.env.VITE_MOCK_AUTH === 'true';
+
 export const useLogin = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -19,12 +22,24 @@ export const useLogin = () => {
         setIsLoading(true);
         setError(null);
 
+        // モックモード: 実際の API 呼び出しを行わず、成功扱いにしてプラン画面へ遷移
+        if (USE_MOCK_AUTH) {
+            // 少し遅延を入れて実際のリクエストっぽく見せる
+            await new Promise((res) => setTimeout(res, 300));
+            tokenService.setAccessToken('mock-access-token');
+            tokenService.setRefreshToken('mock-refresh-token');
+            navigate('/plan');
+            setIsLoading(false);
+            return;
+        }
+
         try {
             const response = await authApi.login(data);
             // ログイン成功 → トークンを tokenService 経由で保存してホームへ遷移
             tokenService.setAccessToken(response.access_token ?? null);
             tokenService.setRefreshToken(response.refresh_token ?? null);
-            navigate('/home');
+            // ログイン成功後はプラン画面へ遷移する
+            navigate('/plan');
         }catch(err: unknown){
             //エラー表示
             if((err as {response?:{status?:number}}).response?.status === 401){
