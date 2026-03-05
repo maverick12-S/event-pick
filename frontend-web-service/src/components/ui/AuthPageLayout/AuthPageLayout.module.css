@@ -1,0 +1,61 @@
+/* ============================================================
+   AuthPageLayout
+   ============================================================
+   ログイン系画面共通のページラッパー。
+   ・スクロール可能な縦積みレイアウト
+   ・画面中央にコンテンツを配置
+   ・ヘッダー分のパディングを自動調整
+   ============================================================ */
+
+.pageRoot {
+  /* ページ全体スクロールを許可 */
+  min-height: 100dvh;           /* dynamic viewport height (iOS対応) */
+  display: flex;
+  flex-direction: column;
+}
+
+/* コンテンツエリア: flex-growで残り高さを埋め、内部をセンタリング */
+.contentArea {
+  flex: 1 0 auto;               /* ヘッダー・フッターに挟まれて伸縮 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;      /* 縦方向: コンテンツが少ない時は中央寄せ */
+  padding: var(--space-8) var(--content-padding); /* 上下 32px, 左右 24px */
+  gap: var(--space-5);          /* タイトルとカードの間隔 */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* タイトルセクション */
+.titleSection {
+  text-align: center;
+  color: var(--text-primary);
+  width: 100%;
+  max-width: var(--card-max-width);
+}
+
+.titleSection h1 {
+  font-size: clamp(1.8rem, 5vw, var(--font-size-3xl)); /* レスポンシブなフォントサイズ */
+  font-weight: var(--font-weight-bold);
+  margin: 0 0 var(--space-2);
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+.titleSection .subtitle {
+  font-size: clamp(var(--font-size-sm), 2vw, var(--font-size-md));
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* wide variant: Signup等 */
+.titleSection.wide {
+  max-width: var(--card-wide-max-width);
+}
+
+/* ページ下に余白を確保 */
+.bottomPad {
+  flex-shrink: 0;
+  height: var(--space-8);
+}

@@ -1,15 +1,22 @@
+/* ============================================================
+   Global Base Styles
+   ============================================================ */
+
+/* Design Tokens を先にインポート */
+@import './globals/design-tokens.css';
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: var(--font-family-base);
   line-height: 1.5;
   font-weight: 400;
 
-  /* EventPick ブランド背景カラー (洗練されたグラデーション) */
-  --bg-start: #071020; /* 深いネイビー（左上） */
-  --bg-mid:   #0b2a4a; /* 中間の青み */
-  --bg-end:   #133a66; /* 明るめのブルー（右下） */
-  --bg-spot:  rgba(255, 255, 255, 0.06); /* スポットライトの薄いハイライト */
+  /* EventPick ブランド背景カラー */
+  --bg-start: #071020;
+  --bg-mid:   #0b2a4a;
+  --bg-end:   #133a66;
+  --bg-spot:  rgba(255, 255, 255, 0.06);
 
-  color-scheme: light dark;
+  color-scheme: dark;
   color: rgba(255, 255, 255, 0.87);
   background-color: var(--bg-start);
 
@@ -19,23 +26,25 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+/* ---- ルートリセット ---- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
-a:hover {
-  color: #535bf2;
+
+html {
+  /* スクロールバーが出ても幅が変わらない */
+  scrollbar-gutter: stable;
 }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
+  padding: 0;
   min-width: 320px;
-  min-height: 100vh;
-  /* ベースに滑らかな斜めグラデーション + 軽いスポットハイライト */
-  background-image: 
+  min-height: 100svh;     /* small viewport height */
+  /* ベースグラデーション（背景画像が読み込まれる前のフォールバック） */
+  background-image:
     radial-gradient(1200px 400px at 85% 8%, var(--bg-spot), transparent 20%),
     linear-gradient(135deg, var(--bg-start) 0%, var(--bg-mid) 50%, var(--bg-end) 100%);
   background-repeat: no-repeat;
@@ -43,77 +52,64 @@ body {
   background-size: cover;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* #root はスクロールを body に委ねる */
+#root {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
 }
 
+/* ---- 見出し ---- */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+}
+
+/* ---- リンク ---- */
+a {
+  font-weight: 500;
+  color: rgba(100, 149, 255, 0.9);
+  text-decoration: none;
+}
+a:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+/* ---- ボタンリセット ---- */
 button {
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid transparent;
-  padding: 0.6em 1.2em;
+  padding: 0.5em 1em;
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: transparent;
   cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  transition: border-color var(--transition-normal);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    /* ライトモード向けに控えめなグラデーションを上書き */
-    --bg-start: #f6f9fc;
-    --bg-mid:   #eef4fb;
-    --bg-end:   #e6eef9;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-}
-
-/* ===== Prevent showing text caret on non-editable elements ===== */
-/* Some browsers may show a caret if non-input elements are focused; ensure only inputs/textareas/contenteditable show caret */
+/* ---- テキストキャレット抑止 ---- */
 *:not(input):not(textarea):not([contenteditable="true"]) {
   caret-color: transparent !important;
 }
-
 input, textarea, [contenteditable="true"] {
   caret-color: auto !important;
 }
 
-/* Hide browser's built-in password reveal/eye controls across browsers */
+/* ---- ブラウザ標準パスワードアイコン非表示 ---- */
 input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear {
   display: none !important;
 }
-
-/* Chrome / Edge (Blink) - attempts to target decoration buttons */
 input[type="password"]::-webkit-textfield-decoration-container,
 input[type="password"]::-webkit-credentials-auto-fill-button,
 input::-webkit-credentials-auto-fill-button {
   display: none !important;
   -webkit-appearance: none !important;
 }
-
-/* Some WebKit builds expose a 'reveal' pseudo-element */
 input[type="password"]::-webkit-reveal {
   display: none !important;
 }
-
-/* Fallback: remove native appearance which can hide built-in icons */
 input[type="password"] {
   -webkit-appearance: none;
   appearance: none;

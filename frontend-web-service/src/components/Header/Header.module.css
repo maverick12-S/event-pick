@@ -1,25 +1,31 @@
+/* ============================================================
+   Header
+   ============================================================
+   スクロール追従型のスティッキーヘッダー。
+   position: sticky + top:0 で自然なスクロール挙動。
+   スクロール時は透過度が下がりグラスモーフィズムが際立つ。
+   ============================================================ */
+
 .header {
-  position: fixed;
-  top: 20px;
-  left: 30px;
-  right: 30px;
-  height: calc(100vh / 8 + 20px);
+  position: sticky;         /* ← fixed → sticky: スクロールに追従しつつページフロー内に残る */
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-header, 60);
+  height: var(--header-height, 72px);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
-  padding-right: 36px;
-  /* 落ち着いたフロストガラス風に戻す */
-  background: rgba(32, 37, 51, 0.55);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  padding: 0 var(--space-6, 24px);
+  background: var(--color-bg-header, rgba(32, 37, 51, 0.55));
+  backdrop-filter: var(--backdrop-blur, blur(8px));
+  -webkit-backdrop-filter: var(--backdrop-blur, blur(8px));
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   box-sizing: border-box;
-  z-index: 60;
-  opacity: 0.9;
-  border-radius: 8px;
+  transition: background var(--transition-normal, 0.2s ease);
 }
 
+/* ---- ロゴ左エリア ---- */
 .left {
   display: flex;
   align-items: center;
@@ -29,49 +35,49 @@
   display: inline-flex;
 }
 
-/* ロゴ内の img を少し小さくしてヘッダーに馴染ませる */
 .logo img {
-  width: 69px; /* +3px */
-  height: 69px; /* +3px */
+  width: 48px;
+  height: 48px;
   object-fit: contain;
 }
 
-/* ロゴテキストを大きめにして目立たせる */
-.logoText {
-  font-size: calc(2.2rem + 3px); /* ロゴ文字を縦方向に約+3px相当 */
-  font-weight: 800;
-  color: #ffffff;
-  margin-left: 10px;
-}
-
+/* ---- 日付・時刻 右エリア ---- */
 .right {
   display: flex;
   align-items: center;
-  gap: 14px;
-  color: rgba(255,255,255,0.88);
-  font-size: 1.5rem; /* 日付・時刻も同じく大きく（約+10px分） */
+  color: rgba(255, 255, 255, 0.88);
 }
 
-.date, .time {
+.datePanel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5, 20px);  /* 20px */
+  padding: 4px var(--space-2, 8px);
+  font-size: clamp(0.85rem, 1.8vw, 1.15rem); /* レスポンシブフォント */
+  font-variant-numeric: tabular-nums;         /* 時刻のガタつき防止 */
+}
+
+.date,
+.time {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   opacity: 0.95;
 }
 
-/* 日付/時刻をまとめた小さなパネル（見た目はオプション） */
-.datePanel {
-  display: flex;
-  align-items: center;
-  gap: 25px;
-  padding: 6px 10px;
-  font-size: 1.3rem;
-}
-
-/* アイコンのサイズを統一 */
 .icon {
   display: inline-block;
   vertical-align: middle;
-  font-size: 2rem;
+  font-size: 1.2em;
   color: inherit;
+}
+
+/* ---- 小さい画面: 時刻だけ表示 ---- */
+@media (max-width: 480px) {
+  .date {
+    display: none;
+  }
+  .datePanel {
+    gap: var(--space-3, 12px);
+  }
 }

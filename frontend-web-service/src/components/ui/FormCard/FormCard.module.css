@@ -1,0 +1,46 @@
+/* ============================================================
+   FormCard
+   ============================================================
+   フロストガラス風のフォームカード。
+   全画面共通のカードスタイルをここで一元管理。
+   ============================================================ */
+
+.card {
+  width: 100%;
+  max-width: var(--card-max-width);
+  padding: var(--space-9) var(--space-8);   /* 36px 32px */
+  border-radius: var(--glass-border-radius);
+  background: var(--glass-bg);
+  backdrop-filter: var(--backdrop-blur-heavy);
+  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  box-sizing: border-box;
+  /* ページ進入アニメーション */
+  animation: cardEnter var(--page-duration) var(--page-easing) both;
+}
+
+/* wide variant: Signup等のワイドカード */
+.wide {
+  max-width: var(--card-wide-max-width);
+}
+
+/* カード入場アニメーション */
+@keyframes cardEnter {
+  from {
+    transform: scale(0.98) translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* レスポンシブ: 小さい画面では左右マージンを確保 */
+@media (max-width: 480px) {
+  .card {
+    padding: var(--space-7) var(--space-5);  /* 28px 20px */
+    margin: 0 var(--space-4);               /* 左右16px */
+  }
+}

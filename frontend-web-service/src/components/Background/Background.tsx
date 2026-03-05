@@ -1,5 +1,12 @@
+/**
+ * Background
+ * ─────────────────────────────────────────────
+ * ページ全体の背景ラッパー。
+ * スクロール可能 + 背景はfixed attachmentで固定。
+ */
+
 import React from 'react';
-import styles from '../../features/login/components/LoginForm/screens/LoginScreen.module.css';
+import styles from './Background.module.css';
 import bg from '../../assets/images/login-bg.png';
 
 type Props = {
@@ -7,8 +14,6 @@ type Props = {
 };
 
 const Background: React.FC<Props> = ({ children }) => {
-  // CSS の .pageWrapper は残しつつ、バンドラ経由で解決される画像 URL を
-  // inline style で上書きして確実に表示させます。
   return (
     <div
       className={styles.pageWrapper}
