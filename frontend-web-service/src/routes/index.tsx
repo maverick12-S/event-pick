@@ -37,8 +37,16 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute />,
         children: [
           {
-          path: '/dashboard',
-          element: lazyLoad(() => import('../features/dashboard/screens/DashboardScreen')),
+            path: '/dashboard',
+            element: lazyLoad(() => import('../features/dashboard/screens/DashboardScreen')),
+          },
+          {
+            path: '/home',
+            element: lazyLoad(() => import('../features/home/screens/HomeScreen')),
+          },
+          {
+            path: '/plan',
+            element: lazyLoad(() => import('../features/plan/screens/PlanScreen')),
           },
         ],
       },
