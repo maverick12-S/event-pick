@@ -1,0 +1,430 @@
+/* ============================================================
+   PlanScreen
+   ============================================================
+   ・3プランカード (ライト / スタンダード / プレミアム)
+   ・クーポンコード入力欄
+   ・スクロール対応
+   ============================================================ */
+
+.page {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-8, 32px) var(--space-6, 24px) var(--space-12, 48px);
+  gap: var(--space-7, 28px);
+  box-sizing: border-box;
+  min-height: calc(100dvh - var(--header-height, 72px) - 60px);
+}
+
+/* ---- タイトル ---- */
+.titleSection {
+  text-align: center;
+  color: #fff;
+  width: 100%;
+  max-width: 900px;
+}
+
+.titleSection h1 {
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  font-weight: 700;
+  margin: 0 0 8px;
+  letter-spacing: 0.02em;
+}
+
+.titleSection .subtitle {
+  font-size: clamp(0.875rem, 2vw, 1rem);
+  color: rgba(255, 255, 255, 0.72);
+  margin: 0;
+}
+
+/* ---- プランカードグリッド ---- */
+.plansGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-5, 20px);
+  width: 100%;
+  max-width: 980px;
+  align-items: start;
+}
+
+/* ---- 個別プランカード ---- */
+.planCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  padding: var(--space-6, 24px) var(--space-5, 20px) var(--space-7, 28px);
+  background: rgba(8, 16, 40, 0.65);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  animation: cardEnter 320ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  box-sizing: border-box;
+  height: 100%;
+}
+
+.planCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.5);
+}
+
+/* アニメーション遅延 */
+.planCard:nth-child(1) { animation-delay: 0ms; }
+.planCard:nth-child(2) { animation-delay: 80ms; }
+.planCard:nth-child(3) { animation-delay: 160ms; }
+
+@keyframes cardEnter {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ---- ライトプラン: シアン系 ---- */
+.planLight {
+  border: 2px solid rgba(0, 210, 220, 0.65);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 24px rgba(0, 210, 220, 0.1) inset;
+}
+.planLight:hover {
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.5), 0 0 32px rgba(0, 210, 220, 0.18) inset;
+}
+
+/* ---- スタンダードプラン: ゴールド系 ---- */
+.planStandard {
+  border: 2px solid rgba(220, 180, 0, 0.75);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 28px rgba(220, 180, 0, 0.12) inset;
+  /* 少し大きく目立たせる */
+  transform: scale(1.02);
+}
+.planStandard:hover {
+  transform: scale(1.02) translateY(-4px);
+  box-shadow: 0 22px 52px rgba(0, 0, 0, 0.55), 0 0 36px rgba(220, 180, 0, 0.2) inset;
+}
+
+/* ---- プレミアムプラン: パープル系 ---- */
+.planPremium {
+  border: 2px solid rgba(160, 80, 240, 0.65);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 24px rgba(160, 80, 240, 0.1) inset;
+}
+.planPremium:hover {
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.5), 0 0 32px rgba(160, 80, 240, 0.18) inset;
+}
+
+/* ---- おすすめバッジ ---- */
+.badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #e53935, #ff6f00);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 12px;
+  border-radius: 20px;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(229, 57, 53, 0.4);
+}
+
+/* ---- プランヘッダー (タイトル枠) ---- */
+.planHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-3, 12px);
+  align-self: flex-start;
+}
+
+.planHeaderLight    { background: rgba(0, 210, 220, 0.15); color: #00d2e6; border: 1px solid rgba(0, 210, 220, 0.4); }
+.planHeaderStandard { background: rgba(220, 180, 0, 0.15);  color: #e6c800; border: 1px solid rgba(220, 180, 0, 0.4); }
+.planHeaderPremium  { background: rgba(160, 80, 240, 0.15); color: #c080f0; border: 1px solid rgba(160, 80, 240, 0.4); }
+
+/* ---- 価格 ---- */
+.price {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: var(--space-4, 16px);
+}
+
+.priceCurrency {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.priceAmount {
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.pricePeriod {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-left: 2px;
+}
+
+/* ---- 機能リスト ---- */
+.featureList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--space-6, 24px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 8px);
+  flex: 1; /* ボタンを下に押し込む */
+}
+
+.featureItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.5;
+}
+
+.featureDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+  margin-top: 7px;
+}
+
+/* ---- 選択ボタン ---- */
+.selectButton {
+  width: 100%;
+  padding: 13px var(--space-4, 16px);
+  border-radius: 10px;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  letter-spacing: 0.02em;
+  margin-top: auto;
+}
+
+.selectButton:hover {
+  transform: translateY(-2px);
+}
+
+.selectButton:active {
+  transform: translateY(0);
+}
+
+.selectButton:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.4);
+  outline-offset: 2px;
+}
+
+/* ライトプランボタン */
+.btnLight {
+  background: rgba(0, 210, 220, 0.15);
+  color: #00d2e6;
+  border: 1.5px solid rgba(0, 210, 220, 0.6);
+}
+.btnLight:hover {
+  background: rgba(0, 210, 220, 0.25);
+  box-shadow: 0 6px 20px rgba(0, 210, 220, 0.2);
+}
+
+/* スタンダードプランボタン */
+.btnStandard {
+  background: linear-gradient(135deg, rgba(220, 180, 0, 0.85), rgba(180, 140, 0, 0.85));
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 6px 20px rgba(220, 180, 0, 0.25);
+}
+.btnStandard:hover {
+  filter: brightness(1.12);
+  box-shadow: 0 10px 28px rgba(220, 180, 0, 0.35);
+}
+
+/* プレミアムプランボタン */
+.btnPremium {
+  background: rgba(160, 80, 240, 0.2);
+  color: #c080f0;
+  border: 1.5px solid rgba(160, 80, 240, 0.6);
+}
+.btnPremium:hover {
+  background: rgba(160, 80, 240, 0.3);
+  box-shadow: 0 6px 20px rgba(160, 80, 240, 0.25);
+}
+
+/* ---- クーポンセクション ---- */
+.couponSection {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3, 12px);
+  margin-top: var(--space-2, 8px);
+}
+
+.couponTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  align-self: flex-start;
+}
+
+.couponRow {
+  display: flex;
+  gap: var(--space-2, 8px);
+  width: 100%;
+}
+
+.couponInput {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+  box-sizing: border-box;
+}
+
+.couponInput::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.couponInput:focus {
+  border-color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.13);
+}
+
+.couponButton {
+  padding: 12px 20px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.couponButton:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: translateY(-1px);
+}
+
+.couponButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* クーポン適用結果メッセージ */
+.couponMessage {
+  font-size: 0.85rem;
+  padding: 8px 14px;
+  border-radius: 8px;
+  width: 100%;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.couponSuccess {
+  background: rgba(0, 180, 80, 0.15);
+  border: 1px solid rgba(0, 180, 80, 0.4);
+  color: #5edd90;
+}
+
+.couponError {
+  background: rgba(220, 53, 69, 0.15);
+  border: 1px solid rgba(220, 53, 69, 0.4);
+  color: #ff8a8a;
+}
+
+/* ---- プラン説明文 ---- */
+.description {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.6;
+  margin: 0 0 var(--space-4, 16px);
+}
+
+/* ---- 機能アイコン (チェックマーク) ---- */
+.featureCheck {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 4px;
+}
+
+/* ---- 選択済みカード ---- */
+.planSelected {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+}
+
+/* ---- クーポンアイコン ---- */
+.couponIcon {
+  vertical-align: -2px;
+  margin-right: 5px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+/* ---- 下部余白 ---- */
+.bottomPad {
+  height: 40px;
+}
+
+/* ---- ローディングドット ---- */
+.loadingDots {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+}
+
+@keyframes dotBlink {
+  0%, 80%, 100% { opacity: 0; }
+  40%           { opacity: 1; }
+}
+
+.dot1 { animation: dotBlink 1.2s ease infinite; }
+.dot2 { animation: dotBlink 1.2s ease 0.2s infinite; }
+.dot3 { animation: dotBlink 1.2s ease 0.4s infinite; }
+
+/* ---- レスポンシブ ---- */
+@media (max-width: 768px) {
+  .plansGrid {
+    grid-template-columns: 1fr;
+    max-width: 440px;
+  }
+  /* スタンダードを1カラム時は通常サイズ */
+  .planStandard {
+    transform: scale(1);
+  }
+  .planStandard:hover {
+    transform: translateY(-4px);
+  }
+}
+
+@media (max-width: 480px) {
+  .page {
+    padding: var(--space-6, 24px) var(--space-4, 16px) var(--space-10, 40px);
+  }
+}
