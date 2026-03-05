@@ -7,6 +7,7 @@ import { lazyLoad } from './lazyLoad';
 // `lazyLoad` ヘルパを使って各画面を遅延読み込みします。
 
 export const router = createBrowserRouter([
+  // ─── 認証系画面（ダークテーマ BaseLayout） ───────────────
   {
     element: <BaseLayout />,
     children: [
@@ -53,7 +54,9 @@ export const router = createBrowserRouter([
 
       // ルートアクセス → ログインへ
       { path: '/',  element: <Navigate to="/login" replace /> },
-      { path: '*',  element: <Navigate to="/login" replace /> },
     ],
   },
+
+  // 不明パス → ログイン
+  { path: '*', element: <Navigate to="/login" replace /> },
 ]);
