@@ -43,59 +43,61 @@ const PasswordResetScreen: React.FC = () => {
 
   return (
     <MuiAuthLayout
-      title="パスワードリセット"
+      title="パスワードリセット画面"
       subtitle="登録済みのメールアドレスを入力してください"
     >
-      <Card elevation={0}>
-        <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
-          <Box
-            component="form"
-            onSubmit={handleSubmit}
-            noValidate
-            sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}
-          >
-            {error && <Alert severity="error" sx={{ borderRadius: 2 }}>{error}</Alert>}
-
-            <TextField
-              id="reset-email"
-              label="メールアドレス"
-              placeholder="example@company.com"
-              type="email"
-              value={email}
-              onChange={(e) => { setEmail(e.target.value); setFieldError(''); }}
-              error={Boolean(fieldError)}
-              helperText={fieldError}
-              autoComplete="email"
-              required
-              fullWidth
-              variant="outlined"
-            />
-
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              fullWidth
-              disabled={loading}
-              size="large"
+      <Box sx={{ mt: { xs: 2.5, sm: 3.25 } }}>
+        <Card elevation={0}>
+          <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+            <Box
+              component="form"
+              onSubmit={handleSubmit}
+              noValidate
+              sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}
             >
-              {loading ? '送信中…' : '認証コードを送信'}
-            </Button>
+              {error && <Alert severity="error" sx={{ borderRadius: 2 }}>{error}</Alert>}
 
-            <Stack alignItems="flex-end">
-              <Link
-                component="button"
-                type="button"
-                onClick={() => navigate('/login')}
-                underline="hover"
-                sx={{ fontSize: '0.85rem', color: 'text.secondary', cursor: 'pointer' }}
+              <TextField
+                id="reset-email"
+                label="メールアドレス"
+                placeholder="example@company.com"
+                type="email"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setFieldError(''); }}
+                error={Boolean(fieldError)}
+                helperText={fieldError}
+                autoComplete="email"
+                required
+                fullWidth
+                variant="outlined"
+              />
+
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                fullWidth
+                disabled={loading}
+                size="large"
               >
-                ログイン画面へ戻る
-              </Link>
-            </Stack>
-          </Box>
-        </CardContent>
-      </Card>
+                {loading ? '送信中…' : '認証コードを送信'}
+              </Button>
+
+              <Stack alignItems="flex-end">
+                <Link
+                  component="button"
+                  type="button"
+                  onClick={() => navigate('/login')}
+                  underline="hover"
+                  sx={{ fontSize: '0.85rem', color: 'text.secondary', cursor: 'pointer' }}
+                >
+                  ログイン画面へ戻る
+                </Link>
+              </Stack>
+            </Box>
+          </CardContent>
+        </Card>
+      </Box>
     </MuiAuthLayout>
   );
 };

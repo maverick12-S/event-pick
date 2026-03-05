@@ -1,8 +1,8 @@
 import { apiClient } from '../../../api/client'; 
 import type { LoginRequest, LoginResponse } from '../../../types/auth';
 
-// Vite 環境変数でモック認証を有効にできます
-const USE_MOCK_AUTH = import.meta.env.VITE_MOCK_AUTH === 'true';
+// 開発中はモック認証を固定（ログイン導線を安定させる）
+const USE_MOCK_AUTH = true;
 
 export const authApi = {
       /**
@@ -39,6 +39,15 @@ export const authApi = {
    * GET /auth/me
    */
   getMe: async (): Promise<import('../../../types/auth').AuthUser> => {
+    if (USE_MOCK_AUTH) {
+      await new Promise((res) => setTimeout(res, 120));
+      return {
+        id: 'mock-user-1',
+        username: 'mock.user',
+        realm: 'mock-realm',
+        displayName: 'モックユーザー',
+      };
+    }
     const response = await apiClient.get<import('../../../types/auth').AuthUser>('/auth/me');
     return response.data;
   },

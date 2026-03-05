@@ -52,7 +52,7 @@ const SignupScreen: React.FC = () => {
   /* ---- 審査受け付け完了画面 ---- */
   if (submitted) {
     return (
-      <AuthPageLayout title="" wide>
+      <AuthPageLayout title="初回会員登録完了" wide>
         <FormCard wide className={styles.signupCardBoost}>
           <div className={styles.completedWrapper}>
             <h2 className={styles.completedTitle}>審査を受け付けました</h2>

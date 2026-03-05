@@ -51,7 +51,7 @@ const PasswordChangeScreen: React.FC = () => {
 
   return (
     <MuiAuthLayout
-      title="パスワード変更"
+      title="企業ログイン"
       subtitle="新しいパスワードを設定してください"
     >
       <Card elevation={0}>
