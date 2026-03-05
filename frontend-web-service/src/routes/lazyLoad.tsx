@@ -5,9 +5,9 @@ import SuspenseLoading from '../components/SuspenseWeather/SuspenseLoading';
 export const lazyLoad = (importFn: () => Promise<{ default: React.ComponentType<any> }>): ReactElement => {
   const Component = lazy(importFn) as React.LazyExoticComponent<React.ComponentType<any>>;
   return (
-    <Suspense fallback={<SuspenseLoading />}>
+    <SuspenseLoading>
       <Component />
-    </Suspense>
+    </SuspenseLoading>
   );
 };
 
