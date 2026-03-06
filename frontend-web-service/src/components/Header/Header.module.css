@@ -33,12 +33,7 @@
 
 .logo {
   display: inline-flex;
-}
-
-.logo img {
-  width: 48px;
-  height: 48px;
-  object-fit: contain;
+  width: auto;
 }
 
 /* ---- 日付・時刻 右エリア ---- */

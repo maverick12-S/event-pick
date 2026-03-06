@@ -1,14 +1,11 @@
 // =============================================
-// LoginScreen
-// =============================================
-// 原則：Screenは「組み立て」だけをする
-// 背景配置 / レイアウト / hookの呼び出し
-// UIの細かい実装はコンポーネントに任せる
+// LoginScreen — MUI リファクタ版
 // =============================================
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthPageLayout, FormCard } from '../../../../../components/ui';
+import { Box } from '@mui/material';
+import MuiAuthLayout from '../../../../../components/ui/MuiAuthLayout/MuiAuthLayout';
 import LoginForm from '../LoginForm';
 import { useLogin } from '../../../api/hooks/useLogin';
 
@@ -17,14 +14,15 @@ const LoginScreen: React.FC = () => {
   const { isLoading, error, login } = useLogin();
 
   const handlePasswordReset = () => navigate('/password-reset');
-  const handleNewAccount = () => navigate('/signup');
+  const handleNewAccount    = () => navigate('/signup');
 
   return (
-    <AuthPageLayout
+    <MuiAuthLayout
       title="企業ログイン"
       subtitle="拠点アカウントでログインしてください"
+      layoutScale={1.25}
     >
-      <FormCard>
+      <Box sx={{ mt: { xs: 2.5, sm: 3.25 } }}>
         <LoginForm
           isLoading={isLoading}
           error={error}
@@ -32,8 +30,8 @@ const LoginScreen: React.FC = () => {
           onPasswordReset={handlePasswordReset}
           onNewAccount={handleNewAccount}
         />
-      </FormCard>
-    </AuthPageLayout>
+      </Box>
+    </MuiAuthLayout>
   );
 };
 

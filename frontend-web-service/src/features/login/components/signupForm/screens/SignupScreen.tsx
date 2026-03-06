@@ -52,8 +52,8 @@ const SignupScreen: React.FC = () => {
   /* ---- 審査受け付け完了画面 ---- */
   if (submitted) {
     return (
-      <AuthPageLayout title="" wide>
-        <FormCard wide>
+      <AuthPageLayout title="初回会員登録完了" wide>
+        <FormCard wide className={styles.signupCardBoost}>
           <div className={styles.completedWrapper}>
             <h2 className={styles.completedTitle}>審査を受け付けました</h2>
             <p className={styles.completedBody}>
@@ -83,7 +83,7 @@ const SignupScreen: React.FC = () => {
       subtitle="企業情報を入力してください"
       wide
     >
-      <FormCard wide>
+      <FormCard wide className={styles.signupCardBoost}>
         <form className={fieldStyles.form} onSubmit={handleSubmit} encType="multipart/form-data">
           {error && (
             <div className={fieldStyles.errorBanner} role="alert">

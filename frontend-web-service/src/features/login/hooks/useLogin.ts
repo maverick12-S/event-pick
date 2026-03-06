@@ -8,9 +8,9 @@ export const useLogin = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ログイン後の遷移先（元ページ or ダッシュボード）
+  // ログイン後の遷移先（元ページ or プラン選択）
   const from = (location.state as { from?: { pathname: string } })
-    ?.from?.pathname ?? '/dashboard';
+    ?.from?.pathname ?? '/plan';
 
   const handleLogin = async (data: LoginRequest) => {
     try {

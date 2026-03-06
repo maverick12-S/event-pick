@@ -1,95 +1,100 @@
-import React, { Suspense } from 'react';
-import bg from '../../assets/images/login-bg.png';
-import styles from '../../features/login/components/LoginForm/screens/LoginScreen.module.css';
+/**
+ * SuspenseLoading
+ * ─────────────────────────────────────────────
+ * lazy import 中に表示するフォールバックUI。
+ * Header / Footer / 背景は BaseLayout 側が担当しているため、
+ * ここでは中央のローディングインジケーターのみを表示する。
+ */
 
-// API用URL
-const url =
-  'https://api.open-meteo.com/v1/forecast?latitude=35.6895&longitude=139.6917&hourly=temperature_2m&timezone=Asia%2FTokyo';
+import React, { Suspense, useEffect, useState } from 'react';
+import { CircularProgress, Box, Typography } from '@mui/material';
 
-// APIレスポンスの型定義
-interface WeatherData {
-  hourly: {
-    temperature_2m: number[];
-    time: string[];
-  };
-}
-
-let weatherData: WeatherData | undefined;
-
-// APIデータ取得用処理
-const fetchWeatherData = async (): Promise<WeatherData> => {
-  const res = await fetch(url);
-  const data = await res.json();
-  weatherData = data;
-  return data;
-};
-
-// コンポーネント描画処理
-const WeatherDataComponent: React.FC = () => {
-  if (!weatherData) {
-    throw fetchWeatherData();
-  }
-
-  return (
-    <div style={{ color: '#fff', padding: 20 }}>
-      <h2>Temperature Forecast</h2>
-      {weatherData?.hourly && (
-        <ul>
-          {weatherData.hourly.time.map((time, index) => (
-            <li key={time}>
-              {time}: {weatherData!.hourly.temperature_2m[index]}°C
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-};
-
-const SuspenseLoading: React.FC = () => {
-  return (
-    <Suspense
-      fallback={
-        <div
-          className={styles.pageWrapper}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundImage: `url(${bg})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            backgroundColor: '#0d1b2a',
-            color: '#fff',
-            zIndex: 9999,
-          }}
-        >
-          <div style={{
-            minWidth: 200,
-            maxWidth: '70%',
-            height: 56,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'rgba(255,255,255,0.08)',
-            color: '#fff',
-            borderRadius: 10,
-            border: '1px solid rgba(255,255,255,0.12)',
-            boxShadow: '0 6px 20px rgba(2,6,23,0.45)',
-            backdropFilter: 'blur(6px)',
-            WebkitBackdropFilter: 'blur(6px)',
-            fontSize: 16,
-            fontWeight: 600,
-          }}>Loading・・・ </div>
-        </div>
-      }
+const LoadingFallback: React.FC = () => (
+  <Box
+    component="section"
+    sx={{
+      flex: '1 0 auto',
+      minHeight: 'calc(100dvh - var(--header-height, 72px) - 60px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      px: 2,
+      py: { xs: 6, sm: 8 },
+      boxSizing: 'border-box',
+    }}
+  >
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 2,
+        background: 'rgba(255,255,255,0.08)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        border: '1px solid rgba(255,255,255,0.14)',
+        borderRadius: '14px',
+        boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
+        px: 5,
+        py: 4,
+        minWidth: 220,
+      }}
     >
-      <WeatherDataComponent />
-    </Suspense>
+      <CircularProgress
+        size={36}
+        thickness={3.5}
+        sx={{ color: 'rgba(255,255,255,0.75)' }}
+      />
+      <Typography
+        sx={{
+          color: 'rgba(255,255,255,0.85)',
+          fontWeight: 600,
+          fontSize: '0.95rem',
+          letterSpacing: '0.04em',
+        }}
+      >
+        読み込み中...
+      </Typography>
+    </Box>
+  </Box>
+);
+
+const DelayedLoadingFallback: React.FC<{ delayMs?: number }> = ({ delayMs = 120 }) => {
+  const [shouldRender, setShouldRender] = useState(false);
+  const [fadeIn, setFadeIn] = useState(false);
+
+  useEffect(() => {
+    const timerId = window.setTimeout(() => {
+      setShouldRender(true);
+      // マウント直後にopacityを上げてフェードイン
+      requestAnimationFrame(() => setFadeIn(true));
+    }, delayMs);
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [delayMs]);
+
+  if (!shouldRender) return null;
+
+  return (
+    <Box
+      sx={{
+        flex: '1 0 auto',
+        display: 'flex',
+        flexDirection: 'column',
+        opacity: fadeIn ? 1 : 0,
+        transition: 'opacity 220ms cubic-bezier(0.22, 1, 0.36, 1)',
+      }}
+    >
+      <LoadingFallback />
+    </Box>
   );
 };
+
+const SuspenseLoading: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <Suspense fallback={<DelayedLoadingFallback delayMs={120} />}>
+    {children}
+  </Suspense>
+);
 
 export default SuspenseLoading;
