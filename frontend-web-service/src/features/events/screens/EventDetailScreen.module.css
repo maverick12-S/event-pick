@@ -1,0 +1,559 @@
+/* ============================================================
+   EventDetailScreen — 2ページ横スワイプ投稿詳細
+   ダークネイビー背景 + ホワイトカード グラスモーフィズム
+   ============================================================ */
+
+/* ── ルートコンテナ ────────────────────────────────────── */
+.root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: linear-gradient(160deg, #071020 0%, #0b2a4a 55%, #0d1e38 100%);
+  font-family: var(--font-family-base);
+  color: var(--text-primary, #fff);
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── トップバー ─────────────────────────────────────────── */
+.topBar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header, 60);
+  height: var(--header-height, 64px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 16px;
+  background: rgba(7, 16, 32, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: rgba(255,255,255,0.10);
+  color: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: background var(--transition-fast, 0.12s);
+  flex-shrink: 0;
+}
+.backBtn:hover { background: rgba(255,255,255,0.18); }
+
+.topBarCenter {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.topBarLogo {
+  font-weight: 800;
+  font-size: 1rem;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+.topBarDate {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.65);
+  white-space: nowrap;
+}
+
+.topBarIcon {
+  font-size: 0.75rem;
+  vertical-align: middle;
+}
+
+.topBarActions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: rgba(255,255,255,0.10);
+  color: rgba(255,255,255,0.75);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.actionBtn:hover { background: rgba(255,255,255,0.18); color: #fff; }
+.actionBtnLiked { background: rgba(229,57,53,0.25) !important; color: #ff6b6b !important; }
+
+/* ── ページナビゲータタブ ─────────────────────────────── */
+.pageNav {
+  display: flex;
+  gap: 0;
+  background: rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+
+.pageNavTab {
+  flex: 1;
+  padding: 10px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.5);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+  letter-spacing: 0.02em;
+}
+.pageNavTabActive {
+  color: #fff;
+  border-bottom-color: var(--color-brand-primary, #0a66ff);
+}
+
+/* ── スワイプコンテナ ─────────────────────────────────── */
+.swipeContainer {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.swipeTrack {
+  display: flex;
+  width: 200%;
+  height: 100%;
+  transition: transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.swipePage {
+  width: 50%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+.swipePage::-webkit-scrollbar { width: 4px; }
+.swipePage::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 99px; }
+
+.pageContent {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 0 24px;
+}
+
+/* ── 写真カルーセル ──────────────────────────────────── */
+.carousel {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #0a1628;
+  flex-shrink: 0;
+}
+
+.carouselSlide {
+  position: absolute;
+  inset: 0;
+  transition: transform 350ms cubic-bezier(0.22, 1, 0.36, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.carouselImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.carouselPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+}
+
+.carouselEmoji {
+  font-size: clamp(3rem, 8vw, 5rem);
+  line-height: 1;
+  filter: drop-shadow(0 4px 16px rgba(0,0,0,0.4));
+}
+
+.carouselAlt {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.6);
+  letter-spacing: 0.04em;
+}
+
+/* ← → ボタン */
+.carouselBtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(6px);
+  color: rgba(255,255,255,0.9);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background var(--transition-fast);
+  z-index: 2;
+}
+.carouselBtn:hover { background: rgba(0,0,0,0.65); }
+.carouselBtnLeft  { left: 10px; }
+.carouselBtnRight { right: 10px; }
+
+/* ドットインジケーター */
+.carouselDots {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 2;
+}
+
+.carouselDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.40);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+}
+.carouselDotActive {
+  background: #fff;
+  transform: scale(1.3);
+}
+
+/* ── カード共通 ───────────────────────────────────────── */
+.card {
+  margin: 0 12px;
+  background: rgba(255, 255, 255, 0.97);
+  border-radius: 16px;
+  padding: 18px 20px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.28);
+  color: #1a1a2e;
+}
+
+/* ── Page1: イベント名・ピル・バッジ ─────────────────── */
+.eventTitle {
+  margin: 0 0 14px;
+  font-size: clamp(1.15rem, 3vw, 1.5rem);
+  font-weight: 800;
+  color: #0d1b2e;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.infoRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.infoPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f0f4ff;
+  border: 1px solid #dce7ff;
+  border-radius: 99px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  color: #1a3a6e;
+  font-weight: 600;
+}
+
+.infoPillIcon {
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+  color: var(--color-brand-primary, #0a66ff);
+}
+
+.infoPillText {
+  white-space: nowrap;
+}
+
+.badgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+/* ── 概要 ─────────────────────────────────────────────── */
+.sectionTitle {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0d1b2e;
+  letter-spacing: -0.01em;
+}
+
+.overviewText {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #3a4a5e;
+  line-height: 1.75;
+}
+
+/* ── 会社・いいね行 ───────────────────────────────────── */
+.companyRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.companyName {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #3a4a6e;
+}
+
+.likeCount {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #3a4a6e;
+}
+
+.likedIcon   { color: #e53935; font-size: 1rem; }
+.unlikedIcon { color: #aaa; font-size: 1rem; }
+
+/* → 詳細ページへボタン */
+.nextPageBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 4px 12px 0;
+  padding: 13px 24px;
+  background: var(--color-brand-primary, #0a66ff);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: filter var(--transition-fast), transform var(--transition-fast);
+}
+.nextPageBtn:hover { filter: brightness(1.12); transform: translateY(-1px); }
+
+.nextPageIcon { font-size: 1rem; }
+
+/* ── Page2: エリアマップ ──────────────────────────────── */
+.mapBox {
+  background: #eaf0f8;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #dce6f0;
+}
+
+.mapPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 28px 16px 20px;
+  text-align: center;
+}
+
+.mapPinIcon {
+  font-size: 2rem;
+  color: var(--color-brand-primary, #0a66ff);
+}
+
+.mapAddr {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1a2e50;
+}
+
+.mapSubAddr {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #5a7090;
+}
+
+.mapOpenLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 11px 16px;
+  background: #fff;
+  border-top: 1px solid #dce6f0;
+  color: var(--color-brand-primary, #0a66ff);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+  transition: background var(--transition-fast);
+}
+.mapOpenLink:hover { background: #f0f6ff; }
+
+.mapOpenIcon { font-size: 0.9rem; }
+
+/* ── Page2: 予約 ──────────────────────────────────────── */
+.reserveBtn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  margin-bottom: 14px;
+  background: var(--color-brand-primary, #0a66ff);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: filter var(--transition-fast), transform var(--transition-fast), background var(--transition-fast);
+}
+.reserveBtn:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+.reserveBtn:disabled { cursor: not-allowed; opacity: 0.85; }
+.reserveBtnDone    { background: #2e7d32 !important; }
+.reserveBtnLoading { background: #0052cc !important; }
+
+.seatsRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+
+.seatsIcon { font-size: 0.95rem; color: #5a7090; }
+
+.seatsText {
+  font-size: 0.82rem;
+  color: #3a4a6e;
+}
+
+.seatsBar {
+  width: 100%;
+  height: 6px;
+  background: #e8eef7;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.seatsBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #0a66ff, #4da6ff);
+  border-radius: 99px;
+  transition: width 0.6s ease;
+}
+
+/* ── Page2: Event Details ─────────────────────────────── */
+.detailSection {
+  margin-bottom: 18px;
+}
+.detailSection:last-child { margin-bottom: 0; }
+
+.detailSubTitle {
+  margin: 0 0 6px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0d1b2e;
+}
+
+.detailText {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #3a4a5e;
+  line-height: 1.7;
+}
+
+.bulletList {
+  margin: 0;
+  padding-left: 18px;
+}
+.bulletList li {
+  font-size: 0.82rem;
+  color: #3a4a5e;
+  line-height: 1.8;
+}
+
+.speakerRow {
+  margin-bottom: 6px;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.speakerName  { font-weight: 700; color: #0d1b2e; }
+.speakerTitle { color: #3a4a5e; }
+
+/* ── スワイプヒント ───────────────────────────────────── */
+.swipeHint {
+  text-align: center;
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.35);
+  padding: 6px 16px 10px;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.bottomPad { height: 40px; }
+
+/* ── レスポンシブ（幅が広い端末） ────────────────────── */
+@media (min-width: 540px) {
+  .carousel { aspect-ratio: 16 / 7; }
+  .card { padding: 22px 26px; }
+  .eventTitle { font-size: 1.4rem; }
+}
+
+@media (min-width: 768px) {
+  .carousel { aspect-ratio: 16 / 6; }
+}

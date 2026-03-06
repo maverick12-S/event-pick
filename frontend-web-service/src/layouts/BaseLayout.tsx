@@ -24,12 +24,17 @@ import Background from '../components/Background/Background';
 import { useAuth } from '../contexts/AuthContext';
 import '../styles/pageTransitions.css';
 
+/** 独自ヘッダー/フッターを持つ全画面ルートのパスプレフィックス */
+const FULLSCREEN_PATHS = ['/events/'];
+
 const BaseLayout: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
   const navigation = useNavigation();
   const [isEntering, setIsEntering] = useState(false);
-  
+
+  const isFullscreen = FULLSCREEN_PATHS.some((p) => location.pathname.startsWith(p));
+
   // 公開ルート（ログイン画面など）では背景アニメーションを無効化
   const publicRoutes = ['/login', '/signup', '/password-reset', '/mfa', '/password-change'];
   const isPublicRoute = publicRoutes.includes(location.pathname);
@@ -42,6 +47,14 @@ const BaseLayout: React.FC = () => {
     return () => window.cancelAnimationFrame(rafId);
   }, [location.pathname]);
 
+  // 投稿詳細など独自ヘッダーを持つ画面: Background・Header・Footer を省略
+  if (isFullscreen) {
+    return (
+      <main style={{ flex: '1 0 auto', display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
+        <Outlet />
+      </main>
+    );
+  }
 
   return (
     <Background isAuthenticated={showDarkOverlay}>
