@@ -9,8 +9,6 @@
   transition:
     opacity var(--page-duration) var(--page-easing),
     transform var(--page-duration) var(--page-easing);
-  will-change: opacity, transform;
-  backface-visibility: hidden;
 }
 
 .page-stage.is-enter {

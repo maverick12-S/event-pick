@@ -1,8 +1,14 @@
 import React, { useMemo, useState } from 'react';
-import { Box, ButtonBase, CircularProgress, Grid, Typography } from '@mui/material';
+import { Box, Button, ButtonBase, CircularProgress, Collapse, Grid, InputBase, MenuItem, Select, Typography } from '@mui/material';
 import { FiSearch } from 'react-icons/fi';
 import usePostsMock from '../hooks/usePostsMock';
-import type { PostsTabKey } from '../../../api/db/posts.screen';
+import {
+  categoryOptions,
+  cityOptions,
+  prefectureOptions,
+  timeSlotOptions,
+  type PostsTabKey,
+} from '../../../api/db/posts.screen';
 import PostEventCard from '../reDesigne/PostEventCard';
 
 const PAGE_LIMIT = 60;
@@ -14,18 +20,53 @@ const tabs: Array<{ key: PostsTabKey; label: string }> = [
   { key: 'scheduled', label: '投稿予約・確認' },
 ];
 
+type SearchFilters = {
+  title: string;
+  categories: string[];
+  prefectures: string[];
+  cities: string[];
+  timeSlots: string[];
+};
+
+const defaultFilters: SearchFilters = {
+  title: '',
+  categories: [],
+  prefectures: [],
+  cities: [],
+  timeSlots: [],
+};
+
+const toSelectedValues = (selected: unknown): string[] => {
+  if (Array.isArray(selected)) {
+    return selected.map((value) => String(value));
+  }
+
+  if (typeof selected === 'string' && selected.length > 0) {
+    return selected.split(',').map((value) => value.trim()).filter(Boolean);
+  }
+
+  return [];
+};
+
 const PostsListScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<PostsTabKey>('today');
   const [page, setPage] = useState(1);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [draftFilters, setDraftFilters] = useState<SearchFilters>(defaultFilters);
+  const [appliedFilters, setAppliedFilters] = useState<SearchFilters>(defaultFilters);
 
   const params = useMemo(
     () => ({
       tab: activeTab,
       page,
       limit: PAGE_LIMIT,
-      search: '',
+      search: appliedFilters.title.trim(),
+      categories: appliedFilters.categories,
+      prefectures: appliedFilters.prefectures,
+      cities: appliedFilters.cities,
+      timeSlots: appliedFilters.timeSlots,
     }),
-    [activeTab, page],
+    [activeTab, page, appliedFilters],
   );
 
   const { data, isFetching } = usePostsMock(params);
@@ -38,7 +79,6 @@ const PostsListScreen: React.FC = () => {
           width: `${100 / SCALE_FACTOR}%`,
           mx: 'auto',
           zoom: SCALE_FACTOR,
-          transformOrigin: 'top center',
         }}
       >
         <Box sx={{ width: '100%', maxWidth: 1900, mx: 'auto' }}>
@@ -52,9 +92,6 @@ const PostsListScreen: React.FC = () => {
             boxShadow: 'inset 0 1px 0 rgba(248, 252, 255, 0.36), 0 12px 28px rgba(2, 8, 22, 0.36)',
             backdropFilter: 'blur(14px)',
             WebkitBackdropFilter: 'blur(14px)',
-            transform: 'translateZ(0)',
-            willChange: 'transform',
-            isolation: 'isolate',
             p: { xs: 1.25, md: 1.75 },
           }}
         >
@@ -63,111 +100,345 @@ const PostsListScreen: React.FC = () => {
               mx: { xs: -1.25, md: -1.75 },
               px: '20px',
               pb: { xs: 1.5, md: 1.75 },
-              boxShadow: 'inset 0 -1px 0 rgba(206, 224, 246, 0.5)',
+              borderBottom: '1px solid rgba(206, 224, 246, 0.5)',
             }}
           >
-            <Box
-              sx={{
-                position: 'relative',
-                display: 'grid',
-                gridTemplateColumns: 'auto 1fr auto',
-                alignItems: 'center',
-                minHeight: { xs: 52, md: 62 },
-              }}
-            >
-              <ButtonBase
-                aria-label="検索"
-                sx={{
-                  width: 'auto',
-                  height: 'auto',
-                  minWidth: 0,
-                  p: 0,
-                  color: 'rgba(243, 249, 255, 0.98)',
-                  fontSize: '2.1rem',
-                }}
-              >
-                <FiSearch />
-              </ButtonBase>
+            <Grid container spacing={{ xs: 1.1, md: 1.5 }} alignItems="center">
+              <Grid size={{ xs: 12, md: 6 }} sx={{ mt: { xs: 1, md: 2, lg: 5 }, order: { xs: 1, md: 1 } }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    borderRadius: 999,
+                    border: '1px solid rgba(194, 216, 243, 0.58)',
+                    backgroundColor: 'rgba(235, 245, 255, 0.14)',
+                    boxShadow: searchOpen
+                      ? 'inset 0 1px 0 rgba(246, 251, 255, 0.34), 0 10px 24px rgba(8, 20, 40, 0.28)'
+                      : 'inset 0 1px 0 rgba(246, 251, 255, 0.34)',
+                    px: 1.25,
+                    py: 0.4,
+                    gap: 0.8,
+                    width: { xs: '100%', md: searchOpen ? 340 : 300 },
+                    cursor: 'text',
+                    transform: searchOpen ? 'translateY(-2px)' : 'translateY(0)',
+                    transition:
+                      'width 360ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 360ms cubic-bezier(0.22, 1, 0.36, 1), transform 300ms cubic-bezier(0.22, 1, 0.36, 1)',
+                  }}
+                  onClick={() => setSearchOpen(true)}
+                >
+                  <Box
+                    aria-hidden="true"
+                    sx={{ color: 'rgba(241, 249, 255, 0.98)', fontSize: '1.2rem', display: 'grid', placeItems: 'center' }}
+                  >
+                    <FiSearch />
+                  </Box>
+                  <InputBase
+                    value={draftFilters.title}
+                    onChange={(event) => {
+                      setDraftFilters((prev) => ({ ...prev, title: event.target.value }));
+                    }}
+                    onFocus={() => setSearchOpen(true)}
+                    placeholder="イベントタイトルで検索"
+                    inputProps={{ 'aria-label': 'イベントタイトルで検索' }}
+                    sx={{
+                      flex: 1,
+                      color: '#f2f8ff',
+                      fontSize: '0.95rem',
+                      '& input::placeholder': {
+                        color: 'rgba(221, 235, 250, 0.8)',
+                        opacity: 1,
+                      },
+                    }}
+                  />
+                </Box>
+              </Grid>
 
-              <Typography
-                component="h1"
+              <Grid
+                size={{ xs: 12 }}
                 sx={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  textAlign: 'center',
-                  color: '#f1f7ff',
-                  fontSize: { xs: '2.2rem', md: '3rem' },
-                  fontWeight: 700,
-                  letterSpacing: '0.04em',
-                  textShadow: '0 5px 14px rgba(6, 14, 35, 0.5)',
-                  whiteSpace: 'nowrap',
+                  mt: { xs: 0.35, md: 0.6, lg: 0.35 },
+                  order: { xs: 2, md: 3 },
+                  display: 'flex',
+                  justifyContent: 'center',
                   pointerEvents: 'none',
                 }}
               >
-                投稿一覧
-              </Typography>
+                <Typography
+                  component="h1"
+                  sx={{
+                    textAlign: 'center',
+                    color: '#f1f7ff',
+                    fontSize: { xs: '1.8rem', md: '2.15rem', lg: '2.5rem' },
+                    fontWeight: 700,
+                    letterSpacing: '0.04em',
+                    textShadow: '0 5px 14px rgba(6, 14, 35, 0.5)',
+                    whiteSpace: { xs: 'normal', md: 'nowrap' },
+                    lineHeight: 1.15,
+                    transform: { xs: 'none', md: 'none', lg: 'translateY(-20px)', xl: 'translateY(-58px)' },
+                  }}
+                >
+                  投稿一覧
+                </Typography>
+              </Grid>
 
-              <Box sx={{ width: 1, height: 1, justifySelf: 'end' }} />
-            </Box>
+              <Grid size={{ xs: 12, md: 6 }} sx={{ mt: { xs: 0.7, md: 2, lg: 5 }, order: { xs: 3, md: 2 } }}>
+                <Box
+                  role="tablist"
+                  aria-label="投稿絞り込みタブ"
+                  sx={{
+                    display: 'flex',
+                    justifyContent: { xs: 'flex-start', sm: 'center', md: 'flex-end' },
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: 0.9,
+                  }}
+                >
+                  {tabs.map((tab) => {
+                    const active = tab.key === activeTab;
 
-            <Box
-              role="tablist"
-              aria-label="投稿絞り込みタブ"
-              sx={{
-                mt: 1,
-                display: 'grid',
-                gridAutoFlow: 'column',
-                justifyContent: 'start',
-                gap: 0.9,
-              }}
-            >
-              {tabs.map((tab) => {
-                const active = tab.key === activeTab;
-
-                return (
-                  <ButtonBase
-                    key={tab.key}
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => {
-                      setActiveTab(tab.key);
-                      setPage(1);
-                    }}
-                    sx={{
-                      minHeight: 46,
-                      px: 2.5,
-                      borderRadius: 999,
-                      border: active ? '1px solid rgba(255, 182, 198, 0.95)' : '1px solid rgba(176, 201, 232, 0.72)',
-                      background: active
-                        ? 'linear-gradient(165deg, rgba(235, 97, 131, 0.96), rgba(221, 78, 116, 0.96))'
-                        : 'linear-gradient(165deg, rgba(70, 93, 129, 0.86), rgba(55, 74, 106, 0.86))',
-                      color: '#f7fbff',
-                      fontSize: '1rem',
-                      fontWeight: active ? 700 : 600,
-                      letterSpacing: '0.01em',
-                      boxShadow: active
-                        ? '0 6px 14px rgba(35, 14, 34, 0.34), inset 0 1px 0 rgba(255, 226, 233, 0.34)'
-                        : '0 3px 8px rgba(6, 14, 31, 0.25), inset 0 1px 0 rgba(228, 241, 255, 0.28)',
-                      backdropFilter: 'blur(8px)',
-                      WebkitBackdropFilter: 'blur(8px)',
-                      transition: 'box-shadow 160ms ease, filter 160ms ease',
-                      '@media (hover: hover) and (pointer: fine)': {
-                        '&:hover': {
+                    return (
+                      <ButtonBase
+                        key={tab.key}
+                        role="tab"
+                        aria-selected={active}
+                        onClick={() => {
+                          setActiveTab(tab.key);
+                          setPage(1);
+                        }}
+                        sx={{
+                          minHeight: 44,
+                          px: 2.2,
+                          borderRadius: 999,
+                          border: active ? '1px solid rgba(255, 182, 198, 0.95)' : '1px solid rgba(176, 201, 232, 0.72)',
+                          background: active
+                            ? 'linear-gradient(165deg, rgba(235, 97, 131, 0.96), rgba(221, 78, 116, 0.96))'
+                            : 'linear-gradient(165deg, rgba(70, 93, 129, 0.86), rgba(55, 74, 106, 0.86))',
+                          color: '#f7fbff',
+                          fontSize: '0.96rem',
+                          fontWeight: active ? 700 : 600,
+                          letterSpacing: '0.01em',
                           boxShadow: active
-                            ? '0 8px 18px rgba(35, 14, 34, 0.38), inset 0 1px 0 rgba(255, 226, 233, 0.34)'
-                            : '0 5px 12px rgba(6, 14, 31, 0.3), inset 0 1px 0 rgba(228, 241, 255, 0.28)',
-                          filter: 'brightness(1.03)',
+                            ? '0 6px 14px rgba(35, 14, 34, 0.34), inset 0 1px 0 rgba(255, 226, 233, 0.34)'
+                            : '0 3px 8px rgba(6, 14, 31, 0.25), inset 0 1px 0 rgba(228, 241, 255, 0.28)',
+                          backdropFilter: 'blur(8px)',
+                          WebkitBackdropFilter: 'blur(8px)',
+                          transition: 'box-shadow 160ms ease, filter 160ms ease',
+                          whiteSpace: 'nowrap',
+                          '@media (hover: hover) and (pointer: fine)': {
+                            '&:hover': {
+                              boxShadow: active
+                                ? '0 8px 18px rgba(35, 14, 34, 0.38), inset 0 1px 0 rgba(255, 226, 233, 0.34)'
+                                : '0 5px 12px rgba(6, 14, 31, 0.3), inset 0 1px 0 rgba(228, 241, 255, 0.28)',
+                              filter: 'brightness(1.03)',
+                            },
+                          },
+                        }}
+                      >
+                        {tab.label}
+                      </ButtonBase>
+                    );
+                  })}
+                </Box>
+              </Grid>
+            </Grid>
+
+            <Collapse
+              in={searchOpen}
+              timeout={420}
+              easing="cubic-bezier(0.22, 1, 0.36, 1)"
+              sx={{ mt: searchOpen ? { xs: 1, md: 0.9, lg: 1.2 } : 0 }}
+            >
+              <Box
+                sx={{
+                  borderRadius: 2,
+                  border: '1px solid rgba(186, 210, 239, 0.45)',
+                  backgroundColor: 'rgba(18, 32, 54, 0.9)',
+                  boxShadow: 'inset 0 1px 0 rgba(243, 249, 255, 0.24)',
+                  p: { xs: 1.1, md: 1.25 },
+                  opacity: searchOpen ? 1 : 0,
+                  transform: searchOpen ? 'translateY(0)' : 'translateY(-10px)',
+                  transition: 'opacity 260ms ease, transform 420ms cubic-bezier(0.22, 1, 0.36, 1)',
+                }}
+              >
+                <Grid container spacing={1.1} alignItems="center">
+                  <Grid size={{ xs: 12, md: 3 }}>
+                    <Select
+                      fullWidth
+                      multiple
+                      displayEmpty
+                      value={draftFilters.categories}
+                      renderValue={(selected) => {
+                        const values = toSelectedValues(selected);
+                        return values.length > 0 ? values.join(' / ') : 'カテゴリー(全て)';
+                      }}
+                      onChange={(event) => {
+                        const values = event.target.value;
+                        setDraftFilters((prev) => ({ ...prev, categories: typeof values === 'string' ? values.split(',') : values }));
+                      }}
+                      MenuProps={{
+                        PaperProps: {
+                          sx: {
+                            backgroundColor: '#17293f',
+                            color: '#e9f2ff',
+                          },
                         },
-                      },
-                    }}
-                  >
-                    {tab.label}
-                  </ButtonBase>
-                );
-              })}
-            </Box>
+                      }}
+                      sx={{
+                        color: '#f2f8ff',
+                        backgroundColor: 'rgba(8, 18, 34, 0.72)',
+                        '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(178, 204, 236, 0.8)' },
+                        '& .MuiSvgIcon-root': { color: '#d9e9ff' },
+                      }}
+                    >
+                      {categoryOptions.map((option) => (
+                        <MenuItem key={option} value={option}>
+                          {option}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 3 }}>
+                    <Select
+                      fullWidth
+                      multiple
+                      displayEmpty
+                      value={draftFilters.prefectures}
+                      renderValue={(selected) => {
+                        const values = toSelectedValues(selected);
+                        return values.length > 0 ? values.join(' / ') : '県(全て)';
+                      }}
+                      onChange={(event) => {
+                        const values = event.target.value;
+                        setDraftFilters((prev) => ({
+                          ...prev,
+                          prefectures: typeof values === 'string' ? values.split(',') : values,
+                        }));
+                      }}
+                      MenuProps={{
+                        PaperProps: {
+                          sx: {
+                            backgroundColor: '#17293f',
+                            color: '#e9f2ff',
+                          },
+                        },
+                      }}
+                      sx={{
+                        color: '#f2f8ff',
+                        backgroundColor: 'rgba(8, 18, 34, 0.72)',
+                        '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(178, 204, 236, 0.8)' },
+                        '& .MuiSvgIcon-root': { color: '#d9e9ff' },
+                      }}
+                    >
+                      {prefectureOptions.map((option) => (
+                        <MenuItem key={option} value={option}>
+                          {option}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 3 }}>
+                    <Select
+                      fullWidth
+                      multiple
+                      displayEmpty
+                      value={draftFilters.cities}
+                      renderValue={(selected) => {
+                        const values = toSelectedValues(selected);
+                        return values.length > 0 ? values.join(' / ') : '市・区(全て)';
+                      }}
+                      onChange={(event) => {
+                        const values = event.target.value;
+                        setDraftFilters((prev) => ({ ...prev, cities: typeof values === 'string' ? values.split(',') : values }));
+                      }}
+                      MenuProps={{
+                        PaperProps: {
+                          sx: {
+                            backgroundColor: '#17293f',
+                            color: '#e9f2ff',
+                          },
+                        },
+                      }}
+                      sx={{
+                        color: '#f2f8ff',
+                        backgroundColor: 'rgba(8, 18, 34, 0.72)',
+                        '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(178, 204, 236, 0.8)' },
+                        '& .MuiSvgIcon-root': { color: '#d9e9ff' },
+                      }}
+                    >
+                      {cityOptions.map((option) => (
+                        <MenuItem key={option} value={option}>
+                          {option}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </Grid>
+
+                  <Grid size={{ xs: 12, md: 3 }}>
+                    <Select
+                      fullWidth
+                      multiple
+                      displayEmpty
+                      value={draftFilters.timeSlots}
+                      renderValue={(selected) => {
+                        const values = toSelectedValues(selected);
+                        return values.length > 0 ? values.join(' / ') : '時間帯(全て)';
+                      }}
+                      onChange={(event) => {
+                        const values = event.target.value;
+                        setDraftFilters((prev) => ({ ...prev, timeSlots: typeof values === 'string' ? values.split(',') : values }));
+                      }}
+                      MenuProps={{
+                        PaperProps: {
+                          sx: {
+                            backgroundColor: '#17293f',
+                            color: '#e9f2ff',
+                          },
+                        },
+                      }}
+                      sx={{
+                        color: '#f2f8ff',
+                        backgroundColor: 'rgba(8, 18, 34, 0.72)',
+                        '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(178, 204, 236, 0.8)' },
+                        '& .MuiSvgIcon-root': { color: '#d9e9ff' },
+                      }}
+                    >
+                      {timeSlotOptions.map((option) => (
+                        <MenuItem key={option} value={option}>
+                          {option}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </Grid>
+
+                  <Grid size={{ xs: 12, md: 12 }}>
+                    <Box sx={{ display: 'flex', gap: 0.8, justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
+                      <Button
+                        variant="outlined"
+                        onClick={() => {
+                          setDraftFilters({ ...defaultFilters });
+                        }}
+                        sx={{
+                          color: '#e8f2ff',
+                          borderColor: 'rgba(169, 196, 228, 0.7)',
+                        }}
+                      >
+                        クリア
+                      </Button>
+                      <Button
+                        variant="contained"
+                        onClick={() => {
+                          setAppliedFilters({ ...draftFilters });
+                          setPage(1);
+                          setSearchOpen(false);
+                        }}
+                      >
+                        検索
+                      </Button>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </Box>
+            </Collapse>
           </Box>
 
           <Box sx={{ width: '100%', maxWidth: 1500, mx: 'auto' }}>
