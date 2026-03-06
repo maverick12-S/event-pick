@@ -41,9 +41,37 @@
   position: fixed;            /* fixedにしてスクロール時も同位置 */
   inset: 0;
   background-image:
-    radial-gradient(800px 240px at 82% 8%, rgba(255, 255, 255, 0.04), transparent 12%),
-    radial-gradient(60% 40% at 50% 95%, rgba(0, 0, 0, 0.5), transparent 35%),
-    linear-gradient(135deg, rgba(6, 10, 18, 0.78), rgba(10, 18, 28, 0.78));
+    radial-gradient(980px 380px at 82% 8%, rgba(124, 168, 255, 0.13), transparent 34%),
+    radial-gradient(860px 440px at 10% 88%, rgba(35, 92, 190, 0.18), transparent 48%),
+    radial-gradient(60% 45% at 50% 96%, rgba(0, 6, 18, 0.76), transparent 54%),
+    linear-gradient(138deg, rgba(2, 8, 24, 0.92) 0%, rgba(6, 16, 42, 0.9) 44%, rgba(9, 26, 60, 0.86) 100%);
   z-index: 1;
   pointer-events: none;
+}
+
+/* ログイン成功後のdarkネイビーオーバーレイ */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: 
+    radial-gradient(1200px 520px at 88% -4%, rgba(34, 58, 102, 0.12), transparent 42%),
+    radial-gradient(760px 360px at 0% 0%, rgba(158, 92, 30, 0.18), transparent 52%),
+    radial-gradient(900px 460px at 8% 2%, rgba(4, 14, 36, 0.56), transparent 40%),
+    radial-gradient(960px 520px at 50% 102%, rgba(0, 2, 8, 0.88), transparent 58%),
+    radial-gradient(980px 560px at 10% 96%, rgba(0, 4, 12, 0.86), transparent 54%),
+    linear-gradient(
+      146deg,
+      #1c1008 0%,
+      #2a160a 14%,
+      #120f11 30%,
+      #010912 50%,
+      #04142a 72%,
+      #0a2444 100%
+    );
+  background-size: 200% 200%;
+  z-index: 2;
+  pointer-events: none;
+  transition: 
+    opacity 2000ms cubic-bezier(0.4, 0, 0.2, 1),
+    background-position 3000ms cubic-bezier(0.4, 0, 0.2, 1);
 }

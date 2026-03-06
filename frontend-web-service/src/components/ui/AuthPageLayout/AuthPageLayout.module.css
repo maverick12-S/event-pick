@@ -36,8 +36,8 @@
 }
 
 .titleSection h1 {
-  /* clampの最大値を2xlに抑えて長いタイトルでも折り返さない */
-  font-size: clamp(1.6rem, 4vw, var(--font-size-2xl));
+  /* LoginScreen(layoutScale=1.25) と同等の見え方に合わせる */
+  font-size: clamp(2.25rem, 5vw, 3.125rem);
   font-weight: var(--font-weight-bold);
   margin: 0 0 var(--space-2);
   letter-spacing: 0.02em;

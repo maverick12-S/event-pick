@@ -32,6 +32,8 @@ interface Plan {
   accentColor: string;
   borderColor: string;
   glowColor: string;
+  cardGradient: string;
+  ctaGradient: string;
   btnVariant: 'outlined' | 'contained';
 }
 
@@ -50,6 +52,8 @@ const PLANS: Plan[] = [
     accentColor: '#00d2e6',
     borderColor: 'rgba(0,210,220,0.6)',
     glowColor: 'rgba(0,210,220,0.12)',
+    cardGradient: 'linear-gradient(160deg, rgba(14,52,82,0.88) 0%, rgba(11,35,61,0.8) 42%, rgba(7,21,42,0.82) 100%)',
+    ctaGradient: 'linear-gradient(135deg, rgba(58,176,236,0.95), rgba(33,132,207,0.92))',
     btnVariant: 'outlined',
   },
   {
@@ -68,6 +72,8 @@ const PLANS: Plan[] = [
     accentColor: '#e6c800',
     borderColor: 'rgba(220,180,0,0.75)',
     glowColor: 'rgba(220,180,0,0.14)',
+    cardGradient: 'linear-gradient(160deg, rgba(74,58,12,0.9) 0%, rgba(52,39,10,0.84) 45%, rgba(33,24,9,0.86) 100%)',
+    ctaGradient: 'linear-gradient(135deg, rgba(242,200,64,0.98), rgba(201,148,21,0.95))',
     btnVariant: 'contained',
   },
   {
@@ -86,6 +92,8 @@ const PLANS: Plan[] = [
     accentColor: '#c080f0',
     borderColor: 'rgba(160,80,240,0.6)',
     glowColor: 'rgba(160,80,240,0.1)',
+    cardGradient: 'linear-gradient(160deg, rgba(50,31,84,0.88) 0%, rgba(39,23,67,0.82) 45%, rgba(22,15,44,0.84) 100%)',
+    ctaGradient: 'linear-gradient(135deg, rgba(153,104,235,0.95), rgba(106,63,190,0.92))',
     btnVariant: 'outlined',
   },
 ];
@@ -100,13 +108,13 @@ const PlanCard: React.FC<{
   loading: boolean;
   onSelect: (id: PlanId) => void;
 }> = ({ plan, selected, loading, onSelect }) => (
-  <Box sx={{ position: 'relative', height: '100%', pt: plan.recommended ? '16px' : 0 }}>
+  <Box sx={{ position: 'relative', height: '100%', pt: '20px', px: { xs: 0.25, md: 0.5 } }}>
     {/* おすすめバッジ */}
     {plan.recommended && (
       <Box
         sx={{
           position: 'absolute',
-          top: 0,
+          top: 2,
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 1,
@@ -131,25 +139,36 @@ const PlanCard: React.FC<{
       elevation={0}
       sx={{
         height: '100%',
+        minHeight: { xs: 560, md: 620 },
         display: 'flex',
         flexDirection: 'column',
+        position: 'relative',
+        overflow: 'hidden',
         border: `2px solid ${plan.borderColor}`,
-        background: 'rgba(8,16,40,0.65)',
+        background: plan.cardGradient,
         backdropFilter: 'blur(14px)',
         WebkitBackdropFilter: 'blur(14px)',
         boxShadow: `0 8px 32px rgba(0,0,0,0.4), 0 0 24px ${plan.glowColor} inset`,
-        borderRadius: '14px',
+        borderRadius: '16px',
         transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-        transform: plan.recommended ? 'scale(1.03)' : 'scale(1)',
+        transform: 'scale(1)',
         outline: selected ? '2px solid rgba(255,255,255,0.5)' : 'none',
         outlineOffset: '2px',
         '&:hover': {
-          transform: plan.recommended ? 'scale(1.03) translateY(-4px)' : 'translateY(-4px)',
+          transform: 'translateY(-4px)',
           boxShadow: `0 18px 48px rgba(0,0,0,0.5), 0 0 32px ${plan.glowColor} inset`,
+        },
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          inset: 0,
+          background: 'radial-gradient(700px 220px at 85% -8%, rgba(255,255,255,0.18), transparent 38%)',
+          pointerEvents: 'none',
+          zIndex: 0,
         },
       }}
     >
-      <CardContent sx={{ flex: 1, p: { xs: 2.5, sm: 3 }, pb: '0 !important' }}>
+      <CardContent sx={{ flex: 1, p: { xs: 4, sm: 4.5 }, pb: '0 !important', position: 'relative', zIndex: 1 }}>
         {/* プランラベル */}
         <Chip
           label={plan.name}
@@ -160,16 +179,16 @@ const PlanCard: React.FC<{
             color: plan.accentColor,
             border: `1px solid ${plan.borderColor}`,
             fontWeight: 700,
-            fontSize: '0.82rem',
+              fontSize: '0.9rem',
           }}
         />
 
         {/* 価格 */}
         <Stack direction="row" alignItems="baseline" gap={0.5} mb={1.5}>
-          <Typography sx={{ fontSize: '1.4rem', fontWeight: 700, color: '#fff' }}>¥</Typography>
+            <Typography sx={{ fontSize: '1.5rem', fontWeight: 700, color: '#fff' }}>¥</Typography>
           <Typography
             sx={{
-              fontSize: 'clamp(2rem,4vw,2.8rem)',
+              fontSize: 'clamp(2.4rem,4.5vw,3.6rem)',
               fontWeight: 800,
               color: '#fff',
               lineHeight: 1,
@@ -178,7 +197,7 @@ const PlanCard: React.FC<{
           >
             {plan.price.toLocaleString('ja-JP')}
           </Typography>
-          <Typography sx={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }}>/月</Typography>
+            <Typography sx={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)' }}>/月</Typography>
         </Stack>
 
         {/* 説明 */}
@@ -201,9 +220,10 @@ const PlanCard: React.FC<{
         </Stack>
       </CardContent>
 
-      <CardActions sx={{ p: { xs: 2.5, sm: 3 }, pt: '0 !important' }}>
+      <CardActions sx={{ p: { xs: 4, sm: 4.5 }, pt: '0 !important', position: 'relative', zIndex: 1 }}>
         <Button
           fullWidth
+          size="large"
           variant={plan.btnVariant}
           disabled={loading}
           onClick={() => onSelect(plan.id)}
@@ -211,19 +231,30 @@ const PlanCard: React.FC<{
           sx={
             plan.btnVariant === 'contained'
               ? {
-                  background: `linear-gradient(135deg, rgba(220,180,0,0.85), rgba(180,140,0,0.85))`,
+                  py: 1.45,
+                  fontSize: '1rem',
+                  fontWeight: 800,
+                  letterSpacing: '0.01em',
+                  background: plan.ctaGradient,
                   color: '#fff',
                   border: 'none',
-                  '&:hover': { filter: 'brightness(1.12)' },
+                  boxShadow: '0 10px 24px rgba(0,0,0,0.26)',
+                  '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
                 }
               : {
-                  borderColor: plan.borderColor,
-                  color: plan.accentColor,
-                  '&:hover': { background: `rgba(${plan.id === 'light' ? '0,210,220' : '160,80,240'},0.1)` },
+                  py: 1.45,
+                  fontSize: '1rem',
+                  fontWeight: 800,
+                  letterSpacing: '0.01em',
+                  borderColor: 'rgba(255,255,255,0.3)',
+                  color: '#fff',
+                  background: plan.ctaGradient,
+                  boxShadow: '0 8px 22px rgba(0,0,0,0.22)',
+                  '&:hover': { filter: 'brightness(1.08)', transform: 'translateY(-1px)' },
                 }
           }
         >
-          {loading ? '処理中…' : selected ? '選択済み ✓' : 'このプランを選択'}
+          {loading ? '処理中…' : selected ? '選択済み ✓' : plan.recommended ? '今すぐこのプランで始める' : 'このプランを選択'}
         </Button>
       </CardActions>
     </Card>
@@ -281,6 +312,7 @@ const PlanScreen: React.FC = () => {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
+        justifyContent: 'center',
         py: { xs: 4, sm: 5 },
         px: { xs: 2, sm: 3 },
         gap: 4,
@@ -304,8 +336,8 @@ const PlanScreen: React.FC = () => {
       {/* プランカードグリッド */}
       <Grid
         container
-        spacing={{ xs: 2, md: 2.5 }}
-        sx={{ width: '100%', maxWidth: 980 }}
+        spacing={{ xs: 3, md: 4 }}
+        sx={{ width: '100%', maxWidth: 1420 }}
         alignItems="stretch"
       >
         {PLANS.map((plan) => (
@@ -321,12 +353,25 @@ const PlanScreen: React.FC = () => {
       </Grid>
 
       {/* クーポンセクション */}
-      <Box sx={{ width: '100%', maxWidth: 480 }}>
+      <Box
+        sx={{
+          width: '100%',
+          maxWidth: 760,
+          mt: 1,
+          p: { xs: 2.5, sm: 3 },
+          borderRadius: '14px',
+          border: '1px solid rgba(255,255,255,0.16)',
+          background: 'rgba(8,16,40,0.52)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          boxShadow: '0 8px 26px rgba(0,0,0,0.28)',
+        }}
+      >
         <Typography
-          variant="body2"
-          sx={{ fontWeight: 600, color: 'rgba(255,255,255,0.8)', mb: 1.5, display: 'flex', alignItems: 'center', gap: 0.5 }}
+          variant="body1"
+          sx={{ fontWeight: 700, color: 'rgba(255,255,255,0.88)', mb: 1.5, display: 'flex', alignItems: 'center', gap: 0.75 }}
         >
-          <LocalOfferOutlinedIcon sx={{ fontSize: '1rem' }} />
+          <LocalOfferOutlinedIcon sx={{ fontSize: '1.1rem', color: '#9fd8ff' }} />
           クーポンコードをお持ちの方
         </Typography>
 
@@ -338,16 +383,16 @@ const PlanScreen: React.FC = () => {
             onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
             disabled={couponLoading}
             inputProps={{ maxLength: 30, 'aria-label': 'クーポンコード入力' }}
-            size="small"
+            size="medium"
             sx={{
               flex: 1,
               '& .MuiOutlinedInput-root': {
-                background: 'rgba(255,255,255,0.08)',
-                borderRadius: '10px',
+                background: 'rgba(255,255,255,0.06)',
+                borderRadius: '12px',
                 color: '#fff',
-                '& fieldset': { borderColor: 'rgba(255,255,255,0.25)' },
-                '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.45)' },
-                '&.Mui-focused fieldset': { borderColor: 'rgba(255,255,255,0.65)' },
+                '& fieldset': { borderColor: 'rgba(255,255,255,0.20)' },
+                '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.38)' },
+                '&.Mui-focused fieldset': { borderColor: 'rgba(159,216,255,0.9)' },
               },
               '& input::placeholder': { color: 'rgba(255,255,255,0.4)', opacity: 1 },
             }}
@@ -358,9 +403,12 @@ const PlanScreen: React.FC = () => {
             onClick={handleApplyCoupon}
             sx={{
               whiteSpace: 'nowrap',
-              borderColor: 'rgba(255,255,255,0.28)',
+              minWidth: 148,
+              borderRadius: '12px',
+              borderColor: 'rgba(255,255,255,0.32)',
               color: '#fff',
-              '&:hover': { background: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.5)' },
+              background: 'rgba(255,255,255,0.06)',
+              '&:hover': { background: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.52)' },
             }}
           >
             {couponLoading ? '確認中…' : 'クーポンを使用する'}

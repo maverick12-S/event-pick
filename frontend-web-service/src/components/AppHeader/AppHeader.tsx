@@ -31,12 +31,17 @@ const AppHeader: React.FC = () => {
   /* 1分ごとに時刻更新 */
   useEffect(() => {
     const msToNext = (60 - new Date().getSeconds()) * 1000;
+    let intervalId: number | null = null;
     const t = window.setTimeout(() => {
       setNow(new Date());
-      const iv = window.setInterval(() => setNow(new Date()), 60_000);
-      return () => clearInterval(iv);
+      intervalId = window.setInterval(() => setNow(new Date()), 60_000);
     }, msToNext);
-    return () => clearTimeout(t);
+    return () => {
+      clearTimeout(t);
+      if (intervalId !== null) {
+        clearInterval(intervalId);
+      }
+    };
   }, []);
 
   /* ドロップダウン外クリックで閉じる */

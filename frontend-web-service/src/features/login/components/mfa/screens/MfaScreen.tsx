@@ -46,60 +46,62 @@ const MfaScreen: React.FC = () => {
   };
 
   return (
-    <MuiAuthLayout title="多要素認証" subtitle="認証コードを入力してください">
-      <Card elevation={0}>
-        <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
-          <Box
-            component="form"
-            onSubmit={handleSubmit}
-            noValidate
-            sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}
-          >
-            {error && <Alert severity="error" sx={{ borderRadius: 2 }}>{error}</Alert>}
-
-            <TextField
-              id="mfa-code"
-              label="認証コード"
-              placeholder="6桁の認証コード"
-              value={code}
-              onChange={(e) => {
-                setCode(e.target.value);
-                setFieldError('');
-                setError(null);
-              }}
-              inputProps={{ inputMode: 'numeric', autoComplete: 'one-time-code', maxLength: 6 }}
-              error={Boolean(fieldError)}
-              helperText={fieldError}
-              required
-              fullWidth
-              variant="outlined"
-            />
-
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              fullWidth
-              disabled={loading}
-              size="large"
+    <MuiAuthLayout title="多要素認証画面" subtitle="認証コードを入力してください">
+      <Box sx={{ mt: { xs: 2.5, sm: 3.25 } }}>
+        <Card elevation={0}>
+          <CardContent sx={{ p: { xs: 4.5, sm: 5.5 } }}>
+            <Box
+              component="form"
+              onSubmit={handleSubmit}
+              noValidate
+              sx={{ display: 'flex', flexDirection: 'column', gap: 3.25 }}
             >
-              {loading ? '認証中…' : '認証'}
-            </Button>
+              {error && <Alert severity="error" sx={{ borderRadius: 2 }}>{error}</Alert>}
 
-            <Stack alignItems="flex-end">
-              <Link
-                component="button"
-                type="button"
-                onClick={() => navigate('/login')}
-                underline="hover"
-                sx={{ fontSize: '0.85rem', color: 'text.secondary', cursor: 'pointer' }}
+              <TextField
+                id="mfa-code"
+                label="認証コード"
+                placeholder="6桁の認証コード"
+                value={code}
+                onChange={(e) => {
+                  setCode(e.target.value);
+                  setFieldError('');
+                  setError(null);
+                }}
+                inputProps={{ inputMode: 'numeric', autoComplete: 'one-time-code', maxLength: 6 }}
+                error={Boolean(fieldError)}
+                helperText={fieldError}
+                required
+                fullWidth
+                variant="outlined"
+              />
+
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                fullWidth
+                disabled={loading}
+                size="large"
               >
-                ログイン画面へ戻る
-              </Link>
-            </Stack>
-          </Box>
-        </CardContent>
-      </Card>
+                {loading ? '認証中…' : '認証'}
+              </Button>
+
+              <Stack alignItems="flex-end">
+                <Link
+                  component="button"
+                  type="button"
+                  onClick={() => navigate('/login')}
+                  underline="hover"
+                  sx={{ fontSize: '0.85rem', color: 'text.secondary', cursor: 'pointer' }}
+                >
+                  ログイン画面へ戻る
+                </Link>
+              </Stack>
+            </Box>
+          </CardContent>
+        </Card>
+      </Box>
 
       {/* 説明インフォカード */}
       <Card
@@ -108,7 +110,7 @@ const MfaScreen: React.FC = () => {
           background: 'rgba(10,20,50,0.55)',
           backdropFilter: 'blur(8px)',
           border: '1px solid rgba(255,255,255,0.08)',
-          mt: 1,
+          mt: { xs: 2.5, sm: 3.25 },
         }}
       >
         <CardContent sx={{ py: '12px !important', px: 2 }}>

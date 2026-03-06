@@ -5,6 +5,11 @@
    共通スタイル (fieldStyles) と組み合わせて使用。
    ============================================================ */
 
+/* サインアップのみカードを少し大きく見せる */
+.signupCardBoost {
+  padding: 50px 48px;
+}
+
 /* ---- 2カラムグリッド ---- */
 .grid {
   display: grid;
@@ -75,6 +80,10 @@
 
 /* ---- レスポンシブ: 600px以下は1カラム ---- */
 @media (max-width: 600px) {
+  .signupCardBoost {
+    padding: 36px 28px;
+  }
+
   .grid {
     grid-template-columns: 1fr;
   }

@@ -26,12 +26,17 @@ const Header: React.FC = () => {
     const tick = () => setNow(new Date());
     // 次の分の頭まで待ってから1分インターバル開始
     const msToNextMinute = (60 - new Date().getSeconds()) * 1000;
+    let intervalId: number | null = null;
     const firstTimeout = window.setTimeout(() => {
       tick();
-      const interval = window.setInterval(tick, 60_000);
-      return () => clearInterval(interval);
+      intervalId = window.setInterval(tick, 60_000);
     }, msToNextMinute);
-    return () => clearTimeout(firstTimeout);
+    return () => {
+      clearTimeout(firstTimeout);
+      if (intervalId !== null) {
+        clearInterval(intervalId);
+      }
+    };
   }, []);
 
   return (

@@ -34,7 +34,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       tokenService.setAccessToken(data.access_token ?? null);
       tokenService.setRefreshToken(data.refresh_token ?? null);
       setError(null);
-      queryClient.invalidateQueries({});
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
     },
     onError: (err: unknown) => {
       console.error('login error', err);
@@ -77,6 +77,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 export const useAuth = (): AuthContextValue => {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth は AuthProvider 内で使用してください');
+  if (!ctx) {
+    // HMRや一時的な描画順の揺らぎでProvider外評価になっても全体クラッシュを避ける
+    console.error('useAuth は AuthProvider 内で使用してください');
+    return {
+      isAuthenticated: false,
+      user: null,
+      isLoading: false,
+      error: '認証コンテキストが初期化されていません',
+      isInitialized: true,
+      login: async () => {
+        throw new Error('AuthProvider が見つからないためログインできません');
+      },
+      logout: () => {
+        // no-op
+      },
+      clearAuthError: () => {
+        // no-op
+      },
+    };
+  }
   return ctx;
 };
