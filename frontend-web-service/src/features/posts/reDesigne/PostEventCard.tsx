@@ -62,11 +62,11 @@ const PostEventCard: React.FC<PostEventCardProps> = ({ event }) => {
         borderRadius: 2,
         border: '1px solid rgba(228, 232, 238, 0.86)',
         backgroundColor: '#ffffff',
-        display: 'grid',
-        gridTemplateRows: 'auto 1fr 1fr',
+        display: 'flex',
+        flexDirection: 'column',
         boxShadow: '0 4px 10px rgba(0,0,0,0.08)',
         overflow: 'hidden',
-        minHeight: { xs: 360, md: 430 },
+        height: '100%',
       }}
     >
       <Box sx={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: 1.25, px: 1.5, pt: 1.25, pb: 1 }}>
@@ -107,7 +107,18 @@ const PostEventCard: React.FC<PostEventCardProps> = ({ event }) => {
         </IconButton>
       </Box>
 
-      <Box sx={{ position: 'relative', overflow: 'hidden', touchAction: 'pan-y', borderRadius: 1.5, mx: 1.5 }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      <Box
+        sx={{
+          position: 'relative',
+          overflow: 'hidden',
+          touchAction: 'pan-y',
+          borderRadius: 1.5,
+          mx: 1.5,
+          aspectRatio: { xs: '4 / 3', md: '16 / 10' },
+        }}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
         <ButtonBase onClick={onNextImage} aria-label="次の画像へ" sx={{ width: '100%', height: '100%', display: 'block' }}>
           <Box component="img" src={imageUrls[activeImageIndex]} alt={event.title} loading="lazy" sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
         </ButtonBase>
@@ -161,7 +172,7 @@ const PostEventCard: React.FC<PostEventCardProps> = ({ event }) => {
         <CarouselIndicator total={imageUrls.length} currentIndex={activeImageIndex} />
       </Box>
 
-      <Box sx={{ p: '10px 12px 12px', display: 'grid', gridTemplateRows: 'auto auto auto auto 1fr auto', gap: 0.75, minWidth: 0 }}>
+      <Box sx={{ p: '10px 12px 12px', display: 'grid', gridTemplateRows: 'auto auto auto auto 1fr auto', gap: 0.75, minWidth: 0, flex: 1 }}>
         <Box sx={{ display: 'grid', gridAutoFlow: 'column', justifyContent: 'start', mb: 1 }}>
           <Box sx={{ display: 'grid', justifyItems: 'center', alignItems: 'start', gap: 0.25 }}>
             <ButtonBase aria-label="お気に入り" sx={{ color: '#222222', fontSize: '2.1rem', lineHeight: 1 }}>

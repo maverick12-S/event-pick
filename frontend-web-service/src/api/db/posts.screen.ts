@@ -16,7 +16,7 @@ export interface PostEventDbItem {
   tab: PostsTabKey;
 }
 
-const wards = [
+export const cityOptions = [
   '渋谷区',
   '新宿区',
   '港区',
@@ -42,7 +42,9 @@ const wards = [
   '文京区',
 ];
 
-const categories = ['フード', '音楽', 'アート', '地域祭り', 'スポーツ', 'ファミリー'];
+export const categoryOptions = ['食事', '体験', '買い物', 'イベント', 'ライブ', '観光', '祭り', '温泉', '車'];
+export const prefectureOptions = ['東京都', '神奈川県', '千葉県', '埼玉県'];
+export const timeSlotOptions = ['朝', '昼', '夕方', '夜'];
 
 const descriptionTemplates = [
   '10店舗以上の人気店が集まり、食べ歩きとライブを同時に楽しめます。',
@@ -71,8 +73,8 @@ const buildImageUrls = (index: number): string[] => {
 
 const buildRows = (count: number, tab: PostsTabKey, dateLabel: string): PostEventDbItem[] => {
   return Array.from({ length: count }, (_, i) => {
-    const ward = wards[i % wards.length];
-    const category = categories[i % categories.length];
+    const ward = cityOptions[i % cityOptions.length];
+    const category = categoryOptions[i % categoryOptions.length];
     const hours = 10 + (i % 8);
     const end = hours + 2;
     const imageUrls = buildImageUrls(i);
