@@ -1,19 +1,20 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Box, Button, ButtonBase, CircularProgress, Collapse, Grid, InputBase, MenuItem, Select, Typography } from '@mui/material';
 import { FiSearch } from 'react-icons/fi';
 import usePostsMock from '../hooks/usePostsMock';
 import {
+  type PostEventDbItem,
   categoryOptions,
   cityOptions,
   prefectureOptions,
   timeSlotOptions,
   type PostsTabKey,
 } from '../../../api/db/posts.screen';
-import PostEventCard from '../reDesigne/PostEventCard';
+import { CURRENT_LOCATION_ID, scheduledPostsDb } from '../../../api/db/scheduledPosts.db.ts';
+import { PostEventCard } from '../components';
 
 const PAGE_LIMIT = 60;
-const SCALE_FACTOR = 1.25;
-
 const tabs: Array<{ key: PostsTabKey; label: string }> = [
   { key: 'today', label: '今日' },
   { key: 'tomorrow', label: '明日' },
@@ -48,8 +49,23 @@ const toSelectedValues = (selected: unknown): string[] => {
   return [];
 };
 
+const detectTimeSlot = (timeLabel: string): string => {
+  const startHour = Number.parseInt(timeLabel.slice(0, 2), 10);
+  if (Number.isNaN(startHour)) return '';
+  if (startHour < 12) return '朝';
+  if (startHour < 16) return '昼';
+  if (startHour < 19) return '夕方';
+  return '夜';
+};
+
 const PostsListScreen: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<PostsTabKey>('today');
+  const [searchParams] = useSearchParams();
+  const isAccountScope = searchParams.get('scope') === 'account';
+  const initialTab = searchParams.get('tab');
+  const resolvedInitialTab: PostsTabKey =
+    initialTab === 'tomorrow' ? 'tomorrow' : initialTab === 'scheduled' ? 'scheduled' : initialTab === 'today' ? 'today' : isAccountScope ? 'scheduled' : 'today';
+  const [activeTab, setActiveTab] = useState<PostsTabKey>(resolvedInitialTab);
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [searchOpen, setSearchOpen] = useState(false);
   const [draftFilters, setDraftFilters] = useState<SearchFilters>(defaultFilters);
@@ -70,17 +86,79 @@ const PostsListScreen: React.FC = () => {
   );
 
   const { data, isFetching } = usePostsMock(params);
-  const totalPages = data?.totalPages ?? 1;
+
+  const accountLinkedItems = useMemo<PostEventDbItem[]>(() => {
+    const query = appliedFilters.title.trim().toLowerCase();
+
+    const mapped = scheduledPostsDb
+      .filter((item) => item.locationId === CURRENT_LOCATION_ID)
+      .map<PostEventDbItem>((item) => ({
+        id: `scheduled-${item.id}`,
+        title: item.title,
+        ward: item.ward,
+        venue: item.venue,
+        description: item.description,
+        category: item.category,
+        dateLabel: item.dateLabel,
+        timeLabel: item.timeLabel,
+        imageUrl: item.imageUrl,
+        imageUrls: [item.imageUrl],
+        detailPath: `/posts/scheduled/${item.id}`,
+        detailLabel: '詳細を見る',
+        reservationContact: 'https://www.google.com/',
+        tab: 'scheduled',
+      }))
+      .filter((item) => {
+        if (query && !item.title.toLowerCase().includes(query)) {
+          return false;
+        }
+
+        if (appliedFilters.categories.length > 0 && !appliedFilters.categories.some((category) => item.category.includes(category))) {
+          return false;
+        }
+
+        if (appliedFilters.cities.length > 0 && !appliedFilters.cities.some((city) => item.ward.includes(city))) {
+          return false;
+        }
+
+        if (appliedFilters.timeSlots.length > 0 && !appliedFilters.timeSlots.includes(detectTimeSlot(item.timeLabel))) {
+          return false;
+        }
+
+        return true;
+      });
+
+    return mapped;
+  }, [appliedFilters]);
+
+  const accountTotalPages = Math.max(Math.ceil(accountLinkedItems.length / PAGE_LIMIT), 1);
+  const accountPage = Math.min(page, accountTotalPages);
+  const accountPageItems = useMemo(() => {
+    const start = (accountPage - 1) * PAGE_LIMIT;
+    return accountLinkedItems.slice(start, start + PAGE_LIMIT);
+  }, [accountLinkedItems, accountPage]);
+
+  useEffect(() => {
+    const queryTab = searchParams.get('tab');
+    if (queryTab === 'today' || queryTab === 'tomorrow' || queryTab === 'scheduled') {
+      setActiveTab(queryTab);
+      setPage(1);
+      return;
+    }
+
+    if (isAccountScope) {
+      setActiveTab('scheduled');
+      setPage(1);
+    }
+  }, [searchParams, isAccountScope]);
+
+  const displayItems = isAccountScope ? accountPageItems : (data?.items ?? []);
+  const totalPages = isAccountScope ? accountTotalPages : (data?.totalPages ?? 1);
+  const currentPage = isAccountScope ? accountPage : (data?.page ?? page);
 
   return (
     <Box sx={{ width: '100%', px: { xs: 1.25, sm: 2, md: 2.5 }, pb: { xs: 3, md: 4 } }}>
-      <Box
-        sx={{
-          width: `${100 / SCALE_FACTOR}%`,
-          mx: 'auto',
-          zoom: SCALE_FACTOR,
-        }}
-      >
+      <Box sx={{ width: '100%', mx: 'auto' }}>
         <Box sx={{ width: '100%', maxWidth: 1900, mx: 'auto' }}>
         <Box
           sx={{
@@ -177,7 +255,7 @@ const PostsListScreen: React.FC = () => {
                     transform: { xs: 'none', md: 'none', lg: 'translateY(-20px)', xl: 'translateY(-58px)' },
                   }}
                 >
-                  投稿一覧
+                  {isAccountScope ? '投稿一覧（アカウント紐づき）' : '投稿一覧'}
                 </Typography>
               </Grid>
 
@@ -202,8 +280,17 @@ const PostsListScreen: React.FC = () => {
                         role="tab"
                         aria-selected={active}
                         onClick={() => {
-                          setActiveTab(tab.key);
-                          setPage(1);
+                          if (tab.key === 'scheduled') {
+                            navigate('/posts/scheduled');
+                            return;
+                          }
+
+                          if (isAccountScope) {
+                            navigate('/posts');
+                            return;
+                          }
+
+                          navigate(`/posts?tab=${tab.key}`);
                         }}
                         sx={{
                           minHeight: 44,
@@ -276,6 +363,7 @@ const PostsListScreen: React.FC = () => {
                         setDraftFilters((prev) => ({ ...prev, categories: typeof values === 'string' ? values.split(',') : values }));
                       }}
                       MenuProps={{
+                        disableScrollLock: true,
                         PaperProps: {
                           sx: {
                             backgroundColor: '#17293f',
@@ -315,6 +403,7 @@ const PostsListScreen: React.FC = () => {
                         }));
                       }}
                       MenuProps={{
+                        disableScrollLock: true,
                         PaperProps: {
                           sx: {
                             backgroundColor: '#17293f',
@@ -351,6 +440,7 @@ const PostsListScreen: React.FC = () => {
                         setDraftFilters((prev) => ({ ...prev, cities: typeof values === 'string' ? values.split(',') : values }));
                       }}
                       MenuProps={{
+                        disableScrollLock: true,
                         PaperProps: {
                           sx: {
                             backgroundColor: '#17293f',
@@ -388,6 +478,7 @@ const PostsListScreen: React.FC = () => {
                         setDraftFilters((prev) => ({ ...prev, timeSlots: typeof values === 'string' ? values.split(',') : values }));
                       }}
                       MenuProps={{
+                        disableScrollLock: true,
                         PaperProps: {
                           sx: {
                             backgroundColor: '#17293f',
@@ -444,14 +535,14 @@ const PostsListScreen: React.FC = () => {
           <Box sx={{ width: '100%', maxWidth: 1500, mx: 'auto' }}>
             <Box sx={{ mt: '30px', position: 'relative' }}>
               <Grid container spacing={{ xs: 2, sm: 2.25, md: 2.5 }}>
-                {data?.items.map((event) => (
+                {displayItems.map((event) => (
                   <Grid key={event.id} size={{ xs: 12, sm: 6, md: 6, lg: 4, xl: 3 }}>
                     <PostEventCard event={event} />
                   </Grid>
                 ))}
               </Grid>
 
-              {isFetching ? (
+              {!isAccountScope && isFetching ? (
                 <Box
                   role="status"
                   aria-live="polite"
@@ -503,7 +594,7 @@ const PostsListScreen: React.FC = () => {
                   前へ
                 </ButtonBase>
                 <Typography sx={{ minWidth: 76, textAlign: 'center', color: '#dceaff', fontSize: '0.82rem', fontWeight: 600 }}>
-                  {data ? `${data.page} / ${data.totalPages}` : '0 / 0'}
+                  {`${currentPage} / ${totalPages}`}
                 </Typography>
                 <ButtonBase
                   onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}

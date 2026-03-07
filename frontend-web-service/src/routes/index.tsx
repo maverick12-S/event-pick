@@ -53,6 +53,30 @@ export const router = createBrowserRouter([
             path: '/posts',
             element: lazyLoad(() => import('../features/posts/screens/PostsListScreen')),
           },
+          {
+            path: '/posts/create',
+            element: lazyLoad(() => import('../features/posts/screens/PostCreateScreen')),
+          },
+          {
+            path: '/posts/preview',
+            element: lazyLoad(() => import('../features/posts/screens/PostDetailScreenB')),
+          },
+          {
+            path: '/posts/drafts',
+            element: lazyLoad(() => import('../features/posts/screens/PostDraftsScreen')),
+          },
+          {
+            path: '/posts/scheduled',
+            element: lazyLoad(() => import('../features/posts/screens/ScheduledPostsScreen.tsx')),
+          },
+          {
+            path: '/posts/scheduled/edit/:id',
+            element: lazyLoad(() => import('../features/posts/screens/ScheduledPostEditRedirect')),
+          },
+          {
+            path: '/posts/:tab/:id',
+            element: lazyLoad(() => import('../features/posts/screens/PostDetailScreenB')),
+          },
         ],
       },
 

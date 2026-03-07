@@ -33,7 +33,7 @@ const MENU_ITEMS: MenuItem[] = [
     id: 'post',
     label: '投稿',
     icon: <FiEdit3 />,
-    path: '/post/new',
+    path: '/posts/create',
   },
   {
     id: 'report',

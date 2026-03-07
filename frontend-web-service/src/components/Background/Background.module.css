@@ -14,13 +14,35 @@
   display: flex;
   flex-direction: column;
 
-  /* 背景画像 (バンドラ経由で inline style で上書きされる) */
-  background-image: url('/src/assets/images/login-bg.png');
+  /* 背景画像は .bgImageLayer で管理 */
+  background: #030a18;
+}
+
+.bgImageLayer {
+  position: fixed;
+  inset: 0;
   background-size: cover;
   background-position: center top;
   background-repeat: no-repeat;
-  background-attachment: fixed; /* ← スクロール時に背景は固定 */
-  isolation: isolate;
+  transform: scale(1.05);
+  opacity: 0.95;
+  transition:
+    transform 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.bgImageLayerEnter {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.pageWrapper[data-motion='off'] .bgImageLayer,
+.pageWrapper[data-motion='off'] .bgImageLayerEnter {
+  transition: none;
+  transform: scale(1);
+  opacity: 1;
 }
 
 /* スポットハイライト（下層） */
@@ -31,7 +53,7 @@
   background-image:
     radial-gradient(900px 320px at 80% 8%, rgba(255, 255, 255, 0.06), transparent 12%),
     radial-gradient(700px 300px at 18% 20%, rgba(255, 255, 255, 0.02), transparent 10%);
-  z-index: 0;
+  z-index: 1;
   pointer-events: none;
 }
 
@@ -45,7 +67,7 @@
     radial-gradient(860px 440px at 10% 88%, rgba(35, 92, 190, 0.18), transparent 48%),
     radial-gradient(60% 45% at 50% 96%, rgba(0, 6, 18, 0.76), transparent 54%),
     linear-gradient(138deg, rgba(2, 8, 24, 0.92) 0%, rgba(6, 16, 42, 0.9) 44%, rgba(9, 26, 60, 0.86) 100%);
-  z-index: 1;
+  z-index: 2;
   pointer-events: none;
 }
 
@@ -69,9 +91,16 @@
       #0a2444 100%
     );
   background-size: 200% 200%;
-  z-index: 2;
+  z-index: 3;
   pointer-events: none;
+  opacity: 0;
+  background-position: 0% 0%;
   transition: 
     opacity 2000ms cubic-bezier(0.4, 0, 0.2, 1),
     background-position 3000ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.overlayVisible {
+  opacity: 1;
+  background-position: 100% 100%;
 }
