@@ -54,6 +54,14 @@ export const router = createBrowserRouter([
             element: lazyLoad(() => import('../features/posts/screens/PostsListScreen')),
           },
           {
+            path: '/posts/create',
+            element: lazyLoad(() => import('../features/posts/screens/PostCreateScreen')),
+          },
+          {
+            path: '/posts/preview',
+            element: lazyLoad(() => import('../features/posts/screens/PostDetailScreenB')),
+          },
+          {
             path: '/posts/scheduled',
             element: lazyLoad(() => import('../features/posts/screens/ScheduledPostsScreen.tsx')),
           },

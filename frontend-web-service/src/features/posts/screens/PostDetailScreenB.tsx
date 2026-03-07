@@ -20,7 +20,7 @@
  */
 
 import React, { useMemo, useRef, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Box, ButtonBase, Chip, Typography } from '@mui/material';
 import {
   FiArrowLeft,
@@ -206,22 +206,62 @@ const TextBlock: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 const PostDetailScreenB: React.FC = () => {
   const { tab, id } = useParams<{ tab: string; id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const previewForm = (location.state as {
+    previewForm?: {
+      title: string;
+      images: string[];
+      summary: string;
+      detail: string;
+      reservation: string;
+      address: string;
+      venueName: string;
+      budget: string;
+      startTime: string;
+      endTime: string;
+      category: string;
+    };
+  } | null)?.previewForm;
 
   const event = useMemo(
     () => postsDb.find((p) => p.id === `${tab}-${id}`),
     [tab, id],
   );
 
+  const isPreviewMode = Boolean(previewForm);
+
+  const title = previewForm?.title || event?.title || '';
+  const category = previewForm?.category || event?.category || '';
+  const ward = previewForm
+    ? (previewForm.address?.split(/[\s、,]+/).find(Boolean) || '入力中')
+    : (event?.ward || '');
+  const venue = previewForm?.venueName || event?.venue || '';
+  const description = previewForm?.summary || event?.description || '';
+  const timeLabel = previewForm
+    ? (previewForm.startTime && previewForm.endTime
+      ? `${previewForm.startTime}-${previewForm.endTime}`
+      : previewForm.startTime || previewForm.endTime || '未設定')
+    : (event?.timeLabel || '未設定');
+  const dateLabel = isPreviewMode ? '入力中プレビュー' : (event?.dateLabel || '');
+  const budgetLabel = previewForm?.budget || '￥3,000～￥3,999';
+  const reservationContact = previewForm?.reservation || event?.reservationContact || '';
+
   const imageUrls = useMemo(() => {
+    if (previewForm) {
+      if (previewForm.images.length > 0) return previewForm.images.slice(0, 10);
+      return ['https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80'];
+    }
+
     if (!event) return [];
     return event.imageUrls?.length ? event.imageUrls.slice(0, 10) : [event.imageUrl];
-  }, [event]);
+  }, [event, previewForm]);
 
   const [activeIdx, setActiveIdx] = useState(0);
   const touchStartX = useRef<number | null>(null);
 
   /* ── 存在しないイベント ── */
-  if (!event) {
+  if (!event && !previewForm) {
     return (
       <Box
         sx={{
@@ -269,40 +309,20 @@ const PostDetailScreenB: React.FC = () => {
     );
   }
 
-  const chipColor = CATEGORY_COLORS[event.category] ?? '#4a6fa5';
-  const encodedVenue = encodeURIComponent(`${event.ward} ${event.venue}`);
+  const chipColor = CATEGORY_COLORS[category] ?? '#4a6fa5';
+  const encodedVenue = encodeURIComponent(`${ward} ${venue || previewForm?.address || ''}`);
   const mapLink = `https://www.google.com/maps/search/?api=1&query=${encodedVenue}`;
   const mapSrc = `https://maps.google.com/maps?q=${encodedVenue}&output=embed&z=15&hl=ja`;
-  const budgetLabel = '￥3,000～￥3,999';
-  const eventDetailSeed =
-    `【${event.title}｜公式ご案内】\n\n` +
-    `季節の空気と街の魅力を、五感で楽しんでいただくための特別企画として本イベントを開催します。` +
-    `会場は${event.venue}。${event.dateLabel} ${event.timeLabel} の時間帯で、` +
-    `「おいしい」「たのしい」「つながる」をテーマに、地域の個性が伝わるコンテンツを丁寧に編成しました。\n\n` +
-    `当日は、ローカルフードの出店、ライブ感のあるステージプログラム、` +
-    `写真に残したくなる装飾エリア、気軽に参加できる体験ブースなど、` +
-    `初めての方でも回りやすい導線でご案内します。` +
-    `どこから見ても雰囲気が伝わるよう、照明・音響・サイン計画にもこだわり、` +
-    `短時間の滞在でも満足いただけるよう設計しています。\n\n` +
-    `また、混雑を避けながら快適に過ごしていただけるよう、` +
-    `会場内には休憩ポイントを複数ご用意しています。` +
-    `お一人でゆっくり楽しみたい方、友人同士で写真を撮りたい方、` +
-    `ご家族で思い出をつくりたい方まで、それぞれのペースでお楽しみいただけます。` +
-    `スタッフも常時巡回し、案内やサポートを行いますので、` +
-    `イベント参加に不安がある方も安心してお越しください。\n\n` +
-    `運営として大切にしているのは、「ただ参加する」だけでなく、` +
-    `街と人の魅力に触れ、また来たいと思える体験を届けることです。` +
-    `そのため、出店者や出演者の背景が伝わる紹介パネルや、` +
-    `当日限定の小さな企画も準備しています。` +
-    `会場内で見つけたお気に入りは、ぜひ写真や感想とともにシェアしてください。\n\n` +
-    `ご来場前には、最新のお知らせ・天候に関するご案内・` +
-    `当日の注意事項をご確認ください。` +
-    `安全面に配慮した運営を最優先に、皆さまに心地よい時間を提供できるよう準備を進めています。` +
-    `スタッフ一同、会場でお会いできることを楽しみにしております。`;
+  const eventDetailSeed = previewForm?.detail
+    || (
+      `【${title}｜公式ご案内】\n\n` +
+      `季節の空気と街の魅力を、五感で楽しんでいただくための特別企画として本イベントを開催します。` +
+      `会場は${venue}。${dateLabel} ${timeLabel} の時間帯で、` +
+      `「おいしい」「たのしい」「つながる」をテーマに、地域の個性が伝わるコンテンツを丁寧に編成しました。`
+    );
   const normalizedEventDetailText = eventDetailSeed.replace(/[。]+$/u, '');
   const clippedEventDetailText = normalizedEventDetailText.slice(0, 1399);
-  const eventDetailText = `${clippedEventDetailText.padEnd(1399, ' ')}。`;
-  const reservationContact = event.reservationContact;
+  const eventDetailText = `${clippedEventDetailText.padEnd(1, ' ')}。`;
   const isPhoneContact = /^tel:/i.test(reservationContact)
     || (/^[+\d][\d\s\-()]{7,}$/.test(reservationContact) && !/^https?:\/\//i.test(reservationContact));
 
@@ -355,7 +375,17 @@ const PostDetailScreenB: React.FC = () => {
       {/* ── 戻るボタン ── */}
       <Box>
         <ButtonBase
-          onClick={() => navigate(-1)}
+          onClick={() => {
+            if (isPreviewMode && previewForm) {
+              navigate('/posts/create', {
+                state: {
+                  restoreForm: previewForm,
+                },
+              });
+              return;
+            }
+            navigate(-1);
+          }}
           sx={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -377,7 +407,7 @@ const PostDetailScreenB: React.FC = () => {
           }}
         >
           <FiArrowLeft />
-          投稿一覧に戻る
+          {isPreviewMode ? '投稿作成に戻る' : '投稿一覧に戻る'}
         </ButtonBase>
       </Box>
 
@@ -399,7 +429,7 @@ const PostDetailScreenB: React.FC = () => {
           <Box
             component="img"
             src={imageUrls[activeIdx]}
-            alt={event.title}
+            alt={title}
             sx={{
               width: '100%',
               height: '100%',
@@ -534,25 +564,25 @@ const PostDetailScreenB: React.FC = () => {
             mb: 0.75,
           }}
         >
-          {event.title}
+          {title || 'タイトル未入力'}
         </Typography>
 
         {/* カテゴリー・エリアチップ */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap', mb: 2.5 }}>
           <FiTag style={{ color: '#7a9cc4', fontSize: '0.85rem' }} />
-          {[event.category, event.ward].map((label) => (
+          {[category, ward].map((label) => (
             <Chip
               key={label}
               label={label}
               size="small"
               sx={{
-                backgroundColor: label === event.category ? chipColor : '#eef4ff',
-                color: label === event.category ? '#fff' : '#2d5080',
+                backgroundColor: label === category ? chipColor : '#eef4ff',
+                color: label === category ? '#fff' : '#2d5080',
                 fontWeight: 700,
                 fontSize: '0.82rem',
                 letterSpacing: '0.02em',
                 border:
-                  label === event.category
+                  label === category
                     ? '1px solid rgba(0,0,0,0.08)'
                     : '1px solid rgba(171,198,236,0.55)',
                 height: 26,
@@ -570,9 +600,9 @@ const PostDetailScreenB: React.FC = () => {
             mb: 0,
           }}
         >
-          <InfoBadge icon={<FiCalendar />} label="開催日" value={event.dateLabel} />
-          <InfoBadge icon={<FiClock />} label="時間帯" value={event.timeLabel} />
-          <InfoBadge icon={<FiMapPin />} label="会場名" value={event.venue} />
+          <InfoBadge icon={<FiCalendar />} label="開催日" value={dateLabel} />
+          <InfoBadge icon={<FiClock />} label="時間帯" value={timeLabel} />
+          <InfoBadge icon={<FiMapPin />} label="会場名" value={venue || '未入力'} />
           <InfoBadge icon={<FiTag />} label="予算" value={budgetLabel} />
         </Box>
 
@@ -591,7 +621,7 @@ const PostDetailScreenB: React.FC = () => {
               letterSpacing: '0.01em',
             }}
           >
-            {event.description}
+            {description || '概要未入力'}
           </Typography>
         </TextBlock>
 
@@ -699,7 +729,7 @@ const PostDetailScreenB: React.FC = () => {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
               <FiMapPin style={{ color: '#4a6fa5', fontSize: '0.88rem' }} />
               <Typography sx={{ color: '#4d6a8a', fontSize: '0.88rem', fontWeight: 500 }}>
-                {event.venue}
+                {venue || '会場未入力'}
               </Typography>
             </Box>
           </Box>

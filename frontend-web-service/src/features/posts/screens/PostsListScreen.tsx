@@ -15,8 +15,6 @@ import { CURRENT_LOCATION_ID, scheduledPostsDb } from '../../../api/db/scheduled
 import { PostEventCard } from '../components';
 
 const PAGE_LIMIT = 60;
-const SCALE_FACTOR = 1.25;
-
 const tabs: Array<{ key: PostsTabKey; label: string }> = [
   { key: 'today', label: '今日' },
   { key: 'tomorrow', label: '明日' },
@@ -160,13 +158,7 @@ const PostsListScreen: React.FC = () => {
 
   return (
     <Box sx={{ width: '100%', px: { xs: 1.25, sm: 2, md: 2.5 }, pb: { xs: 3, md: 4 } }}>
-      <Box
-        sx={{
-          width: `${100 / SCALE_FACTOR}%`,
-          mx: 'auto',
-          zoom: SCALE_FACTOR,
-        }}
-      >
+      <Box sx={{ width: '100%', mx: 'auto' }}>
         <Box sx={{ width: '100%', maxWidth: 1900, mx: 'auto' }}>
         <Box
           sx={{

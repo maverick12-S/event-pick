@@ -6,7 +6,6 @@
 .page-stage {
   opacity: 0;
   transform: translateY(8px) scale(0.998);
-  will-change: opacity, transform;
   transition:
     opacity var(--page-duration) var(--page-easing) 120ms,
     transform var(--page-duration) var(--page-easing) 120ms;

@@ -16,7 +16,6 @@
 
   /* 背景画像は .bgImageLayer で管理 */
   background: #030a18;
-  isolation: isolate;
 }
 
 .bgImageLayer {
