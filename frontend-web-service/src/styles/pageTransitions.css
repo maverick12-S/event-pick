@@ -1,19 +1,26 @@
 :root {
   --page-easing: cubic-bezier(0.22, 1, 0.36, 1);
-  --page-duration: 320ms;
+  --page-duration: 300ms;
 }
 
 .page-stage {
   opacity: 0;
-  transform: translateY(8px);
+  transform: translateY(8px) scale(0.998);
+  will-change: opacity, transform;
   transition:
-    opacity var(--page-duration) var(--page-easing),
-    transform var(--page-duration) var(--page-easing);
+    opacity var(--page-duration) var(--page-easing) 120ms,
+    transform var(--page-duration) var(--page-easing) 120ms;
 }
 
 .page-stage.is-enter {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
+}
+
+.page-stage.no-motion {
+  opacity: 1;
+  transform: none;
+  transition: none;
 }
 
 .route-loading-bar {

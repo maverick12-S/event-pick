@@ -13,6 +13,7 @@ export interface PostEventDbItem {
   imageUrls: string[];
   detailPath: string;
   detailLabel: string;
+  reservationContact: string;
   tab: PostsTabKey;
 }
 
@@ -78,9 +79,14 @@ const buildRows = (count: number, tab: PostsTabKey, dateLabel: string): PostEven
     const hours = 10 + (i % 8);
     const end = hours + 2;
     const imageUrls = buildImageUrls(i);
+    const eventId = `${tab}-${i + 1}`;
+    const reservationContact =
+      i % 2 === 0
+        ? `03-45${String((i % 90) + 10)}-${String((i % 9000) + 1000)}`
+        : 'https://www.google.com/';
 
     return {
-      id: `${tab}-${i + 1}`,
+      id: eventId,
       title: `${ward}${category}フェス 2026-${String((i % 12) + 1).padStart(2, '0')}`,
       ward,
       venue: `${ward}駅前広場${(i % 4) + 1}-${(i % 3) + 1}-${(i % 9) + 1}`,
@@ -92,6 +98,7 @@ const buildRows = (count: number, tab: PostsTabKey, dateLabel: string): PostEven
       imageUrls,
       detailPath: `/posts/${tab}/${i + 1}`,
       detailLabel: '詳細を見る',
+      reservationContact,
       tab,
     };
   });
