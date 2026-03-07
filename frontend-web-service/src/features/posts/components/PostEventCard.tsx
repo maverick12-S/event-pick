@@ -1,7 +1,8 @@
 import React, { useMemo, useRef, useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import { Box, ButtonBase, IconButton, Typography } from '@mui/material';
 import type { PostEventDbItem } from '../../../api/db/posts.screen';
-import CarouselIndicator from './CarouselIndicator.tsx';
+import CarouselIndicator from './CarouselIndicator';
 
 interface PostEventCardProps {
   event: PostEventDbItem;
@@ -194,7 +195,11 @@ const PostEventCard: React.FC<PostEventCardProps> = ({ event }) => {
           </Typography>
         </Box>
         <Box sx={{ justifySelf: 'end' }}>
-          <ButtonBase component="a" href={event.detailPath} sx={{ minHeight: 32, px: 1.75, borderRadius: 999, border: '1px solid rgba(164, 181, 206, 0.72)', backgroundColor: '#f8fbff', color: '#2f4a78', fontSize: '0.78rem', boxShadow: '0 2px 6px rgba(16, 30, 53, 0.12)' }}>
+          <ButtonBase
+            component={RouterLink}
+            to={event.detailPath}
+            sx={{ minHeight: 32, px: 1.75, borderRadius: 999, border: '1px solid rgba(164, 181, 206, 0.72)', backgroundColor: '#f8fbff', color: '#2f4a78', fontSize: '0.78rem', boxShadow: '0 2px 6px rgba(16, 30, 53, 0.12)' }}
+          >
             {event.detailLabel}
           </ButtonBase>
         </Box>

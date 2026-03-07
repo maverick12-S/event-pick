@@ -27,6 +27,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const user = (meQuery.data as AuthUser | undefined) ?? null;
   const isInitialized = !meQuery.isFetching;
+  const isCookieAuth = tokenService.isUsingCookies();
 
   const loginMutation = useMutation<LoginResponse, unknown, LoginRequest>({
     mutationFn: (data: LoginRequest) => authApi.login(data),
@@ -62,7 +63,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const clearAuthError = () => setError(null);
 
   const value: AuthContextValue = {
-    isAuthenticated: Boolean(tokenService.getAccessToken()),
+    // Cookie認証時は access token をJSで参照できないため /me の成否で判定する
+    isAuthenticated: isCookieAuth ? Boolean(user) : Boolean(tokenService.getAccessToken()),
     user,
     isLoading: loginMutation.isPending,
     error,

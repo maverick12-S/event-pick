@@ -3,18 +3,16 @@
 // =============================================
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Box } from '@mui/material';
 import MuiAuthLayout from '../../../../../components/ui/MuiAuthLayout/MuiAuthLayout';
 import LoginForm from '../LoginForm';
-import { useLogin } from '../../../api/hooks/useLogin';
+import { useLogin } from '../../../hooks/useLogin';
 
 const LoginScreen: React.FC = () => {
-  const navigate = useNavigate();
   const { isLoading, error, login } = useLogin();
 
-  const handlePasswordReset = () => navigate('/password-reset');
-  const handleNewAccount    = () => navigate('/signup');
+  const handlePasswordReset = () => window.location.assign('/password-reset');
+  const handleNewAccount    = () => window.location.assign('/signup');
 
   return (
     <MuiAuthLayout
