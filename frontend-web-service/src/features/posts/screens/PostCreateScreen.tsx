@@ -30,8 +30,10 @@ import {
   FiUploadCloud,
   FiX,
 } from 'react-icons/fi';
+import { upsertPostDraft } from '../../../api/db/postDrafts.db.ts';
 
 const MAX_IMAGES = 10;
+const DETAIL_MAX_LENGTH = 1200;
 const POST_CREATE_SCALE = 1.62;
 
 const GLASS_BG = 'rgba(255,255,255,0.1)';
@@ -134,64 +136,86 @@ const DarkInput: React.FC<{
   type?: string;
   minHeight?: number;
   fontSize?: string;
-}> = ({ value, onChange, placeholder, multiline = false, rows = 1, icon, type = 'text', minHeight = 44, fontSize = '0.9rem' }) => (
-  <Box
-    sx={{
-      display: 'flex',
-      alignItems: multiline ? 'flex-start' : 'center',
-      gap: 0.75,
-      px: 1.5,
-      py: multiline ? 1.25 : 0,
-      minHeight: multiline ? 'auto' : minHeight,
-      borderRadius: '12px',
-      border: GLASS_BORDER,
-      backgroundColor: GLASS_BG,
-      backdropFilter: 'blur(10px)',
-      WebkitBackdropFilter: 'blur(10px)',
-      boxShadow: NEON_SHADOW,
-      transition: 'border-color 0.2s, box-shadow 0.2s',
-      '&:hover': {
-        borderColor: 'rgba(98, 156, 230, 0.92)',
-        boxShadow: '0 0 12px rgba(111,179,255,0.7)',
-      },
-      '&:focus-within': {
-        borderColor: 'rgba(25, 56, 108, 0.98)',
-        boxShadow: '0 0 14px rgba(80,160,255,0.66)',
-      },
-    }}
-  >
-    {icon && (
-      <Box sx={{ color: 'rgba(216, 234, 255, 0.9)', flexShrink: 0, mt: multiline ? 0.35 : 0, fontSize: '0.95rem' }}>
-        {icon}
-      </Box>
-    )}
+  maxLength?: number;
+}> = ({ value, onChange, placeholder, multiline = false, rows = 1, icon, type = 'text', minHeight = 44, fontSize = '0.9rem', maxLength }) => {
+  const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+
+  const handleContainerClick = () => {
+    if (multiline || type !== 'time') return;
+
+    const el = inputRef.current;
+    if (!el) return;
+
+    el.focus();
+    if ('showPicker' in el && typeof (el as HTMLInputElement).showPicker === 'function') {
+      (el as HTMLInputElement).showPicker();
+    }
+  };
+
+  return (
     <Box
-      component={multiline ? 'textarea' : 'input'}
-      type={multiline ? undefined : type}
-      value={value}
-      onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-        onChange(e.target.value)
-      }
-      placeholder={placeholder}
-      rows={multiline ? rows : undefined}
+      onClick={handleContainerClick}
       sx={{
-        flex: 1,
-        background: 'none',
-        border: 'none',
-        outline: 'none',
-        color: '#ffffff',
-        fontSize,
-        fontFamily: 'inherit',
-        resize: multiline ? 'vertical' : 'none',
-        lineHeight: 1.65,
-        py: multiline ? 0 : 0,
-        minHeight: multiline ? `${rows * 1.65 * 14}px` : 'auto',
-        '&::placeholder': { color: 'rgba(221, 236, 255, 0.75)' },
-        colorScheme: 'light',
+        display: 'flex',
+        alignItems: multiline ? 'flex-start' : 'center',
+        gap: 0.75,
+        px: 1.5,
+        py: multiline ? 1.25 : 0,
+        minHeight: multiline ? 'auto' : minHeight,
+        borderRadius: '12px',
+        border: GLASS_BORDER,
+        backgroundColor: GLASS_BG,
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        boxShadow: NEON_SHADOW,
+        transition: 'border-color 0.2s, box-shadow 0.2s',
+        cursor: !multiline && type === 'time' ? 'pointer' : 'text',
+        '&:hover': {
+          borderColor: 'rgba(98, 156, 230, 0.92)',
+          boxShadow: '0 0 12px rgba(111,179,255,0.7)',
+        },
+        '&:focus-within': {
+          borderColor: 'rgba(25, 56, 108, 0.98)',
+          boxShadow: '0 0 14px rgba(80,160,255,0.66)',
+        },
       }}
-    />
-  </Box>
-);
+    >
+      {icon && (
+        <Box sx={{ color: 'rgba(216, 234, 255, 0.9)', flexShrink: 0, mt: multiline ? 0.35 : 0, fontSize: '0.95rem' }}>
+          {icon}
+        </Box>
+      )}
+      <Box
+        ref={inputRef}
+        component={multiline ? 'textarea' : 'input'}
+        type={multiline ? undefined : type}
+        value={value}
+        onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+          onChange(typeof maxLength === 'number' ? e.target.value.slice(0, maxLength) : e.target.value)
+        }
+        placeholder={placeholder}
+        rows={multiline ? rows : undefined}
+        maxLength={maxLength}
+        sx={{
+          flex: 1,
+          background: 'none',
+          border: 'none',
+          outline: 'none',
+          color: '#ffffff',
+          fontSize,
+          fontFamily: 'inherit',
+          resize: multiline ? 'vertical' : 'none',
+          lineHeight: 1.65,
+          py: multiline ? 0 : 0,
+          minHeight: multiline ? `${rows * 1.65 * 14}px` : 'auto',
+          '&::placeholder': { color: 'rgba(221, 236, 255, 0.75)' },
+          colorScheme: 'light',
+          cursor: !multiline && type === 'time' ? 'pointer' : 'text',
+        }}
+      />
+    </Box>
+  );
+};
 
 const ImageUploadArea: React.FC<{
   images: PostFormData['images'];
@@ -830,11 +854,31 @@ const PostCreateScreen: React.FC = () => {
       setSnackbar({ open: true, message: 'タイトルを入力してください', severity: 'error' });
       return;
     }
+
+    const saved = upsertPostDraft({
+      title: form.title,
+      images: form.images.map((img) => img.preview),
+      summary: form.summary,
+      detail: form.detail,
+      reservation: form.reservation,
+      address: form.address,
+      venueName: form.venueName,
+      budget: form.budget,
+      startTime: form.startTime,
+      endTime: form.endTime,
+      category: form.category,
+    });
+
+    if (!saved) {
+      setSnackbar({ open: true, message: '下書き保存に失敗しました', severity: 'error' });
+      return;
+    }
+
     setSnackbar({ open: true, message: '下書きを保存しました', severity: 'info' });
   };
 
   const handleDraftList = () => {
-    navigate('/posts/scheduled');
+    navigate('/posts/drafts');
   };
 
   const handlePreviewScreen = () => {
@@ -863,7 +907,7 @@ const PostCreateScreen: React.FC = () => {
     form.images.forEach((img) => URL.revokeObjectURL(img.preview));
     setForm(INITIAL_FORM);
     setDiscardOpen(false);
-    navigate(-1);
+    navigate('/home');
   };
 
   const handleSaveAndExit = () => {
@@ -871,9 +915,29 @@ const PostCreateScreen: React.FC = () => {
       setSnackbar({ open: true, message: '下書き保存にはタイトルが必要です', severity: 'error' });
       return;
     }
+
+    const saved = upsertPostDraft({
+      title: form.title,
+      images: form.images.map((img) => img.preview),
+      summary: form.summary,
+      detail: form.detail,
+      reservation: form.reservation,
+      address: form.address,
+      venueName: form.venueName,
+      budget: form.budget,
+      startTime: form.startTime,
+      endTime: form.endTime,
+      category: form.category,
+    });
+
+    if (!saved) {
+      setSnackbar({ open: true, message: '下書き保存に失敗しました', severity: 'error' });
+      return;
+    }
+
     setSnackbar({ open: true, message: '下書きを保存しました', severity: 'info' });
     setDiscardOpen(false);
-    setTimeout(() => navigate(-1), 500);
+    setTimeout(() => navigate('/home'), 500);
   };
 
   const togglePostDate = (iso: string) => {
@@ -1003,7 +1067,19 @@ const PostCreateScreen: React.FC = () => {
                     placeholder={`【イベント詳細】\n日程: 2026年○月○日（土）14:30 - 21:00\n場所: \n入場料: \n出演アーティスト:\n\n【注意事項】`}
                     multiline
                     rows={5}
+                    maxLength={DETAIL_MAX_LENGTH}
                   />
+                  <Typography
+                    sx={{
+                      mt: 0.5,
+                      textAlign: 'right',
+                      color: 'rgba(205,225,248,0.72)',
+                      fontSize: '0.72rem',
+                      letterSpacing: '0.01em',
+                    }}
+                  >
+                    {form.detail.length} / {DETAIL_MAX_LENGTH}（空白・改行を含む）
+                  </Typography>
                 </Box>
 
                 <Box>
