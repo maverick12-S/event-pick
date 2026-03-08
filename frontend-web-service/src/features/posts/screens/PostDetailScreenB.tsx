@@ -19,9 +19,9 @@
  *   { path: '/posts/:tab/:id', element: lazyLoad(() => import('../features/posts/screens/PostDetailScreenB')) }
  */
 
-import React, { useMemo, useRef, useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Box, ButtonBase, Chip, Typography } from '@mui/material';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Box, ButtonBase, Chip, MenuItem, Select, TextField, Typography } from '@mui/material';
 import {
   FiArrowLeft,
   FiClock,
@@ -32,7 +32,7 @@ import {
   FiAlignLeft,
   FiFileText,
 } from 'react-icons/fi';
-import { postsDb } from '../../../api/db/posts.screen';
+import postManagementMockApi from '../../../api/mock/postManagementMockApi';
 import { CarouselIndicator } from '../components';
 
 /* ─────────────────────────────────────────────
@@ -49,6 +49,37 @@ const CATEGORY_COLORS: Record<string, string> = {
   温泉: '#16a085',
   車: '#2c3e50',
 };
+
+interface ScheduledEditForm {
+  title: string;
+  category: string;
+  ward: string;
+  venue: string;
+  description: string;
+  timeLabel: string;
+  nextPostDate: string;
+  reservationContact: string;
+}
+
+const createScheduledEditForm = (params: {
+  title: string;
+  category: string;
+  ward: string;
+  venue: string;
+  description: string;
+  timeLabel: string;
+  nextPostDate: string;
+  reservationContact: string;
+}): ScheduledEditForm => ({
+  title: params.title,
+  category: params.category,
+  ward: params.ward,
+  venue: params.venue,
+  description: params.description,
+  timeLabel: params.timeLabel,
+  nextPostDate: params.nextPostDate,
+  reservationContact: params.reservationContact,
+});
 
 /* ─────────────────────────────────────────────
    共通カードスタイル（案Bの白カード構成を保持）
@@ -207,6 +238,8 @@ const PostDetailScreenB: React.FC = () => {
   const { tab, id } = useParams<{ tab: string; id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const isScheduledEditMode = tab === 'scheduled' && searchParams.get('mode') === 'edit';
 
   const previewForm = (location.state as {
     previewForm?: {
@@ -222,30 +255,79 @@ const PostDetailScreenB: React.FC = () => {
       endTime: string;
       category: string;
     };
+    returnTo?: string;
   } | null)?.previewForm;
 
-  const event = useMemo(
-    () => postsDb.find((p) => p.id === `${tab}-${id}`),
-    [tab, id],
-  );
+  const previewReturnTo = (location.state as { returnTo?: string } | null)?.returnTo;
+  const previewFrom = (location.state as { from?: 'posts' | 'reservations' } | null)?.from;
+  const previewRestoreSelectedPostDates = (location.state as { restoreSelectedPostDates?: string[] } | null)?.restoreSelectedPostDates;
+  const previewRestoreAutoPostEnabled = (location.state as { restoreAutoPostEnabled?: boolean } | null)?.restoreAutoPostEnabled;
+
+  const event = useMemo(() => postManagementMockApi.findPostEventByRoute(tab, id), [tab, id]);
+  const scheduledPost = useMemo(() => {
+    if (tab !== 'scheduled') return null;
+    return postManagementMockApi.findScheduledPostById(id);
+  }, [tab, id]);
 
   const isPreviewMode = Boolean(previewForm);
 
-  const title = previewForm?.title || event?.title || '';
-  const category = previewForm?.category || event?.category || '';
-  const ward = previewForm
+  const [editForm, setEditForm] = useState<ScheduledEditForm | null>(null);
+
+  const baseTitle = previewForm?.title || scheduledPost?.title || event?.title || '';
+  const baseCategory = previewForm?.category || scheduledPost?.category || event?.category || '';
+  const baseWard = previewForm
     ? (previewForm.address?.split(/[\s、,]+/).find(Boolean) || '入力中')
-    : (event?.ward || '');
-  const venue = previewForm?.venueName || event?.venue || '';
-  const description = previewForm?.summary || event?.description || '';
-  const timeLabel = previewForm
+    : (scheduledPost?.ward || event?.ward || '');
+  const baseVenue = previewForm?.venueName || scheduledPost?.venue || event?.venue || '';
+  const baseDescription = previewForm?.summary || scheduledPost?.description || event?.description || '';
+  const baseTimeLabel = previewForm
     ? (previewForm.startTime && previewForm.endTime
       ? `${previewForm.startTime}-${previewForm.endTime}`
       : previewForm.startTime || previewForm.endTime || '未設定')
-    : (event?.timeLabel || '未設定');
-  const dateLabel = isPreviewMode ? '入力中プレビュー' : (event?.dateLabel || '');
-  const budgetLabel = previewForm?.budget || '￥3,000～￥3,999';
-  const reservationContact = previewForm?.reservation || event?.reservationContact || '';
+    : (scheduledPost?.timeLabel || event?.timeLabel || '未設定');
+  const baseDateLabel = isPreviewMode ? '入力中プレビュー' : (scheduledPost?.dateLabel || event?.dateLabel || '');
+  const baseBudgetLabel = previewForm?.budget || '￥3,000～￥3,999';
+  const baseReservationContact = previewForm?.reservation || event?.reservationContact || 'https://www.google.com/';
+  const baseNextPostDate = scheduledPost?.nextPostDate || '';
+
+  useEffect(() => {
+    if (!isScheduledEditMode || !scheduledPost) {
+      setEditForm(null);
+      return;
+    }
+
+    setEditForm(createScheduledEditForm({
+      title: baseTitle,
+      category: baseCategory,
+      ward: baseWard,
+      venue: baseVenue,
+      description: baseDescription,
+      timeLabel: baseTimeLabel,
+      nextPostDate: baseNextPostDate,
+      reservationContact: baseReservationContact,
+    }));
+  }, [
+    isScheduledEditMode,
+    scheduledPost,
+    baseTitle,
+    baseCategory,
+    baseWard,
+    baseVenue,
+    baseDescription,
+    baseTimeLabel,
+    baseNextPostDate,
+    baseReservationContact,
+  ]);
+
+  const title = editForm?.title ?? baseTitle;
+  const category = editForm?.category ?? baseCategory;
+  const ward = editForm?.ward ?? baseWard;
+  const venue = editForm?.venue ?? baseVenue;
+  const description = editForm?.description ?? baseDescription;
+  const timeLabel = editForm?.timeLabel ?? baseTimeLabel;
+  const dateLabel = isPreviewMode ? '入力中プレビュー' : (editForm?.nextPostDate || baseDateLabel);
+  const budgetLabel = baseBudgetLabel;
+  const reservationContact = editForm?.reservationContact ?? baseReservationContact;
 
   const imageUrls = useMemo(() => {
     if (previewForm) {
@@ -253,15 +335,19 @@ const PostDetailScreenB: React.FC = () => {
       return ['https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80'];
     }
 
+    if (scheduledPost) {
+      return [scheduledPost.imageUrl];
+    }
+
     if (!event) return [];
     return event.imageUrls?.length ? event.imageUrls.slice(0, 10) : [event.imageUrl];
-  }, [event, previewForm]);
+  }, [event, previewForm, scheduledPost]);
 
   const [activeIdx, setActiveIdx] = useState(0);
   const touchStartX = useRef<number | null>(null);
 
   /* ── 存在しないイベント ── */
-  if (!event && !previewForm) {
+  if (!event && !previewForm && !scheduledPost) {
     return (
       <Box
         sx={{
@@ -326,6 +412,47 @@ const PostDetailScreenB: React.FC = () => {
   const isPhoneContact = /^tel:/i.test(reservationContact)
     || (/^[+\d][\d\s\-()]{7,}$/.test(reservationContact) && !/^https?:\/\//i.test(reservationContact));
 
+  const canSaveScheduledEdit = Boolean(
+    isScheduledEditMode
+    && editForm
+    && scheduledPost
+    && (
+      editForm.title !== scheduledPost.title
+      || editForm.category !== scheduledPost.category
+      || editForm.ward !== scheduledPost.ward
+      || editForm.venue !== scheduledPost.venue
+      || editForm.description !== scheduledPost.description
+      || editForm.timeLabel !== scheduledPost.timeLabel
+      || editForm.nextPostDate !== scheduledPost.nextPostDate
+    ),
+  );
+
+  const handleSaveScheduledEdit = () => {
+    if (!scheduledPost || !editForm) return;
+
+    const saved = postManagementMockApi.updateScheduledPostById(scheduledPost.id, {
+      title: editForm.title,
+      category: editForm.category,
+      ward: editForm.ward,
+      venue: editForm.venue,
+      description: editForm.description,
+      timeLabel: editForm.timeLabel,
+      nextPostDate: editForm.nextPostDate,
+    });
+
+    if (!saved) return;
+
+    navigate(`/posts/scheduled/${saved.id}`, { replace: true });
+  };
+
+  const handleCancelScheduledEdit = () => {
+    if (!scheduledPost) {
+      navigate('/posts/scheduled');
+      return;
+    }
+    navigate(`/posts/scheduled/${scheduledPost.id}`, { replace: true });
+  };
+
   const openReservationContact = () => {
     const contact = reservationContact.trim();
     if (!contact) return;
@@ -377,11 +504,18 @@ const PostDetailScreenB: React.FC = () => {
         <ButtonBase
           onClick={() => {
             if (isPreviewMode && previewForm) {
-              navigate('/posts/create', {
+              navigate(previewReturnTo || '/posts/create', {
                 state: {
                   restoreForm: previewForm,
+                  from: previewFrom,
+                  restoreSelectedPostDates: previewRestoreSelectedPostDates,
+                  restoreAutoPostEnabled: previewRestoreAutoPostEnabled,
                 },
               });
+              return;
+            }
+            if (isScheduledEditMode) {
+              handleCancelScheduledEdit();
               return;
             }
             navigate(-1);
@@ -407,9 +541,120 @@ const PostDetailScreenB: React.FC = () => {
           }}
         >
           <FiArrowLeft />
-          {isPreviewMode ? '投稿作成に戻る' : '投稿一覧に戻る'}
+          {isPreviewMode ? '投稿作成に戻る' : isScheduledEditMode ? '編集を終了する' : '投稿一覧に戻る'}
         </ButtonBase>
       </Box>
+
+      {isScheduledEditMode && editForm && (
+        <Box
+          sx={{
+            ...glassCardSx,
+            p: { xs: 1.6, md: 2.1 },
+            border: '1px solid rgba(235,97,131,0.38)',
+            boxShadow: '0 10px 22px rgba(35, 14, 34, 0.18)',
+          }}
+        >
+          <Typography sx={{ color: '#8f2e4b', fontWeight: 800, fontSize: { xs: '1rem', md: '1.08rem' }, mb: 1.2 }}>
+            予約投稿を編集
+          </Typography>
+
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' }, gap: 1 }}>
+            <TextField
+              size="small"
+              label="タイトル"
+              value={editForm.title}
+              onChange={(event) => setEditForm((prev) => (prev ? { ...prev, title: event.target.value } : prev))}
+            />
+            <TextField
+              size="small"
+              label="市区"
+              value={editForm.ward}
+              onChange={(event) => setEditForm((prev) => (prev ? { ...prev, ward: event.target.value } : prev))}
+            />
+            <TextField
+              size="small"
+              label="会場名"
+              value={editForm.venue}
+              onChange={(event) => setEditForm((prev) => (prev ? { ...prev, venue: event.target.value } : prev))}
+            />
+
+            <Select
+              size="small"
+              value={editForm.category}
+              onChange={(event) => setEditForm((prev) => (prev ? { ...prev, category: event.target.value } : prev))}
+              sx={{ minHeight: 40 }}
+            >
+              {Object.keys(CATEGORY_COLORS).map((option) => (
+                <MenuItem key={option} value={option}>
+                  {option}
+                </MenuItem>
+              ))}
+            </Select>
+
+            <TextField
+              size="small"
+              label="時間帯"
+              placeholder="18:00-20:00"
+              value={editForm.timeLabel}
+              onChange={(event) => setEditForm((prev) => (prev ? { ...prev, timeLabel: event.target.value } : prev))}
+            />
+            <TextField
+              size="small"
+              label="次回投稿日"
+              type="date"
+              value={editForm.nextPostDate}
+              onChange={(event) => setEditForm((prev) => (prev ? { ...prev, nextPostDate: event.target.value } : prev))}
+              InputLabelProps={{ shrink: true }}
+            />
+
+            <TextField
+              size="small"
+              label="概要"
+              value={editForm.description}
+              onChange={(event) => setEditForm((prev) => (prev ? { ...prev, description: event.target.value } : prev))}
+              multiline
+              minRows={2}
+              sx={{ gridColumn: { xs: '1', md: '1 / -1' } }}
+            />
+          </Box>
+
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.8, mt: 1.2 }}>
+            <ButtonBase
+              onClick={handleCancelScheduledEdit}
+              sx={{
+                minHeight: 36,
+                px: 1.6,
+                borderRadius: 999,
+                border: '1px solid rgba(171,198,236,0.56)',
+                backgroundColor: '#f8fbff',
+                color: '#2f4a78',
+                fontSize: '0.86rem',
+                fontWeight: 700,
+              }}
+            >
+              キャンセル
+            </ButtonBase>
+
+            <ButtonBase
+              onClick={handleSaveScheduledEdit}
+              disabled={!canSaveScheduledEdit}
+              sx={{
+                minHeight: 36,
+                px: 1.6,
+                borderRadius: 999,
+                border: '1px solid rgba(255,182,198,0.5)',
+                background: 'linear-gradient(165deg, rgba(235,97,131,0.96), rgba(221,78,116,0.96))',
+                color: '#f7fbff',
+                fontSize: '0.86rem',
+                fontWeight: 700,
+                opacity: canSaveScheduledEdit ? 1 : 0.55,
+              }}
+            >
+              保存する
+            </ButtonBase>
+          </Box>
+        </Box>
+      )}
 
       {/* ══════════════════════════════════
           1. フルワイドカルーセル

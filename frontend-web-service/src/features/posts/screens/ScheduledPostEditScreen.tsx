@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   Alert,
   Box,
@@ -25,7 +25,6 @@ import {
   FiImage,
   FiLink,
   FiMapPin,
-  FiSave,
   FiSend,
   FiUploadCloud,
   FiX,
@@ -73,8 +72,11 @@ type PreviewFormPayload = {
   category: string;
 };
 
-type PostCreateLocationState = {
+type ScheduledEditLocationState = {
   restoreForm?: PreviewFormPayload;
+  from?: 'posts' | 'reservations';
+  restoreSelectedPostDates?: string[];
+  restoreAutoPostEnabled?: boolean;
 };
 
 const INITIAL_FORM: PostFormData = {
@@ -765,53 +767,108 @@ const ScheduleCalendarDialog: React.FC<{
   );
 };
 
-const PostCreateScreen: React.FC = () => {
+const ScheduledPostEditScreen: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { id = '' } = useParams<{ id: string }>();
   const [form, setForm] = useState<PostFormData>(INITIAL_FORM);
-  const [discardOpen, setDiscardOpen] = useState(false);
-  const [scheduleOpen, setScheduleOpen] = useState(false);
   const [selectedPostDates, setSelectedPostDates] = useState<string[]>([]);
+  const [autoPostEnabled, setAutoPostEnabled] = useState(true);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'info' | 'error' }>({
     open: false,
     message: '',
     severity: 'success',
   });
 
+  const [editSource, setEditSource] = useState<'posts' | 'reservations'>(
+    (location.state as ScheduledEditLocationState | null)?.from === 'posts' ? 'posts' : 'reservations',
+  );
+  const isAccountPostsEdit = editSource === 'posts';
+  const backTo = editSource === 'posts' ? '/posts/scheduled?view=posts' : '/posts/scheduled?view=reservations';
+
+  const scheduledPost = useMemo(() => postManagementMockApi.findScheduledPostById(id), [id]);
   const todayIso = useMemo(() => toLocalIsoDate(new Date()), []);
   const maxSelectableIso = useMemo(() => addDays(todayIso, 30), [todayIso]);
-  const selectableDates = useMemo(() => {
-    const days: string[] = [];
-    for (let i = 0; i <= 30; i += 1) {
-      days.push(addDays(todayIso, i));
+  const calendarMonths = useMemo(() => buildCalendarMonths(todayIso, maxSelectableIso), [todayIso, maxSelectableIso]);
+
+  const togglePostDate = (iso: string) => {
+    setSelectedPostDates((prev) => (prev.includes(iso) ? prev.filter((d) => d !== iso) : [...prev, iso]));
+  };
+
+  const applyBulkSelect = (mode: 'all' | 'weekdays' | 'weekends' | 'clear') => {
+    if (mode === 'clear') {
+      setSelectedPostDates([]);
+      return;
     }
-    return days;
-  }, [todayIso]);
+
+    const selectableDates: string[] = [];
+    for (let i = 0; i <= 30; i += 1) {
+      selectableDates.push(addDays(todayIso, i));
+    }
+
+    const picked = selectableDates.filter((iso) => {
+      const weekday = parseLocalIsoDate(iso).getDay();
+      if (mode === 'all') return true;
+      if (mode === 'weekdays') return weekday >= 1 && weekday <= 5;
+      return weekday === 0 || weekday === 6;
+    });
+    setSelectedPostDates(picked);
+  };
 
   useEffect(() => {
-    const restore = (location.state as PostCreateLocationState | null)?.restoreForm;
-    if (!restore) return;
+    const from = (location.state as ScheduledEditLocationState | null)?.from;
+    if (from === 'posts' || from === 'reservations') {
+      setEditSource(from);
+    }
 
+    const restore = (location.state as ScheduledEditLocationState | null)?.restoreForm;
+    const restoreSelectedDates = (location.state as ScheduledEditLocationState | null)?.restoreSelectedPostDates;
+    const restoreAutoPostEnabled = (location.state as ScheduledEditLocationState | null)?.restoreAutoPostEnabled;
+    if (restore) {
+      setForm({
+        title: restore.title,
+        images: restore.images.map((preview, idx) => ({
+          file: new File([''], `restored-${idx + 1}.txt`, { type: 'text/plain' }),
+          preview,
+        })),
+        summary: restore.summary,
+        detail: restore.detail,
+        reservation: restore.reservation,
+        address: restore.address,
+        venueName: restore.venueName,
+        budget: restore.budget,
+        startTime: restore.startTime,
+        endTime: restore.endTime,
+        category: restore.category,
+      });
+      setSelectedPostDates(Array.isArray(restoreSelectedDates) ? restoreSelectedDates : []);
+      setAutoPostEnabled(typeof restoreAutoPostEnabled === 'boolean' ? restoreAutoPostEnabled : true);
+      navigate(location.pathname, { replace: true, state: null });
+      return;
+    }
+
+    if (!scheduledPost) return;
+
+    const [startTime = '', endTime = ''] = scheduledPost.timeLabel.split('-');
     setForm({
-      title: restore.title,
-      images: restore.images.map((preview, idx) => ({
-        // Fileオブジェクトはプレビュー復元用のダミー。送信時はAPI実装側で扱いを決める。
-        file: new File([''], `restored-${idx + 1}.txt`, { type: 'text/plain' }),
-        preview,
-      })),
-      summary: restore.summary,
-      detail: restore.detail,
-      reservation: restore.reservation,
-      address: restore.address,
-      venueName: restore.venueName,
-      budget: restore.budget,
-      startTime: restore.startTime,
-      endTime: restore.endTime,
-      category: restore.category,
+      title: scheduledPost.title,
+      images: [{
+        file: new File([''], `scheduled-${scheduledPost.id}.txt`, { type: 'text/plain' }),
+        preview: scheduledPost.imageUrl,
+      }],
+      summary: scheduledPost.description,
+      detail: scheduledPost.description,
+      reservation: 'https://www.google.com/',
+      address: scheduledPost.ward,
+      venueName: scheduledPost.venue,
+      budget: '',
+      startTime,
+      endTime,
+      category: scheduledPost.category,
     });
-
-    navigate(location.pathname, { replace: true, state: null });
-  }, [location.pathname, location.state, navigate]);
+    setSelectedPostDates(scheduledPost.nextPostDate ? [scheduledPost.nextPostDate] : []);
+    setAutoPostEnabled(scheduledPost.condition.autoPost);
+  }, [location.pathname, location.state, navigate, scheduledPost]);
 
   const setField = <K extends keyof PostFormData>(key: K, value: PostFormData[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -840,45 +897,43 @@ const PostCreateScreen: React.FC = () => {
   };
 
   const handleSubmit = () => {
+    if (!scheduledPost) {
+      setSnackbar({ open: true, message: '編集対象が見つかりません', severity: 'error' });
+      return;
+    }
+
     const error = validate();
     if (error) {
       setSnackbar({ open: true, message: error, severity: 'error' });
       return;
     }
-    setSelectedPostDates((prev) => (prev.length > 0 ? prev : [todayIso]));
-    setScheduleOpen(true);
-  };
 
-  const handleDraft = () => {
-    if (!form.title.trim()) {
-      setSnackbar({ open: true, message: 'タイトルを入力してください', severity: 'error' });
+    const sortedSelectedDates = [...selectedPostDates].sort((a, b) => a.localeCompare(b));
+    if (!isAccountPostsEdit && sortedSelectedDates.length === 0) {
+      setSnackbar({ open: true, message: '投稿日を1日以上選択してください', severity: 'error' });
       return;
     }
 
-    const saved = postManagementMockApi.upsertPostDraft({
+    const updated = postManagementMockApi.updateScheduledPostById(scheduledPost.id, {
       title: form.title,
-      images: form.images.map((img) => img.preview),
-      summary: form.summary,
-      detail: form.detail,
-      reservation: form.reservation,
-      address: form.address,
-      venueName: form.venueName,
-      budget: form.budget,
-      startTime: form.startTime,
-      endTime: form.endTime,
+      ward: form.address,
+      venue: form.venueName,
       category: form.category,
+      description: form.summary,
+      timeLabel: `${form.startTime || '00:00'}-${form.endTime || '00:00'}`,
+      nextPostDate: isAccountPostsEdit ? scheduledPost.nextPostDate : (sortedSelectedDates[0] || scheduledPost.nextPostDate),
+      condition: {
+        autoPost: isAccountPostsEdit ? scheduledPost.condition.autoPost : autoPostEnabled,
+      },
     });
 
-    if (!saved) {
-      setSnackbar({ open: true, message: '下書き保存に失敗しました', severity: 'error' });
+    if (!updated) {
+      setSnackbar({ open: true, message: '編集の保存に失敗しました', severity: 'error' });
       return;
     }
 
-    setSnackbar({ open: true, message: '下書きを保存しました', severity: 'info' });
-  };
-
-  const handleDraftList = () => {
-    navigate('/posts/drafts');
+    setSnackbar({ open: true, message: '編集が完了しました', severity: 'success' });
+    setTimeout(() => navigate(backTo), 600);
   };
 
   const handlePreviewScreen = () => {
@@ -899,77 +954,21 @@ const PostCreateScreen: React.FC = () => {
     navigate('/posts/preview', {
       state: {
         previewForm: previewPayload,
-        returnTo: '/posts/create',
+        returnTo: `/posts/scheduled/edit/${id}`,
+        from: editSource,
+        restoreSelectedPostDates: selectedPostDates,
+        restoreAutoPostEnabled: autoPostEnabled,
       },
     });
   };
 
-  const handleDiscard = () => {
-    form.images.forEach((img) => URL.revokeObjectURL(img.preview));
-    setForm(INITIAL_FORM);
-    setDiscardOpen(false);
-    navigate('/home');
-  };
-
-  const handleSaveAndExit = () => {
-    if (!form.title.trim()) {
-      setSnackbar({ open: true, message: '下書き保存にはタイトルが必要です', severity: 'error' });
-      return;
-    }
-
-    const saved = postManagementMockApi.upsertPostDraft({
-      title: form.title,
-      images: form.images.map((img) => img.preview),
-      summary: form.summary,
-      detail: form.detail,
-      reservation: form.reservation,
-      address: form.address,
-      venueName: form.venueName,
-      budget: form.budget,
-      startTime: form.startTime,
-      endTime: form.endTime,
-      category: form.category,
-    });
-
-    if (!saved) {
-      setSnackbar({ open: true, message: '下書き保存に失敗しました', severity: 'error' });
-      return;
-    }
-
-    setSnackbar({ open: true, message: '下書きを保存しました', severity: 'info' });
-    setDiscardOpen(false);
-    setTimeout(() => navigate('/home'), 500);
-  };
-
-  const togglePostDate = (iso: string) => {
-    setSelectedPostDates((prev) => (prev.includes(iso) ? prev.filter((d) => d !== iso) : [...prev, iso]));
-  };
-
-  const applyBulkSelect = (mode: 'all' | 'weekdays' | 'weekends' | 'clear') => {
-    if (mode === 'clear') {
-      setSelectedPostDates([]);
-      return;
-    }
-
-    const picked = selectableDates.filter((iso) => {
-      const weekday = parseLocalIsoDate(iso).getDay();
-      if (mode === 'all') return true;
-      if (mode === 'weekdays') return weekday >= 1 && weekday <= 5;
-      return weekday === 0 || weekday === 6;
-    });
-    setSelectedPostDates(picked);
-  };
-
-  const confirmScheduledPost = () => {
-    if (selectedPostDates.length === 0) {
-      setSnackbar({ open: true, message: '投稿日を1日以上選択してください', severity: 'error' });
-      return;
-    }
-
-    setScheduleOpen(false);
-    setSnackbar({ open: true, message: `${selectedPostDates.length}日分の投稿予定を保存しました`, severity: 'success' });
-    setTimeout(() => navigate('/posts/scheduled'), 1000);
-  };
+  if (!scheduledPost) {
+    return (
+      <Box sx={{ minHeight: '60vh', display: 'grid', placeItems: 'center' }}>
+        <Typography sx={{ color: '#eef6ff' }}>編集対象が見つかりません</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box
@@ -1154,9 +1153,166 @@ const PostCreateScreen: React.FC = () => {
                     onChange={(v) => setField('category', v)}
                   />
                 </Box>
+
               </Box>
             </Grid>
           </Grid>
+
+          {!isAccountPostsEdit && (
+          <Box sx={{ mt: 1.2 }}>
+            <FieldLabel num={11} label="投稿予約設定" />
+            <Box
+              sx={{
+                p: 1.2,
+                borderRadius: '10px',
+                border: GLASS_BORDER,
+                backgroundColor: 'rgba(255,255,255,0.06)',
+                boxShadow: '0 0 10px rgba(80,160,255,0.35)',
+              }}
+            >
+              <Grid container spacing={1.2}>
+                <Grid size={{ xs: 12, md: 8 }}>
+                  <Typography sx={{ color: 'rgba(180,210,250,0.78)', fontSize: '0.76rem', mb: 0.5 }}>
+                    投稿日カレンダー（今日から1カ月）
+                  </Typography>
+
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.7, mb: 0.7 }}>
+                    <ButtonBase
+                      onClick={() => applyBulkSelect('all')}
+                      sx={{ px: 1.1, py: 0.4, borderRadius: '999px', border: '1px solid rgba(120,170,240,0.45)', color: '#b9d7ff', fontSize: '0.75rem', fontWeight: 700 }}
+                    >
+                      すべて選択
+                    </ButtonBase>
+                    <ButtonBase
+                      onClick={() => applyBulkSelect('weekdays')}
+                      sx={{ px: 1.1, py: 0.4, borderRadius: '999px', border: '1px solid rgba(120,170,240,0.45)', color: '#b9d7ff', fontSize: '0.75rem', fontWeight: 700 }}
+                    >
+                      平日のみ
+                    </ButtonBase>
+                    <ButtonBase
+                      onClick={() => applyBulkSelect('weekends')}
+                      sx={{ px: 1.1, py: 0.4, borderRadius: '999px', border: '1px solid rgba(120,170,240,0.45)', color: '#b9d7ff', fontSize: '0.75rem', fontWeight: 700 }}
+                    >
+                      週末のみ
+                    </ButtonBase>
+                    <ButtonBase
+                      onClick={() => applyBulkSelect('clear')}
+                      sx={{ px: 1.1, py: 0.4, borderRadius: '999px', border: '1px solid rgba(190,210,235,0.35)', color: '#c6d9f5', fontSize: '0.75rem', fontWeight: 700 }}
+                    >
+                      解除
+                    </ButtonBase>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.65, maxHeight: 310, overflowY: 'auto', pr: 0.2 }}>
+                    {calendarMonths.map((month) => (
+                      <Box
+                        key={month.key}
+                        sx={{
+                          borderRadius: '10px',
+                          border: '1px solid rgba(120,170,230,0.25)',
+                          backgroundColor: 'rgba(11,24,48,0.48)',
+                          p: 0.9,
+                        }}
+                      >
+                        <Typography sx={{ color: '#d7e9ff', fontSize: '0.92rem', fontWeight: 800, mb: 0.8 }}>
+                          {month.label}
+                        </Typography>
+
+                        <Grid container columns={7} spacing={0.55} sx={{ mb: 0.55 }}>
+                          {WEEKDAY_JA.map((w) => (
+                            <Grid key={`${month.key}-${w}`} size={1}>
+                              <Typography sx={{ textAlign: 'center', color: 'rgba(170,200,240,0.65)', fontSize: '0.72rem', fontWeight: 700 }}>
+                                {w}
+                              </Typography>
+                            </Grid>
+                          ))}
+                        </Grid>
+
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.55 }}>
+                          {month.rows.map((row, rowIdx) => (
+                            <Grid key={`${month.key}-r-${rowIdx}`} container columns={7} spacing={0.55}>
+                              {Array.from({ length: 7 }).map((_, cellIdx) => {
+                                const iso = row[cellIdx] ?? null;
+                                const selectable = Boolean(iso && iso >= todayIso && iso <= maxSelectableIso);
+                                const selected = Boolean(iso && selectedPostDates.includes(iso));
+                                return (
+                                  <Grid key={`${month.key}-r-${rowIdx}-c-${cellIdx}`} size={1}>
+                                    {iso ? (
+                                      <ButtonBase
+                                        onClick={() => selectable && togglePostDate(iso)}
+                                        disabled={!selectable}
+                                        sx={{
+                                          width: '100%',
+                                          minHeight: 38,
+                                          borderRadius: '8px',
+                                          border: selected ? '1px solid rgba(106,177,255,0.95)' : '1px solid rgba(120,170,230,0.25)',
+                                          backgroundColor: selected ? 'rgba(44,119,220,0.3)' : 'rgba(11,24,48,0.55)',
+                                          color: selectable ? '#e7f2ff' : 'rgba(146,168,196,0.45)',
+                                          fontSize: '0.83rem',
+                                          fontWeight: selected ? 800 : 600,
+                                        }}
+                                      >
+                                        {iso.slice(8)}
+                                      </ButtonBase>
+                                    ) : (
+                                      <Box sx={{ minHeight: 38 }} />
+                                    )}
+                                  </Grid>
+                                );
+                              })}
+                            </Grid>
+                          ))}
+                        </Box>
+                      </Box>
+                    ))}
+                  </Box>
+                </Grid>
+
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Typography sx={{ color: 'rgba(180,210,250,0.78)', fontSize: '0.76rem', mb: 0.5 }}>
+                    自動投稿予約
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 0.6 }}>
+                    <ButtonBase
+                      onClick={() => setAutoPostEnabled(true)}
+                      sx={{
+                        flex: 1,
+                        minHeight: 38,
+                        borderRadius: '8px',
+                        border: autoPostEnabled ? '1px solid rgba(100,220,170,0.7)' : '1px solid rgba(120,170,230,0.25)',
+                        backgroundColor: autoPostEnabled ? 'rgba(40,170,110,0.22)' : 'rgba(11,24,48,0.55)',
+                        color: autoPostEnabled ? '#6ef0b1' : '#c8deff',
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                      }}
+                    >
+                      開始
+                    </ButtonBase>
+                    <ButtonBase
+                      onClick={() => setAutoPostEnabled(false)}
+                      sx={{
+                        flex: 1,
+                        minHeight: 38,
+                        borderRadius: '8px',
+                        border: !autoPostEnabled ? '1px solid rgba(235,97,131,0.7)' : '1px solid rgba(120,170,230,0.25)',
+                        backgroundColor: !autoPostEnabled ? 'rgba(190,66,98,0.22)' : 'rgba(11,24,48,0.55)',
+                        color: !autoPostEnabled ? '#ff9db6' : '#c8deff',
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                      }}
+                    >
+                      停止
+                    </ButtonBase>
+                  </Box>
+
+                  <Typography sx={{ mt: 0.85, color: 'rgba(200,220,245,0.72)', fontSize: '0.76rem' }}>
+                    選択中の日付: {selectedPostDates.length > 0 ? selectedPostDates.join(' / ') : '未選択'}
+                  </Typography>
+                </Grid>
+              </Grid>
+            </Box>
+          </Box>
+          )}
         </Box>
 
         <Box
@@ -1174,7 +1330,7 @@ const PostCreateScreen: React.FC = () => {
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
             <ButtonBase
-              onClick={() => setDiscardOpen(true)}
+              onClick={() => navigate(backTo)}
               sx={{
                 display: 'flex',
                 alignItems: 'center',
@@ -1194,54 +1350,9 @@ const PostCreateScreen: React.FC = () => {
             >
               キャンセル
             </ButtonBase>
-
-            <ButtonBase
-              onClick={handleDraftList}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.75,
-                px: 2,
-                py: 1,
-                borderRadius: '8px',
-                border: '1px solid rgba(120,170,240,0.35)',
-                backgroundColor: 'rgba(70,120,200,0.08)',
-                color: '#a8cfff',
-                fontSize: '0.88rem',
-                fontWeight: 600,
-                transition: 'all 0.18s',
-                '&:hover': { backgroundColor: 'rgba(70,120,200,0.18)' },
-                minWidth: 112,
-              }}
-            >
-              下書き一覧
-            </ButtonBase>
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', ml: { xs: 0, md: 'auto' } }}>
-
-            <ButtonBase
-              onClick={handleDraft}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.75,
-                px: 2,
-                py: 1,
-                borderRadius: '8px',
-                border: '1px solid rgba(100,200,150,0.4)',
-                backgroundColor: 'rgba(30,160,100,0.1)',
-                color: '#5dd8a0',
-                fontSize: '0.88rem',
-                fontWeight: 600,
-                transition: 'all 0.18s',
-                '&:hover': { backgroundColor: 'rgba(30,160,100,0.18)' },
-                minWidth: 120,
-              }}
-            >
-              <FiSave size={14} />
-              下書保存
-            </ButtonBase>
 
             <ButtonBase
               onClick={handlePreviewScreen}
@@ -1289,28 +1400,11 @@ const PostCreateScreen: React.FC = () => {
               }}
             >
               <FiSend size={14} />
-              投稿する
+              編集完了
             </ButtonBase>
           </Box>
         </Box>
       </Box>
-
-      <DiscardDialog
-        open={discardOpen}
-        onClose={() => setDiscardOpen(false)}
-        onDiscard={handleDiscard}
-        onSaveAndExit={handleSaveAndExit}
-      />
-      <ScheduleCalendarDialog
-        open={scheduleOpen}
-        selectedDates={selectedPostDates}
-        minDateIso={todayIso}
-        maxDateIso={maxSelectableIso}
-        onClose={() => setScheduleOpen(false)}
-        onToggleDate={togglePostDate}
-        onBulkSelect={applyBulkSelect}
-        onConfirm={confirmScheduledPost}
-      />
 
       <Snackbar
         open={snackbar.open}
@@ -1340,4 +1434,4 @@ const PostCreateScreen: React.FC = () => {
   );
 };
 
-export default PostCreateScreen;
+export default ScheduledPostEditScreen;

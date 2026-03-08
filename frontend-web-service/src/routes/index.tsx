@@ -50,6 +50,14 @@ export const router = createBrowserRouter([
             element: lazyLoad(() => import('../features/plan/screens/PlanScreen')),
           },
           {
+            path: '/report',
+            element: lazyLoad(() => import('../features/reports/screens/ReportScreen.tsx')),
+          },
+          {
+            path: '/report/:reportId',
+            element: lazyLoad(() => import('../features/reports/screens/ReportDetailScreen.tsx')),
+          },
+          {
             path: '/posts',
             element: lazyLoad(() => import('../features/posts/screens/PostsListScreen')),
           },
@@ -71,7 +79,7 @@ export const router = createBrowserRouter([
           },
           {
             path: '/posts/scheduled/edit/:id',
-            element: lazyLoad(() => import('../features/posts/screens/ScheduledPostEditRedirect')),
+            element: lazyLoad(() => import('../features/posts/screens/ScheduledPostEditScreen')),
           },
           {
             path: '/posts/:tab/:id',

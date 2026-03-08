@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Box, ButtonBase, Grid, Typography } from '@mui/material';
 import { FiArrowLeft, FiClock, FiExternalLink, FiMapPin } from 'react-icons/fi';
-import { postsDb } from '../../../api/db/posts.screen';
+import postManagementMockApi from '../../../api/mock/postManagementMockApi';
 import { CarouselIndicator } from '../components';
 
 const CATEGORY_COLORS: Record<string, { bg: string; color: string; border: string }> = {
@@ -57,9 +57,12 @@ const PostEventDetailScreen: React.FC = () => {
   const navigate = useNavigate();
 
   const event = useMemo(() => {
-    const found = postsDb.find((entry) => entry.id === `${tab}-${id}`);
-    return found ?? postsDb[0];
+    const found = postManagementMockApi.findPostEventByRoute(tab, id);
+    const fallback = postManagementMockApi.findPostEventByRoute('today', '1');
+    return found ?? fallback;
   }, [tab, id]);
+
+  if (!event) return null;
 
   const imageUrls = useMemo(() => (event.imageUrls?.length ? event.imageUrls.slice(0, 8) : [event.imageUrl]), [event]);
   const numericId = Number(event.id.split('-').pop() ?? '1');

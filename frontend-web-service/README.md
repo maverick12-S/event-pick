@@ -6,10 +6,13 @@ Project の概要
 フォルダ構成（概要）
 
 - `api`: アプリ共通の通信基盤（axios インスタンス、インターセプター、リフレッシュトークン処理）。インフラ層であり UI を含みません。
+- `api/db`: モック用のDB定義レイヤー。画面で使う固定データの一次ソースを置き、UIから直接参照しないこと。
+- `api/mock`: `api/db` を読み出して画面向けに返す取得レイヤー。将来の実APIに置き換える対象。
 - `assets`: 画像・SVG・フォントなどの静的リソース。ロジックやコンポーネントは置かないでください。
 - `components`: ドメイン非依存の共通 UI（Button、Logo、Modal、Input など）。業務ロジックを持たせないこと。
 - `contexts`: React Context 定義（例: `AuthContext`、`ThemeContext`）。状態共有の器で、ロジックは hooks に分離します。
 - `features`: 機能単位で完結するフォルダ（例: `features/login`）。内部に `api`、`components`、`hooks`、`screens` を持ちます。
+- `features/*/styles`: 機能ローカルのデザイン定義（`sx` オブジェクト、トークン）を管理します。画面内に巨大なスタイル定義を残さないこと。
 - `hooks`: アプリ全体で使う再利用可能なロジック（例: `useAuth`、`useDebounce`）。feature 依存を避けること。
 - `layouts`: 画面の骨組み（例: `BaseLayout`、`Header`、`Footer`）。Screen に骨組みを直接書かないこと。
 - `lib`: 汎用ユーティリティ（date フォーマッタ、storage helper など）。ビジネスロジックは置かない。
@@ -25,6 +28,22 @@ Project の概要
 main.tsx → app/ → layouts/ → routes/ → features/ → components/hooks/api/lib
 
 一方向依存を維持し、feature から上位へ依存しないこと。
+
+責務ドキュメント
+
+- ルート責務: `src/RESPONSIBILITIES.md`
+- API層責務: `src/api/RESPONSIBILITIES.md`
+- モックDB責務: `src/api/db/RESPONSIBILITIES.md`
+- モック取得責務: `src/api/mock/RESPONSIBILITIES.md`
+- 投稿機能責務: `src/features/posts/RESPONSIBILITIES.md`
+- レポート機能責務: `src/features/reports/RESPONSIBILITIES.md`
+
+投稿管理のデータ参照ルール
+
+- 画面（`features/posts/screens`, `features/reports/screens`）では `api/db` を直接 import しない。
+- 画面は `features/*/hooks` または `api/mock` の取得関数を経由してデータを受け取る。
+- `api/db` は生データ定義のみ、加工・絞り込み・結合は `api/mock` に置く。
+- 実API化時は `api/mock` の実装差し替えを優先し、画面側の変更を最小化する。
 
 ログイン風の新規画面を追加する手順（ステップ）
 
