@@ -92,8 +92,17 @@ button {
 *:not(input):not(textarea):not([contenteditable="true"]) {
   caret-color: transparent !important;
 }
+
+/* ---- 入力欄以外のテキスト選択を無効化 ---- */
+*:not(input):not(textarea):not([contenteditable="true"]) {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 input, textarea, [contenteditable="true"] {
   caret-color: auto !important;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 /* ---- ブラウザ標準パスワードアイコン非表示 ---- */

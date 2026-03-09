@@ -46,6 +46,14 @@ export const router = createBrowserRouter([
             element: lazyLoad(() => import('../features/home/screens/HomeScreen')),
           },
           {
+            path: '/accounts',
+            element: lazyLoad(() => import('../features/accounts/screens/AccountsListScreen')),
+          },
+          {
+            path: '/accounts/issue',
+            element: lazyLoad(() => import('../features/accounts/screens/AccountsIssueScreen')),
+          },
+          {
             path: '/plan',
             element: lazyLoad(() => import('../features/plan/screens/PlanScreen')),
           },

@@ -224,6 +224,13 @@ const ImageUploadArea: React.FC<{
 }> = ({ images, onAdd, onRemove }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const openFilePicker = () => {
+    if (!inputRef.current) return;
+    // Allow selecting the same file again by clearing previous value.
+    inputRef.current.value = '';
+    inputRef.current.click();
+  };
+
   const emptySlots = Math.max(0, Math.min(3, MAX_IMAGES - images.length));
   const showSlots = [...images, ...Array(emptySlots).fill(null)].slice(0, Math.max(3, images.length + 1 <= MAX_IMAGES ? images.length + 1 : images.length));
 
@@ -295,7 +302,7 @@ const ImageUploadArea: React.FC<{
           ) : (
             <ButtonBase
               key={`empty-${idx}`}
-              onClick={() => inputRef.current?.click()}
+              onClick={openFilePicker}
               disabled={images.length >= MAX_IMAGES}
               sx={{
                 width: { xs: 120, sm: 140 },
@@ -336,7 +343,7 @@ const ImageUploadArea: React.FC<{
         </Typography>
         {images.length < MAX_IMAGES && (
           <ButtonBase
-            onClick={() => inputRef.current?.click()}
+            onClick={openFilePicker}
             sx={{
               px: 0.9,
               py: 0.25,
@@ -363,7 +370,13 @@ const ImageUploadArea: React.FC<{
         accept="image/*"
         multiple
         style={{ display: 'none' }}
-        onChange={(e) => e.target.files && onAdd(e.target.files)}
+        onChange={(e) => {
+          const { files } = e.currentTarget;
+          if (files && files.length > 0) {
+            onAdd(files);
+          }
+          e.currentTarget.value = '';
+        }}
       />
     </Box>
   );
@@ -817,12 +830,17 @@ const PostCreateScreen: React.FC = () => {
     setForm((prev) => ({ ...prev, [key]: value }));
 
   const handleAddImages = (files: FileList) => {
-    const remaining = MAX_IMAGES - form.images.length;
-    const toAdd = Array.from(files).slice(0, remaining).map((file) => ({
-      file,
-      preview: URL.createObjectURL(file),
-    }));
-    setField('images', [...form.images, ...toAdd]);
+    setForm((prev) => {
+      const remaining = MAX_IMAGES - prev.images.length;
+      if (remaining <= 0) return prev;
+
+      const toAdd = Array.from(files).slice(0, remaining).map((file) => ({
+        file,
+        preview: URL.createObjectURL(file),
+      }));
+
+      return { ...prev, images: [...prev.images, ...toAdd] };
+    });
   };
 
   const handleRemoveImage = (index: number) => {

@@ -226,6 +226,13 @@ const ImageUploadArea: React.FC<{
 }> = ({ images, onAdd, onRemove }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const openFilePicker = () => {
+    if (!inputRef.current) return;
+    // Allow selecting the same file again by clearing previous value.
+    inputRef.current.value = '';
+    inputRef.current.click();
+  };
+
   const emptySlots = Math.max(0, Math.min(3, MAX_IMAGES - images.length));
   const showSlots = [...images, ...Array(emptySlots).fill(null)].slice(0, Math.max(3, images.length + 1 <= MAX_IMAGES ? images.length + 1 : images.length));
 
@@ -297,7 +304,7 @@ const ImageUploadArea: React.FC<{
           ) : (
             <ButtonBase
               key={`empty-${idx}`}
-              onClick={() => inputRef.current?.click()}
+              onClick={openFilePicker}
               disabled={images.length >= MAX_IMAGES}
               sx={{
                 width: { xs: 120, sm: 140 },
@@ -338,7 +345,7 @@ const ImageUploadArea: React.FC<{
         </Typography>
         {images.length < MAX_IMAGES && (
           <ButtonBase
-            onClick={() => inputRef.current?.click()}
+            onClick={openFilePicker}
             sx={{
               px: 0.9,
               py: 0.25,
@@ -365,7 +372,13 @@ const ImageUploadArea: React.FC<{
         accept="image/*"
         multiple
         style={{ display: 'none' }}
-        onChange={(e) => e.target.files && onAdd(e.target.files)}
+        onChange={(e) => {
+          const { files } = e.currentTarget;
+          if (files && files.length > 0) {
+            onAdd(files);
+          }
+          e.currentTarget.value = '';
+        }}
       />
     </Box>
   );
@@ -774,6 +787,7 @@ const ScheduledPostEditScreen: React.FC = () => {
   const [form, setForm] = useState<PostFormData>(INITIAL_FORM);
   const [selectedPostDates, setSelectedPostDates] = useState<string[]>([]);
   const [autoPostEnabled, setAutoPostEnabled] = useState(true);
+  const hasInitializedFormRef = useRef(false);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'info' | 'error' }>({
     open: false,
     message: '',
@@ -816,6 +830,10 @@ const ScheduledPostEditScreen: React.FC = () => {
   };
 
   useEffect(() => {
+    hasInitializedFormRef.current = false;
+  }, [id]);
+
+  useEffect(() => {
     const from = (location.state as ScheduledEditLocationState | null)?.from;
     if (from === 'posts' || from === 'reservations') {
       setEditSource(from);
@@ -843,11 +861,12 @@ const ScheduledPostEditScreen: React.FC = () => {
       });
       setSelectedPostDates(Array.isArray(restoreSelectedDates) ? restoreSelectedDates : []);
       setAutoPostEnabled(typeof restoreAutoPostEnabled === 'boolean' ? restoreAutoPostEnabled : true);
+      hasInitializedFormRef.current = true;
       navigate(location.pathname, { replace: true, state: null });
       return;
     }
 
-    if (!scheduledPost) return;
+    if (!scheduledPost || hasInitializedFormRef.current) return;
 
     const [startTime = '', endTime = ''] = scheduledPost.timeLabel.split('-');
     setForm({
@@ -868,18 +887,24 @@ const ScheduledPostEditScreen: React.FC = () => {
     });
     setSelectedPostDates(scheduledPost.nextPostDate ? [scheduledPost.nextPostDate] : []);
     setAutoPostEnabled(scheduledPost.condition.autoPost);
+    hasInitializedFormRef.current = true;
   }, [location.pathname, location.state, navigate, scheduledPost]);
 
   const setField = <K extends keyof PostFormData>(key: K, value: PostFormData[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
   const handleAddImages = (files: FileList) => {
-    const remaining = MAX_IMAGES - form.images.length;
-    const toAdd = Array.from(files).slice(0, remaining).map((file) => ({
-      file,
-      preview: URL.createObjectURL(file),
-    }));
-    setField('images', [...form.images, ...toAdd]);
+    setForm((prev) => {
+      const remaining = MAX_IMAGES - prev.images.length;
+      if (remaining <= 0) return prev;
+
+      const toAdd = Array.from(files).slice(0, remaining).map((file) => ({
+        file,
+        preview: URL.createObjectURL(file),
+      }));
+
+      return { ...prev, images: [...prev.images, ...toAdd] };
+    });
   };
 
   const handleRemoveImage = (index: number) => {

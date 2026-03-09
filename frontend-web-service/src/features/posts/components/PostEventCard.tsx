@@ -112,6 +112,7 @@ const PostEventCard: React.FC<PostEventCardProps> = ({ event, onEdit, onDelete }
         <IconButton
           aria-label="投稿メニュー"
           size="small"
+          disableRipple
           onClick={(eventButton) => {
             if (!hasPostMenu) return;
             setMenuAnchorEl(eventButton.currentTarget);
@@ -119,12 +120,13 @@ const PostEventCard: React.FC<PostEventCardProps> = ({ event, onEdit, onDelete }
           sx={{
             color: hasPostMenu ? '#1f3d62' : '#7b8da4',
             fontSize: '1.1rem',
-            p: 0.4,
+            p: 0.2,
             opacity: hasPostMenu ? 1 : 0.62,
-            border: '1px solid rgba(159, 184, 214, 0.72)',
-            backgroundColor: 'rgba(244, 250, 255, 0.9)',
+            border: 'none',
+            backgroundColor: 'transparent',
+            borderRadius: '6px',
             '&:hover': {
-              backgroundColor: '#eef6ff',
+              backgroundColor: 'transparent',
             },
           }}
         >
