@@ -6,12 +6,6 @@ import {
   Chip,
   CircularProgress,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Typography,
 } from '@mui/material';
 import {
@@ -78,6 +72,13 @@ const genderColor: Record<string, string> = {
 const genderOrder = ['男性', '女性', 'その他'] as const;
 
 const toAgeLabel = (bin: string) => (bin.includes('以上') ? bin : `${bin}歳`);
+
+const formatCountTick = (value: number) => {
+  if (Math.abs(value) >= 1000) {
+    return `${(value / 1000).toFixed(1)}k`;
+  }
+  return value.toString();
+};
 
 const DarkTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
@@ -290,8 +291,7 @@ const ReportDetailScreen: React.FC = () => {
           const total = account.rows.reduce((s, r) => s + r.values.reduce((ss, v) => ss + v, 0), 0);
           return { name: account.accountId, total };
         })
-        .sort((a, b) => b.total - a.total)
-        .slice(0, 8),
+        .sort((a, b) => b.total - a.total),
     [metricAccounts],
   );
 
@@ -323,33 +323,51 @@ const ReportDetailScreen: React.FC = () => {
     ];
   }, [detail, impressions]);
 
-  const summaryRows = useMemo(() => {
-    if (!detail || !selectedAccount) return [];
+  const favoriteBaseAccount = useMemo(() => {
+    if (!detail) return null;
+    return detail.demographics.favorites.find((account) => account.accountId === detail.accountId) ?? detail.demographics.favorites[0] ?? null;
+  }, [detail]);
 
-    const ageTotals = detail.demographics.ageBins.map((age, idx) => ({
+  const favoriteAgeTotals = useMemo(() => {
+    if (!detail || !favoriteBaseAccount) return [] as Array<{ age: string; total: number }>;
+    return detail.demographics.ageBins.map((age, idx) => ({
       age,
-      total: selectedAccount.rows.reduce((s, r) => s + (r.values[idx] ?? 0), 0),
+      total: favoriteBaseAccount.rows.reduce((sum, row) => sum + (row.values[idx] ?? 0), 0),
     }));
+  }, [detail, favoriteBaseAccount]);
 
-    const topAge = [...ageTotals].sort((a, b) => b.total - a.total)[0];
+  const favoriteTotalCount = useMemo(
+    () => favoriteAgeTotals.reduce((sum, row) => sum + row.total, 0),
+    [favoriteAgeTotals],
+  );
 
-    const decade = (d: number) =>
-      ageTotals
-        .filter(({ age }) => {
-          const n = Number.parseInt(age, 10);
-          return !Number.isNaN(n) && n >= d && n <= d + 9;
-        })
-        .reduce((s, i) => s + i.total, 0);
+  const favoriteTopAge = useMemo(
+    () => favoriteAgeTotals.slice().sort((a, b) => b.total - a.total)[0] ?? null,
+    [favoriteAgeTotals],
+  );
 
-    return [
-      { item: `対象指標 (${metricLabel[selectedMetric]})`, count: ageTotals.reduce((s, i) => s + i.total, 0) },
-      { item: `最多年代 (${topAge?.age ?? '-'}歳)`, count: topAge?.total ?? 0 },
-      { item: '表示回数 (仮)', count: impressions },
-      ...genderTotals.map((g) => ({ item: `${g.gender} 合計`, count: g.total })),
-      ...[10, 20, 30, 40, 50, 60, 70, 80].map((d) => ({ item: `${d}代`, count: decade(d) })),
-      { item: '90代以降', count: ageTotals.filter((i) => i.age.includes('以上')).reduce((s, i) => s + i.total, 0) },
-    ];
-  }, [detail, selectedAccount, genderTotals, selectedMetric, impressions]);
+  const favoriteGenderData = useMemo(() => {
+    if (!favoriteBaseAccount) return [] as Array<{ name: string; value: number }>;
+    return favoriteBaseAccount.rows.map((row) => ({
+      name: row.gender,
+      value: row.values.reduce((sum, v) => sum + v, 0),
+    }));
+  }, [favoriteBaseAccount]);
+
+  const favoriteRegionData = useMemo(() => {
+    if (!detail) return [] as Array<{ name: string; total: number }>;
+    return detail.demographics.favorites
+      .map((account) => ({
+        name: account.accountId,
+        total: account.rows.reduce((sum, row) => sum + row.values.reduce((s, v) => s + v, 0), 0),
+      }))
+      .sort((a, b) => b.total - a.total);
+  }, [detail]);
+
+  const favoriteRegionChartHeight = useMemo(
+    () => Math.max(230, favoriteRegionData.length * 44),
+    [favoriteRegionData.length],
+  );
 
   if (detailQuery.isLoading) {
     return (
@@ -712,32 +730,85 @@ const ReportDetailScreen: React.FC = () => {
             </Box>
           </Section>
 
-          <Section>
-            <TableContainer sx={{ borderRadius: 1.5, border: `1px solid ${PALETTE.cardBorder}`, overflow: 'hidden' }}>
-              <Table size="small" aria-label="まとめ表">
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ ...headCellSx, width: '60%' }}>項目</TableCell>
-                    <TableCell align="right" sx={headCellSx}>
-                      件数
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {summaryRows.map((row, idx) => (
-                    <TableRow
-                      key={`${row.item}-${idx}`}
-                      sx={{ background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.025)' }}
-                    >
-                      <TableCell sx={bodyCellSx}>{row.item}</TableCell>
-                      <TableCell align="right" sx={{ ...bodyCellSx, fontWeight: 800, color: PALETTE.text }}>
-                        {row.count.toLocaleString('ja-JP')}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+          <Section title="フォロワー分析" badge="FAVORITES">
+            <Stack spacing={1.8}>
+              <Box
+                sx={{
+                  borderRadius: 2,
+                  border: `1px solid ${PALETTE.favorites}55`,
+                  background: 'linear-gradient(135deg, rgba(52, 211, 153, 0.18), rgba(31, 88, 68, 0.24))',
+                  p: { xs: '14px 16px', md: '16px 20px' },
+                }}
+              >
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.2} justifyContent="space-between">
+                  <Typography sx={{ color: '#e8fff6', fontSize: '0.95rem', fontWeight: 700 }}>
+                    拠点アカウント {favoriteBaseAccount?.accountId ?? '-'} に紐づく企業をフォローしているユーザー数
+                  </Typography>
+                  <Typography sx={{ color: '#ffffff', fontSize: '1.4rem', fontWeight: 900 }}>
+                    {favoriteTotalCount.toLocaleString('ja-JP')} 人
+                  </Typography>
+                </Stack>
+                <Typography sx={{ color: 'rgba(225, 255, 243, 0.86)', fontSize: '0.82rem', mt: 0.7, fontWeight: 700 }}>
+                  最多年代: {favoriteTopAge ? toAgeLabel(favoriteTopAge.age) : '-'}
+                </Typography>
+                <Typography sx={{ color: 'rgba(225, 255, 243, 0.84)', fontSize: '0.8rem', mt: 0.3, fontWeight: 600 }}>
+                  これらのユーザー層は投稿を素早く見つけることができます。
+                </Typography>
+              </Box>
+
+              <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' } }}>
+                <Box sx={chartCardSx}>
+                  <ChartTitle number="A" text="性別分布（お気に入り）" />
+                  <ResponsiveContainer width="100%" height={230}>
+                    <BarChart data={favoriteGenderData} barCategoryGap="36%">
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} />
+                      <XAxis dataKey="name" tick={{ fill: '#c8d9ef', fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <YAxis
+                        tick={{ fill: '#c8d9ef', fontSize: 11 }}
+                        axisLine={false}
+                        tickLine={false}
+                        width={40}
+                        domain={[0, 'auto']}
+                        tickFormatter={(v) => formatCountTick(Number(v))}
+                      />
+                      <Tooltip content={<DarkTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+                      <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                        {favoriteGenderData.map((entry) => (
+                          <Cell key={entry.name} fill={genderColor[entry.name] ?? PALETTE.accent} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Box>
+
+                <Box sx={chartCardSx}>
+                  <ChartTitle number="B" text="地域分布（お気に入り）" />
+                  <ResponsiveContainer width="100%" height={favoriteRegionChartHeight}>
+                    <BarChart data={favoriteRegionData} layout="vertical" margin={{ left: 12, right: 6 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" horizontal={false} />
+                      <XAxis
+                        type="number"
+                        tick={{ fill: '#c8d9ef', fontSize: 11 }}
+                        axisLine={false}
+                        tickLine={false}
+                        domain={[0, 'auto']}
+                        tickFormatter={(v) => formatCountTick(Number(v))}
+                      />
+                      <YAxis
+                        dataKey="name"
+                        type="category"
+                        width={92}
+                        tick={{ fill: '#c8d9ef', fontSize: 11 }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <Tooltip content={<DarkTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+                      <Bar dataKey="total" fill={PALETTE.favorites} radius={[0, 6, 6, 0]} maxBarSize={22} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Box>
+              </Box>
+            </Stack>
           </Section>
         </Stack>
       </Box>
@@ -794,21 +865,6 @@ const chartCardSx = {
   border: `1px solid ${PALETTE.cardBorder}`,
   background: 'rgba(255,255,255,0.03)',
   p: { xs: '14px', md: '20px' },
-} as const;
-
-const headCellSx = {
-  background: 'rgba(79,142,247,0.12)',
-  color: PALETTE.accent,
-  fontWeight: 800,
-  borderColor: PALETTE.cardBorder,
-  fontSize: '0.82rem',
-} as const;
-
-const bodyCellSx = {
-  color: PALETTE.subtext,
-  fontWeight: 600,
-  borderColor: 'rgba(255,255,255,0.06)',
-  fontSize: '0.82rem',
 } as const;
 
 export default ReportDetailScreen;

@@ -31,6 +31,12 @@ import {
   FiX,
 } from 'react-icons/fi';
 import postManagementMockApi from '../../../api/mock/postManagementMockApi';
+import {
+  ASSIST_NONE_VALUE,
+  DEFAULT_APPLY_FIELDS,
+  getPostQuickAssistSettings,
+  type AssistFieldKey,
+} from '../utils/postQuickAssistSettings';
 
 const MAX_IMAGES = 10;
 const DETAIL_MAX_LENGTH = 1200;
@@ -58,6 +64,8 @@ interface PostFormData {
   endTime: string;
   category: string;
 }
+
+type QuickAssistMode = 'replace' | 'append';
 
 type PreviewFormPayload = {
   title: string;
@@ -90,6 +98,12 @@ const INITIAL_FORM: PostFormData = {
   endTime: '',
   category: '',
 };
+
+const QUICK_ASSIST_SETTINGS = getPostQuickAssistSettings();
+const QUICK_ASSIST_TEMPLATES = QUICK_ASSIST_SETTINGS.templates;
+const EVENT_TIME_TEMPLATES = QUICK_ASSIST_SETTINGS.eventTimes;
+const BUDGET_TEMPLATES = QUICK_ASSIST_SETTINGS.budgets;
+const ASSIST_FIELD_OPTIONS = QUICK_ASSIST_SETTINGS.fieldOptions;
 
 const WEEKDAY_JA = ['日', '月', '火', '水', '木', '金', '土'];
 
@@ -785,6 +799,11 @@ const PostCreateScreen: React.FC = () => {
   const [discardOpen, setDiscardOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [selectedPostDates, setSelectedPostDates] = useState<string[]>([]);
+  const [assistTemplateKey, setAssistTemplateKey] = useState<string>(QUICK_ASSIST_TEMPLATES[0]?.key ?? '');
+  const [assistEventTimeKey, setAssistEventTimeKey] = useState<string>(EVENT_TIME_TEMPLATES[0]?.key ?? '');
+  const [assistBudgetKey, setAssistBudgetKey] = useState<string>(BUDGET_TEMPLATES[0]?.key ?? '');
+  const [assistMode, setAssistMode] = useState<QuickAssistMode>('replace');
+  const [assistApplyFields, setAssistApplyFields] = useState<AssistFieldKey[]>(DEFAULT_APPLY_FIELDS);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'info' | 'error' }>({
     open: false,
     message: '',
@@ -828,6 +847,99 @@ const PostCreateScreen: React.FC = () => {
 
   const setField = <K extends keyof PostFormData>(key: K, value: PostFormData[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
+
+  const handleApplyQuickAssist = () => {
+    if (assistApplyFields.length === 0) {
+      setSnackbar({ open: true, message: '反映する項目を1つ以上選択してください', severity: 'error' });
+      return;
+    }
+
+    const needsPostTemplate = assistApplyFields.some((field) =>
+      field === 'summary' || field === 'detail' || field === 'reservation',
+    );
+    const needsTimeTemplate = assistApplyFields.some((field) =>
+      field === 'startTime' || field === 'endTime',
+    );
+    const needsBudgetTemplate = assistApplyFields.includes('budget');
+
+    const template = QUICK_ASSIST_TEMPLATES.find((item) => item.key === assistTemplateKey);
+    const eventTimeTemplate = EVENT_TIME_TEMPLATES.find((item) => item.key === assistEventTimeKey);
+    const budgetTemplate = BUDGET_TEMPLATES.find((item) => item.key === assistBudgetKey);
+
+    if (needsPostTemplate && !template) {
+      setSnackbar({ open: true, message: '入力補助テンプレートを選択してください', severity: 'error' });
+      return;
+    }
+    if (needsTimeTemplate && !eventTimeTemplate) {
+      setSnackbar({ open: true, message: 'イベント時間テンプレートを選択してください', severity: 'error' });
+      return;
+    }
+    if (needsBudgetTemplate && !budgetTemplate) {
+      setSnackbar({ open: true, message: '予算テンプレートを選択してください', severity: 'error' });
+      return;
+    }
+
+    setForm((prev) => {
+      const shouldReplace = assistMode === 'replace';
+      const nextStartTime = assistApplyFields.includes('startTime') && eventTimeTemplate
+        ? (shouldReplace ? eventTimeTemplate.startTime : (prev.startTime || eventTimeTemplate.startTime))
+        : prev.startTime;
+      const nextEndTime = assistApplyFields.includes('endTime') && eventTimeTemplate
+        ? (shouldReplace ? eventTimeTemplate.endTime : (prev.endTime || eventTimeTemplate.endTime))
+        : prev.endTime;
+      const nextBudget = assistApplyFields.includes('budget') && budgetTemplate
+        ? (shouldReplace ? budgetTemplate.value : (prev.budget.trim() ? prev.budget : budgetTemplate.value))
+        : prev.budget;
+
+      const generatedDetail = template
+        ? template.buildDetail({
+          title: prev.title,
+          category: prev.category,
+          venueName: prev.venueName,
+          address: prev.address,
+          startTime: nextStartTime,
+          endTime: nextEndTime,
+          budget: nextBudget,
+        }).trim()
+        : prev.detail;
+
+      const nextDetail = assistApplyFields.includes('detail')
+        ? (assistMode === 'append' && prev.detail.trim()
+          ? `${prev.detail.trim()}\n\n${generatedDetail}`
+          : generatedDetail)
+        : prev.detail;
+
+      return {
+        ...prev,
+        summary: assistApplyFields.includes('summary')
+          ? (template ? (shouldReplace ? template.summary : (prev.summary.trim() ? prev.summary : template.summary)) : prev.summary)
+          : prev.summary,
+        budget: nextBudget,
+        startTime: nextStartTime,
+        endTime: nextEndTime,
+        detail: nextDetail,
+        reservation: assistApplyFields.includes('reservation')
+          ? (template
+            ? (shouldReplace ? template.reservationHint : (prev.reservation.trim() ? prev.reservation : template.reservationHint))
+            : prev.reservation)
+          : prev.reservation,
+      };
+    });
+
+    setSnackbar({
+      open: true,
+      message: assistMode === 'append' ? '入力補助を追記しました' : '入力補助を反映しました',
+      severity: 'success',
+    });
+  };
+
+  const handleClearAssistFields = () => {
+    setAssistTemplateKey(ASSIST_NONE_VALUE);
+    setAssistEventTimeKey(ASSIST_NONE_VALUE);
+    setAssistBudgetKey(ASSIST_NONE_VALUE);
+    setAssistApplyFields([]);
+    setSnackbar({ open: true, message: '補助入力項目を --- にリセットしました', severity: 'info' });
+  };
 
   const handleAddImages = (files: FileList) => {
     setForm((prev) => {
@@ -1175,6 +1287,7 @@ const PostCreateScreen: React.FC = () => {
               </Box>
             </Grid>
           </Grid>
+
         </Box>
 
         <Box
@@ -1311,6 +1424,324 @@ const PostCreateScreen: React.FC = () => {
             </ButtonBase>
           </Box>
         </Box>
+      </Box>
+
+      <Box
+        sx={{
+          width: { xs: '100%', xl: `${100 / POST_CREATE_SCALE}%` },
+          zoom: { xs: 1, xl: POST_CREATE_SCALE },
+          transformOrigin: 'top center',
+          maxWidth: 1820,
+          mx: 'auto',
+          mt: { xs: 1, md: 1.2 },
+          borderRadius: { xs: '12px', md: '14px' },
+          border: '1px solid rgba(120,170,240,0.32)',
+          backgroundColor: 'rgba(8,22,45,0.66)',
+          boxShadow: '0 0 12px rgba(80,160,255,0.24)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          p: { xs: 1.1, md: 1.3 },
+        }}
+      >
+        <Typography
+          sx={{
+            color: '#d7e9ff',
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            letterSpacing: '0.01em',
+          }}
+        >
+          投稿内容の簡単入力補助
+        </Typography>
+        <Typography
+          sx={{
+            color: 'rgba(205,225,248,0.74)',
+            fontSize: '0.72rem',
+            lineHeight: 1.6,
+            mt: 0.35,
+          }}
+        >
+          複数選択した項目のみ反映するため、競合を避けながらテンプレート適用できます。解除項目も選択できます。
+        </Typography>
+
+        <Grid container spacing={0.8} sx={{ mt: 0.7 }}>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Select
+              value={assistTemplateKey}
+              onChange={(e) => setAssistTemplateKey(e.target.value)}
+              size="small"
+              fullWidth
+              displayEmpty
+              renderValue={(value) => {
+                if (!value) return '投稿テンプレ: ---';
+                const selected = QUICK_ASSIST_TEMPLATES.find((t) => t.key === value);
+                return selected ? selected.label : '投稿テンプレ: ---';
+              }}
+              sx={{
+                height: 38,
+                borderRadius: '8px',
+                backgroundColor: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(170,205,250,0.28)',
+                color: '#eaf3ff',
+                fontSize: '0.82rem',
+                '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                '& .MuiSelect-icon': { color: 'rgba(240,247,255,0.82)' },
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    backgroundColor: '#10213e',
+                    border: '1px solid rgba(155,183,225,0.42)',
+                    borderRadius: '8px',
+                  },
+                },
+              }}
+            >
+              <MenuItem value={ASSIST_NONE_VALUE} sx={{ color: '#9db7d8', fontSize: '0.82rem' }}>
+                ---
+              </MenuItem>
+              {QUICK_ASSIST_TEMPLATES.map((template) => (
+                <MenuItem
+                  key={template.key}
+                  value={template.key}
+                  sx={{
+                    color: '#e2eeff',
+                    fontSize: '0.82rem',
+                    '&:hover': { backgroundColor: 'rgba(60,120,255,0.18)' },
+                  }}
+                >
+                  {template.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 3 }}>
+            <Select
+              value={assistMode}
+              onChange={(e) => setAssistMode(e.target.value as QuickAssistMode)}
+              size="small"
+              fullWidth
+              sx={{
+                height: 38,
+                borderRadius: '8px',
+                backgroundColor: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(170,205,250,0.28)',
+                color: '#eaf3ff',
+                fontSize: '0.82rem',
+                '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                '& .MuiSelect-icon': { color: 'rgba(240,247,255,0.82)' },
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    backgroundColor: '#10213e',
+                    border: '1px solid rgba(155,183,225,0.42)',
+                    borderRadius: '8px',
+                  },
+                },
+              }}
+            >
+              <MenuItem value="replace" sx={{ color: '#e2eeff', fontSize: '0.82rem' }}>
+                上書き
+              </MenuItem>
+              <MenuItem value="append" sx={{ color: '#e2eeff', fontSize: '0.82rem' }}>
+                追記
+              </MenuItem>
+            </Select>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Select
+              multiple
+              value={assistApplyFields}
+              onChange={(e) => setAssistApplyFields((e.target.value as AssistFieldKey[]) ?? [])}
+              size="small"
+              fullWidth
+              displayEmpty
+              renderValue={(selected) => {
+                const values = selected as AssistFieldKey[];
+                if (!values.length) return '反映項目: ---';
+                return `反映: ${values.map((key) => ASSIST_FIELD_OPTIONS.find((o) => o.key === key)?.label ?? key).join(' / ')}`;
+              }}
+              sx={{
+                height: 38,
+                borderRadius: '8px',
+                backgroundColor: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(170,205,250,0.28)',
+                color: '#eaf3ff',
+                fontSize: '0.82rem',
+                '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                '& .MuiSelect-icon': { color: 'rgba(240,247,255,0.82)' },
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    backgroundColor: '#10213e',
+                    border: '1px solid rgba(155,183,225,0.42)',
+                    borderRadius: '8px',
+                  },
+                },
+              }}
+            >
+              {ASSIST_FIELD_OPTIONS.map((option) => (
+                <MenuItem
+                  key={option.key}
+                  value={option.key}
+                  sx={{
+                    color: '#e2eeff',
+                    fontSize: '0.82rem',
+                    '&:hover': { backgroundColor: 'rgba(60,120,255,0.18)' },
+                  }}
+                >
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Select
+              value={assistEventTimeKey}
+              onChange={(e) => setAssistEventTimeKey(e.target.value)}
+              size="small"
+              fullWidth
+              displayEmpty
+              renderValue={(value) => {
+                if (!value) return '時間テンプレ: ---';
+                const selected = EVENT_TIME_TEMPLATES.find((t) => t.key === value);
+                return selected ? `時間テンプレ: ${selected.label}（${selected.startTime} - ${selected.endTime}）` : '時間テンプレ: ---';
+              }}
+              sx={{
+                height: 38,
+                borderRadius: '8px',
+                backgroundColor: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(170,205,250,0.28)',
+                color: '#eaf3ff',
+                fontSize: '0.82rem',
+                '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                '& .MuiSelect-icon': { color: 'rgba(240,247,255,0.82)' },
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    backgroundColor: '#10213e',
+                    border: '1px solid rgba(155,183,225,0.42)',
+                    borderRadius: '8px',
+                  },
+                },
+              }}
+            >
+              <MenuItem value={ASSIST_NONE_VALUE} sx={{ color: '#9db7d8', fontSize: '0.82rem' }}>
+                ---
+              </MenuItem>
+              {EVENT_TIME_TEMPLATES.map((template) => (
+                <MenuItem
+                  key={template.key}
+                  value={template.key}
+                  sx={{
+                    color: '#e2eeff',
+                    fontSize: '0.82rem',
+                    '&:hover': { backgroundColor: 'rgba(60,120,255,0.18)' },
+                  }}
+                >
+                  時間テンプレ: {template.label}（{template.startTime} - {template.endTime}）
+                </MenuItem>
+              ))}
+            </Select>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 3 }}>
+            <Select
+              value={assistBudgetKey}
+              onChange={(e) => setAssistBudgetKey(e.target.value)}
+              size="small"
+              fullWidth
+              displayEmpty
+              renderValue={(value) => {
+                if (!value) return '予算テンプレ: ---';
+                const selected = BUDGET_TEMPLATES.find((t) => t.key === value);
+                return selected ? `予算テンプレ: ${selected.label}` : '予算テンプレ: ---';
+              }}
+              sx={{
+                height: 38,
+                borderRadius: '8px',
+                backgroundColor: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(170,205,250,0.28)',
+                color: '#eaf3ff',
+                fontSize: '0.82rem',
+                '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                '& .MuiSelect-icon': { color: 'rgba(240,247,255,0.82)' },
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    backgroundColor: '#10213e',
+                    border: '1px solid rgba(155,183,225,0.42)',
+                    borderRadius: '8px',
+                  },
+                },
+              }}
+            >
+              <MenuItem value={ASSIST_NONE_VALUE} sx={{ color: '#9db7d8', fontSize: '0.82rem' }}>
+                ---
+              </MenuItem>
+              {BUDGET_TEMPLATES.map((template) => (
+                <MenuItem
+                  key={template.key}
+                  value={template.key}
+                  sx={{
+                    color: '#e2eeff',
+                    fontSize: '0.82rem',
+                    '&:hover': { backgroundColor: 'rgba(60,120,255,0.18)' },
+                  }}
+                >
+                  予算テンプレ: {template.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 3 }}>
+            <ButtonBase
+              onClick={handleClearAssistFields}
+              sx={{
+                width: '100%',
+                height: 38,
+                borderRadius: '8px',
+                border: '1px solid rgba(255,170,170,0.45)',
+                backgroundColor: 'rgba(170,60,60,0.18)',
+                color: '#ffdede',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                letterSpacing: '0.01em',
+                '&:hover': { backgroundColor: 'rgba(170,60,60,0.28)' },
+              }}
+            >
+              補助項目を解除
+            </ButtonBase>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 3 }}>
+            <ButtonBase
+              onClick={handleApplyQuickAssist}
+              sx={{
+                width: '100%',
+                height: 38,
+                borderRadius: '8px',
+                border: '1px solid rgba(120,170,240,0.4)',
+                backgroundColor: 'rgba(40,105,210,0.2)',
+                color: '#d7e9ff',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                letterSpacing: '0.01em',
+                '&:hover': { backgroundColor: 'rgba(40,105,210,0.3)' },
+              }}
+            >
+              テンプレートを反映
+            </ButtonBase>
+          </Grid>
+        </Grid>
       </Box>
 
       <DiscardDialog

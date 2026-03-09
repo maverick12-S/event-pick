@@ -19,6 +19,27 @@ import { cellAlignSx, desktopTableMinWidth, rowGridTemplate } from '../styles/ac
 
 const ACCOUNTS_LIST_SCALE = 1.25;
 
+const getDeletionDaysLeft = (scheduledDeletionAt?: string): number | null => {
+  if (!scheduledDeletionAt) return null;
+  const target = new Date(scheduledDeletionAt).getTime();
+  if (Number.isNaN(target)) return null;
+  const diff = target - Date.now();
+  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+};
+
+const getStatusLabel = (status: string, scheduledDeletionAt?: string): string => {
+  if (status !== '削除予定') return status;
+  const daysLeft = getDeletionDaysLeft(scheduledDeletionAt);
+  if (daysLeft === null) return '削除予定';
+  return `削除予定 (${daysLeft}日)`;
+};
+
+const getStatusColor = (status: string): string => {
+  if (status === '利用中') return 'rgba(46, 201, 113, 0.8)';
+  if (status === '削除予定') return 'rgba(240, 120, 120, 0.88)';
+  return 'rgba(128, 144, 167, 0.78)';
+};
+
 const AccountsListScreen: React.FC = () => {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
@@ -36,8 +57,8 @@ const AccountsListScreen: React.FC = () => {
     navigate('/accounts/issue');
   };
 
-  const handleEdit = (item: { baseName: string; accountId: string }) => {
-    window.alert(`拠点アカウント編集: ${item.baseName} (${item.accountId})`);
+  const handleEdit = (item: { id: string }) => {
+    navigate(`/accounts/edit/${item.id}`);
   };
 
   return (
@@ -243,16 +264,16 @@ const AccountsListScreen: React.FC = () => {
                   <Typography sx={{ color: 'rgba(216, 235, 255, 0.78)', fontSize: '0.78rem', fontWeight: 700 }}>利用ステータス</Typography>
                   <Box>
                     <Chip
-                      label={item.status}
+                      label={getStatusLabel(item.status, item.scheduledDeletionAt)}
                       size="small"
                       sx={{
-                        minWidth: 90,
+                        minWidth: 108,
                         height: 30,
                         borderRadius: 999,
                         fontWeight: 800,
                         fontSize: '0.82rem',
                         color: '#f5fbff',
-                        backgroundColor: item.status === '利用中' ? 'rgba(46, 201, 113, 0.8)' : 'rgba(128, 144, 167, 0.78)',
+                        backgroundColor: getStatusColor(item.status),
                         border: '1px solid rgba(235, 244, 255, 0.3)',
                       }}
                     />
@@ -349,16 +370,16 @@ const AccountsListScreen: React.FC = () => {
 
                       <Box sx={{ ...cellAlignSx, justifyContent: 'center' }}>
                         <Chip
-                          label={item.status}
+                          label={getStatusLabel(item.status, item.scheduledDeletionAt)}
                           size="small"
                           sx={{
-                            minWidth: 98,
+                            minWidth: 116,
                             height: 36,
                             borderRadius: 999,
                             fontWeight: 800,
                             fontSize: '0.96rem',
                             color: '#f5fbff',
-                            backgroundColor: item.status === '利用中' ? 'rgba(46, 201, 113, 0.8)' : 'rgba(128, 144, 167, 0.78)',
+                            backgroundColor: getStatusColor(item.status),
                             border: '1px solid rgba(235, 244, 255, 0.3)',
                           }}
                         />

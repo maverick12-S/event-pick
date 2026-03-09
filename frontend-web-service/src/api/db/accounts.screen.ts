@@ -1,4 +1,4 @@
-export type AccountStatus = '利用中' | '停止中';
+export type AccountStatus = '利用中' | '停止中' | '削除予定';
 export type ContractPlan = 'プレミアムプラン' | 'スタンダードプラン' | 'ライトプラン';
 
 export interface BaseAccountItem {
@@ -8,6 +8,7 @@ export interface BaseAccountItem {
   accountId: string;
   status: AccountStatus;
   plan: ContractPlan;
+  scheduledDeletionAt?: string;
 }
 
 export const defaultCompanyCode = 'CORP-EP-001';

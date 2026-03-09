@@ -72,6 +72,7 @@ const AccountsIssueScreen: React.FC = () => {
         address: form.address.trim(),
         initialPassword: form.initialPassword,
         plan: form.plan,
+        couponCode: form.couponCode.trim(),
       });
 
       setSnackbar({ open: true, message: '拠点アカウントを作成しました', severity: 'success' });
@@ -89,8 +90,6 @@ const AccountsIssueScreen: React.FC = () => {
         px: { xs: 2.2, md: 3.4 },
         pt: { xs: 2.3, md: 3.4 },
         pb: { xs: 4.2, md: 6 },
-        background:
-          'radial-gradient(circle at 0% 100%, rgba(20, 173, 255, 0.24), rgba(4, 18, 38, 0) 36%), radial-gradient(circle at 100% 0%, rgba(47, 223, 255, 0.22), rgba(4, 18, 38, 0) 32%), linear-gradient(180deg, #092345 0%, #081b37 48%, #08172f 100%)',
       }}
     >
       <Box
