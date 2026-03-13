@@ -1,32 +1,70 @@
+/**
+ * ErrorBoundary
+ * ─────────────────────────────────────────────
+ * React コンポーネントツリー内のランタイムエラーをキャッチし、
+ * エラー種別に応じた ErrorPage を表示する。
+ *
+ * - 子コンポーネントのレンダリングエラー全般を捕捉
+ * - チャンク読み込み失敗を自動判定してリロード誘導
+ * - リセット可能（再試行ボタン）
+ */
+
 import React from 'react';
-import styles from './ErrorBoundary.module.css';
+import ErrorPage from './ErrorPage';
+import type { ErrorKind } from './ErrorPage';
+import { classifyError, extractErrorMessage } from './classifyError';
 
-type ErrorBoundaryState = { hasError: boolean; error?: Error | null };
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+  /** フォールバック種別のオーバーライド */
+  fallbackKind?: ErrorKind;
+  /** エラー発生時のカスタムコールバック */
+  onError?: (error: Error, info: React.ErrorInfo) => void;
+}
 
-export default class ErrorBoundary extends React.Component<Record<string, unknown>, ErrorBoundaryState> {
-    constructor(props: Record<string, unknown>) {
-        super(props);
-        this.state = { hasError: false, error: null };
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+  errorKind: ErrorKind;
+}
+
+export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null, errorKind: 'unknown' };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return {
+      hasError: true,
+      error,
+      errorKind: classifyError(error),
+    };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    // 本番ではエラーレポーティングサービスへ送信
+    console.error('[ErrorBoundary] Uncaught error:', error);
+    console.error('[ErrorBoundary] Component stack:', info.componentStack);
+    this.props.onError?.(error, info);
+  }
+
+  /** 状態をリセットしてリトライ */
+  private handleReset = () => {
+    this.setState({ hasError: false, error: null, errorKind: 'unknown' });
+  };
+
+  render() {
+    if (this.state.hasError) {
+      const kind = this.props.fallbackKind ?? this.state.errorKind;
+      return (
+        <ErrorPage
+          kind={kind}
+          message={extractErrorMessage(this.state.error)}
+          onReset={this.handleReset}
+        />
+      );
     }
-
-    static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-        return { hasError: true, error };
-    }
-
-    componentDidCatch(error: unknown, info: React.ErrorInfo) {
-        console.error('Uncaught error in component tree:', error, info);
-    }
-
-    render() {
-        if (this.state.hasError) {
-            return (
-                <div className={styles.wrapper} role="alert">
-                    <h1>予期せぬエラー!</h1>
-                    <p>申し訳ありません。問題を特定中です。ページを再読み込みしてください。</p>
-                    <details className={styles.details}>{this.state.error?.message}</details>
-                </div>
-            );
-        }
-        return this.props.children as React.ReactNode;
-    }
+    return this.props.children;
+  }
 }

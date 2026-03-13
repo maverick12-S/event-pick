@@ -1,5 +1,6 @@
 import { useAuth } from '../../../contexts/AuthContext';
 import type { LoginRequest } from '../../../types/auth';
+import { isOperatorCredential } from '../constants/operatorCredentials';
 
 export const useLogin = () => {
   const { login, isLoading, error, clearAuthError } = useAuth();
@@ -8,7 +9,7 @@ export const useLogin = () => {
     try {
       await login(data);
       // Router hook 依存を避けて、ログイン後の遷移を安定させる
-      window.location.assign('/plan');
+      window.location.assign(isOperatorCredential(data) ? '/admin/dashboard' : '/plan');
     } catch {
       // error は context.state.error に格納される
     }

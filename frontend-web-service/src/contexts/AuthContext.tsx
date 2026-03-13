@@ -9,6 +9,7 @@ import type { LoginRequest, AuthUser, LoginResponse } from '../types/auth';
 // 公開インターフェース（既存 API と互換）
 interface AuthContextValue {
   isAuthenticated: boolean;
+  isOperator: boolean;
   user: AuthUser | null;
   isLoading: boolean;
   error: string | null;
@@ -28,6 +29,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const user = (meQuery.data as AuthUser | undefined) ?? null;
   const isInitialized = !meQuery.isFetching;
   const isCookieAuth = tokenService.isUsingCookies();
+  const accessToken = tokenService.getAccessToken();
+  const isOperatorFromToken = Boolean(accessToken?.startsWith('mock-ops-access-token-'));
+  const isOperatorFromUser = user?.id === 'operator-root';
 
   const loginMutation = useMutation<LoginResponse, unknown, LoginRequest>({
     mutationFn: (data: LoginRequest) => authApi.login(data),
@@ -65,6 +69,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const value: AuthContextValue = {
     // Cookie認証時は access token をJSで参照できないため /me の成否で判定する
     isAuthenticated: isCookieAuth ? Boolean(user) : Boolean(tokenService.getAccessToken()),
+    isOperator: isOperatorFromUser || isOperatorFromToken,
     user,
     isLoading: loginMutation.isPending,
     error,
@@ -84,6 +89,7 @@ export const useAuth = (): AuthContextValue => {
     console.error('useAuth は AuthProvider 内で使用してください');
     return {
       isAuthenticated: false,
+      isOperator: false,
       user: null,
       isLoading: false,
       error: '認証コンテキストが初期化されていません',

@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -31,20 +31,25 @@ import {
   FiHash,
   FiTag,
 } from 'react-icons/fi';
+import type { ScheduledPostItem } from '../../../types/models/scheduledPost';
+import type { PostEventDbItem, PostsTabKey } from '../../../types/models/post';
+import type { PostListSortKey } from '../../../types/models/postSort';
+import postManagementMockApi from '../../../api/mock/postManagementMockApi';
+import { PostEventCard, PostSortSelect } from '../components';
 import {
-  scheduledPostsDb,
-  CURRENT_LOCATION_ID,
-  type ScheduledPostItem,
-} from '../../../api/db/scheduledPosts.db.ts';
-import {
-  type PostEventDbItem,
-  type PostsTabKey,
-  categoryOptions,
-  cityOptions,
-  prefectureOptions,
-  timeSlotOptions,
-} from '../../../api/db/posts.screen';
-import { PostEventCard } from '../components';
+  defaultPostSearchFilters,
+  detectTimeSlot,
+  toSelectedValues,
+  type PostSearchFilters,
+} from '../utils/postSearchFilters';
+import { sortPostsByKey } from '../utils/postSort';
+
+const {
+  categories: categoryOptions,
+  cities: cityOptions,
+  prefectures: prefectureOptions,
+  timeSlots: timeSlotOptions,
+} = postManagementMockApi.getPostFilterOptions();
 
 type FooterTab = 'posts' | 'reservations';
 type MainTab = PostsTabKey;
@@ -57,43 +62,6 @@ const MAIN_TABS: Array<{ key: MainTab; label: string }> = [
 
 const ACCOUNT_POSTS_SCALE = 1.08;
 const POSTS_PAGE_LIMIT = 60;
-
-type SearchFilters = {
-  title: string;
-  categories: string[];
-  prefectures: string[];
-  cities: string[];
-  timeSlots: string[];
-};
-
-const defaultFilters: SearchFilters = {
-  title: '',
-  categories: [],
-  prefectures: [],
-  cities: [],
-  timeSlots: [],
-};
-
-const toSelectedValues = (selected: unknown): string[] => {
-  if (Array.isArray(selected)) {
-    return selected.map((value) => String(value));
-  }
-
-  if (typeof selected === 'string' && selected.length > 0) {
-    return selected.split(',').map((value) => value.trim()).filter(Boolean);
-  }
-
-  return [];
-};
-
-const detectTimeSlot = (timeLabel: string): string => {
-  const startHour = Number.parseInt(timeLabel.slice(0, 2), 10);
-  if (Number.isNaN(startHour)) return '';
-  if (startHour < 12) return '朝';
-  if (startHour < 16) return '昼';
-  if (startHour < 19) return '夕方';
-  return '夜';
-};
 
 const formatDateLabel = (value: string, placeholder: string): string => {
   if (!value) return placeholder;
@@ -118,6 +86,7 @@ const DeleteDialog: React.FC<{
   <Dialog
     open={open}
     onClose={onClose}
+    disableScrollLock
     PaperProps={{
       sx: {
         background: 'linear-gradient(145deg, #0e2040 0%, #091628 100%)',
@@ -459,27 +428,30 @@ const ScheduledCard: React.FC<{
 
 const ScheduledPostsScreen: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const fromDateInputRef = useRef<HTMLInputElement | null>(null);
   const toDateInputRef = useRef<HTMLInputElement | null>(null);
+  const initialFooterTab: FooterTab = searchParams.get('view') === 'posts' ? 'posts' : 'reservations';
 
   const [mainTab, setMainTab] = useState<MainTab>('scheduled');
-  const [footerTab, setFooterTab] = useState<FooterTab>('reservations');
+  const [footerTab, setFooterTab] = useState<FooterTab>(initialFooterTab);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<PostListSortKey>('postedAtDesc');
   const [searchDateFrom, setSearchDateFrom] = useState('');
   const [searchDateTo, setSearchDateTo] = useState('');
-  const [draftFilters, setDraftFilters] = useState<SearchFilters>(defaultFilters);
-  const [appliedFilters, setAppliedFilters] = useState<SearchFilters>(defaultFilters);
+  const [draftFilters, setDraftFilters] = useState<PostSearchFilters>(defaultPostSearchFilters);
+  const [appliedFilters, setAppliedFilters] = useState<PostSearchFilters>(defaultPostSearchFilters);
   const [reservationPage, setReservationPage] = useState(1);
   const [postsPage, setPostsPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<ScheduledPostItem | null>(null);
-  const [items, setItems] = useState<ScheduledPostItem[]>(scheduledPostsDb);
+  const [items, setItems] = useState<ScheduledPostItem[]>(() => postManagementMockApi.listScheduledPosts());
 
   const filtered = useMemo(
     () => {
       const search = appliedFilters.title.trim().toLowerCase();
       const prefecture = '東京都';
 
-      return items.filter((item) => {
+      const matched = items.filter((item) => {
         const targetDate = item.nextPostDate || item.dateLabel;
         const fromMatched = !searchDateFrom || targetDate >= searchDateFrom;
         const toMatched = !searchDateTo || targetDate <= searchDateTo;
@@ -508,14 +480,17 @@ const ScheduledPostsScreen: React.FC = () => {
 
         return true;
       });
+
+      return sortPostsByKey(matched, sortBy);
     },
-    [items, searchDateFrom, searchDateTo, appliedFilters],
+    [items, searchDateFrom, searchDateTo, appliedFilters, sortBy],
   );
 
   const accountPosts = useMemo<PostEventDbItem[]>(
     () =>
-      items
-        .filter((item) => item.locationId === CURRENT_LOCATION_ID)
+      sortPostsByKey(
+        items
+        .filter((item) => item.locationId === postManagementMockApi.getCurrentLocationId())
         .filter((item) => {
           const search = appliedFilters.title.trim().toLowerCase();
           const prefecture = '東京都';
@@ -563,7 +538,9 @@ const ScheduledPostsScreen: React.FC = () => {
           reservationContact: 'https://www.google.com/',
           tab: 'scheduled',
         })),
-    [items, searchDateFrom, searchDateTo, appliedFilters],
+        sortBy,
+      ),
+    [items, searchDateFrom, searchDateTo, appliedFilters, sortBy],
   );
 
   const postsTotalPages = Math.max(Math.ceil(accountPosts.length / POSTS_PAGE_LIMIT), 1);
@@ -588,6 +565,9 @@ const ScheduledPostsScreen: React.FC = () => {
 
   const handleFooterTab = (tab: FooterTab) => {
     setFooterTab(tab);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('view', tab);
+    setSearchParams(nextParams);
     if (tab === 'reservations') {
       setReservationPage(1);
     }
@@ -772,6 +752,7 @@ const ScheduledPostsScreen: React.FC = () => {
                   </ButtonBase>
                 );
               })}
+
             </Box>
           </Box>
 
@@ -1080,21 +1061,29 @@ const ScheduledPostsScreen: React.FC = () => {
                           ))}
                         </Select>
                       </Grid>
+
                     </Grid>
                   </Box>
                 </Grid>
 
                 <Grid size={{ xs: 12 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, flexWrap: 'wrap' }}>
-                    <Typography sx={{ color: 'rgba(190,215,255,0.72)', fontSize: '0.8rem', fontWeight: 600 }}>
-                      絞り込み結果: {footerTab === 'reservations' ? filtered.length : accountPosts.length} 件
-                    </Typography>
+                    <PostSortSelect
+                      value={sortBy}
+                      onChange={(value) => {
+                        setSortBy(value);
+                        setReservationPage(1);
+                        setPostsPage(1);
+                      }}
+                      minHeight={42}
+                      minWidth={{ xs: '100%', sm: 240 }}
+                    />
                     <Box sx={{ display: 'flex', gap: 0.8, justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
                       <Button
                         variant="outlined"
                         onClick={() => {
-                          setDraftFilters({ ...defaultFilters });
-                          setAppliedFilters({ ...defaultFilters });
+                          setDraftFilters({ ...defaultPostSearchFilters });
+                          setAppliedFilters({ ...defaultPostSearchFilters });
                           setSearchDateFrom('');
                           setSearchDateTo('');
                           setReservationPage(1);
@@ -1122,6 +1111,12 @@ const ScheduledPostsScreen: React.FC = () => {
                       </Button>
                     </Box>
                   </Box>
+                </Grid>
+
+                <Grid size={{ xs: 12 }}>
+                  <Typography sx={{ color: 'rgba(190,215,255,0.72)', fontSize: '0.8rem', fontWeight: 600 }}>
+                    絞り込み結果: {footerTab === 'reservations' ? filtered.length : accountPosts.length} 件
+                  </Typography>
                 </Grid>
               </Grid>
             </Box>
@@ -1210,8 +1205,8 @@ const ScheduledPostsScreen: React.FC = () => {
                   <Grid key={item.id} size={{ xs: 12, sm: 12, md: 6, lg: 6, xl: 4 }}>
                     <ScheduledCard
                       item={item}
-                      canEdit={item.locationId === CURRENT_LOCATION_ID}
-                      onEdit={(selected) => navigate(`/posts/scheduled/${selected.id}`)}
+                      canEdit
+                      onEdit={(selected) => navigate(`/posts/scheduled/edit/${selected.id}`, { state: { from: 'reservations' } })}
                       onDelete={(selected) => setDeleteTarget(selected)}
                     />
                   </Grid>
@@ -1281,7 +1276,19 @@ const ScheduledPostsScreen: React.FC = () => {
                 <Grid container spacing={{ xs: 1.25, sm: 1.75, md: 2 }} columns={{ xs: 12, sm: 12, md: 12, lg: 12, xl: 10 }}>
                   {accountPostsPageItems.map((event) => (
                     <Grid key={event.id} size={{ xs: 12, sm: 6, md: 6, lg: 4, xl: 2 }}>
-                      <PostEventCard event={event} />
+                      <PostEventCard
+                        event={event}
+                        onEdit={(selected) => {
+                          const scheduledId = selected.id.startsWith('scheduled-') ? selected.id.slice('scheduled-'.length) : selected.id;
+                          navigate(`/posts/scheduled/edit/${scheduledId}`, { state: { from: 'posts' } });
+                        }}
+                        onDelete={(selected) => {
+                          const scheduledId = selected.id.startsWith('scheduled-') ? selected.id.slice('scheduled-'.length) : selected.id;
+                          const target = items.find((item) => item.id === scheduledId) ?? null;
+                          if (!target) return;
+                          setDeleteTarget(target);
+                        }}
+                      />
                     </Grid>
                   ))}
                 </Grid>

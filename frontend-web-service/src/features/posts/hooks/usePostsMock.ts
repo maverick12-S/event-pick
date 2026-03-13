@@ -3,7 +3,15 @@ import { postsMockApi, type GetPostsParams } from '../../../api/mock/postsMockAp
 
 export const usePostsMock = (params: GetPostsParams) => {
   return useQuery({
-    queryKey: ['mock', 'posts', params.tab, params.page ?? 1, params.limit ?? 60, params.search ?? ''],
+    queryKey: [
+      'mock',
+      'posts',
+      params.tab,
+      params.page ?? 1,
+      params.limit ?? 60,
+      params.search ?? '',
+      params.sortBy ?? 'postedAtDesc',
+    ],
     queryFn: () => postsMockApi.getPosts(params),
     placeholderData: keepPreviousData,
     staleTime: 60 * 1000,

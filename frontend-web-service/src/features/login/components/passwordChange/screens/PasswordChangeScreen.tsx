@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Box, Card, CardContent, TextField, Button,
   Alert, Link, Stack, InputAdornment, IconButton,
@@ -15,6 +15,9 @@ import MuiAuthLayout from '../../../../../components/ui/MuiAuthLayout/MuiAuthLay
 
 const PasswordChangeScreen: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const state = location.state as { returnTo?: string } | null;
+  const returnTo = state?.returnTo;
   const [password, setPassword]     = useState('');
   const [confirm, setConfirm]       = useState('');
   const [showPass, setShowPass]     = useState(false);
@@ -41,7 +44,11 @@ const PasswordChangeScreen: React.FC = () => {
     setLoading(true);
     try {
       await new Promise((r) => setTimeout(r, 700));
-      navigate('/login', { state: { passwordChanged: true } });
+      if (returnTo) {
+        navigate(returnTo, { state: { passwordChanged: true } });
+      } else {
+        navigate('/login', { state: { passwordChanged: true } });
+      }
     } catch {
       setError('パスワードの変更中にエラーが発生しました');
     } finally {
@@ -51,7 +58,7 @@ const PasswordChangeScreen: React.FC = () => {
 
   return (
     <MuiAuthLayout
-      title="企業ログイン"
+      title="パスワード変更画面"
       subtitle="新しいパスワードを設定してください"
     >
       <Card elevation={0}>
@@ -137,15 +144,25 @@ const PasswordChangeScreen: React.FC = () => {
               {loading ? '変更中…' : 'パスワードを変更'}
             </Button>
 
+            <Button
+              type="button"
+              variant="outlined"
+              fullWidth
+              onClick={() => navigate(returnTo ?? '/login')}
+              size="large"
+            >
+              戻る
+            </Button>
+
             <Stack alignItems="flex-end">
               <Link
                 component="button"
                 type="button"
-                onClick={() => navigate('/login')}
+                onClick={() => navigate(returnTo ?? '/login')}
                 underline="hover"
                 sx={{ fontSize: '0.85rem', color: 'text.secondary', cursor: 'pointer' }}
               >
-                ログイン画面へ戻る
+                {returnTo ? '編集画面へ戻る' : 'ログイン画面へ戻る'}
               </Link>
             </Stack>
           </Box>

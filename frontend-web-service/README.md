@@ -1,21 +1,28 @@
 Project の概要
 
+EventPick フロントエンド Web サービス。Feature-based design で構成され、保守性・拡張性に優れたアーキテクチャ。
+
 - 目的: EventPick のフロントエンド — 機能拡張がしやすく、画面追加が容易な構成。
 - デザイン/仕様: 機能実装時に視覚デザインや挙動を変更しないこと。既存のスタイルと UX は維持してください。
 
 フォルダ構成（概要）
 
 - `api`: アプリ共通の通信基盤（axios インスタンス、インターセプター、リフレッシュトークン処理）。インフラ層であり UI を含みません。
+- `api/db`: モック用のDB定義レイヤー。画面で使う固定データの一次ソースを置き、UIから直接参照しないこと。**型定義は `types/models/` に集約済み。** `db` は re-export のみ。
+- `api/mock`: `api/db` を読み出して画面向けに返す取得レイヤー。将来の実APIに置き換える対象。**型定義は `types/models/` から import。**
 - `assets`: 画像・SVG・フォントなどの静的リソース。ロジックやコンポーネントは置かないでください。
-- `components`: ドメイン非依存の共通 UI（Button、Logo、Modal、Input など）。業務ロジックを持たせないこと。
+- `components`: ドメイン非依存の共通 UI（Button、Logo、Modal、Input、ErrorBoundary など）。業務ロジックを持たせないこと。
 - `contexts`: React Context 定義（例: `AuthContext`、`ThemeContext`）。状態共有の器で、ロジックは hooks に分離します。
 - `features`: 機能単位で完結するフォルダ（例: `features/login`）。内部に `api`、`components`、`hooks`、`screens` を持ちます。
+- `features/*/styles`: 機能ローカルのデザイン定義（`sx` オブジェクト、トークン）を管理します。画面内に巨大なスタイル定義を残さないこと。
 - `hooks`: アプリ全体で使う再利用可能なロジック（例: `useAuth`、`useDebounce`）。feature 依存を避けること。
 - `layouts`: 画面の骨組み（例: `BaseLayout`、`Header`、`Footer`）。Screen に骨組みを直接書かないこと。
-- `lib`: 汎用ユーティリティ（date フォーマッタ、storage helper など）。ビジネスロジックは置かない。
+- `lib`: 汎用ユーティリティ（date フォーマッタ、storage helper、**zodUtils** など）。ビジネスロジックは置かない。
 - `routes`: ルーティング定義（`react-router` 設定、ProtectedRoute 等）。Screen のみを import する。
 - `screens`: feature に属さない単発ページ（404、500 等）。
 - `types`: アプリ全体で使う共通型定義。feature 固有型は feature 内に置く。
+- `types/models`: **全ドメインモデルの型定義（唯一の型ソース）。** feature / api どちらもここから import する。
+- `types/schemas`: **Zod スキーマ定義。** `types/models` と一対一対応し、ランタイム検証に使用。
 - `app`: アプリの組み立て層（`App.tsx` など）。ビジネスロジックは書かない。
 - `styles`: グローバル CSS（`index.css`、`app.css`）を管理。
 - `main.tsx`: エントリーポイント。React の起動、Provider のラップ、グローバル CSS 読み込みを担当。
@@ -25,6 +32,71 @@ Project の概要
 main.tsx → app/ → layouts/ → routes/ → features/ → components/hooks/api/lib
 
 一方向依存を維持し、feature から上位へ依存しないこと。
+
+責務ドキュメント
+
+- ルート責務: `src/RESPONSIBILITIES.md`
+- API層責務: `src/api/RESPONSIBILITIES.md`
+- モックDB責務: `src/api/db/RESPONSIBILITIES.md`
+- モック取得責務: `src/api/mock/RESPONSIBILITIES.md`
+- 投稿機能責務: `src/features/posts/RESPONSIBILITIES.md`
+- レポート機能責務: `src/features/reports/RESPONSIBILITIES.md`
+- エラーバウンダリーテスト: `src/components/ErrorBoundary/__tests__/README.md`
+
+型定義システム（types/models + Zod）
+
+型の一元管理:
+- 全ドメインモデル型は `types/models/` に集約。`api/db` や `api/mock` には型を定義しない。
+- `api/db/` は `types/models/` の型を re-export し、モックデータのみを管理。
+- feature の画面・hooks・コンポーネントは `types/models/` から型を import する。
+
+```
+types/models/          ← 唯一の型ソース (手書き TypeScript 型)
+  ├── account.ts       AccountStatus, ContractPlan, BaseAccountItem
+  ├── accountQuery.ts  AccountsSortKey, GetAccountsParams
+  ├── post.ts          PostsTabKey, PostEventDbItem
+  ├── postDraft.ts     PostDraftPayload, PostDraftItem
+  ├── postSort.ts      PostListSortKey
+  ├── scheduledPost.ts PostCondition, ScheduledPostItem
+  ├── report.ts        ReportSortKey, ReportListItem
+  ├── reportDetail.ts  ReportMetricKey, DemographicAccountBlock, ReportDetailItem
+  ├── reportSummary.ts ReportAggregateSummary
+  ├── billing.ts       BillingData, BillingAddress, Invoice, etc.
+  ├── executionHistory.ts ExecutionHistoryCategory, ExecutionHistoryItem
+  └── index.ts         集約 re-export
+```
+
+Zod スキーマ:
+- `types/schemas/` に Zod スキーマを定義。`types/models/` の手書き型と一対一対応。
+- ランタイム検証（API レスポンス、フォーム入力）に使用。
+- `lib/zodUtils.ts` に parse / safeParse / flattenErrors ヘルパーを提供。
+
+```
+types/schemas/
+  ├── account.schema.ts  ← BaseAccountItem のバリデーション
+  ├── auth.schema.ts     ← LoginRequest/Response バリデーション
+  ├── billing.schema.ts  ← 請求データのバリデーション
+  └── index.ts           ← 集約 re-export
+```
+
+使い方の例:
+```tsx
+import { loginRequestSchema } from '../types/schemas';
+import { safeParse, flattenErrors } from '../lib/zodUtils';
+
+const result = safeParse(loginRequestSchema, formData);
+if (!result.success) {
+  const errors = flattenErrors(result.error);
+  // { username: '必須項目です', password: '必須項目です' }
+}
+```
+
+投稿管理のデータ参照ルール
+
+- 画面（`features/posts/screens`, `features/reports/screens`）では `api/db` を直接 import しない。
+- 画面は `features/*/hooks` または `api/mock` の取得関数を経由してデータを受け取る。
+- `api/db` は生データ定義のみ、加工・絞り込み・結合は `api/mock` に置く。
+- 実API化時は `api/mock` の実装差し替えを優先し、画面側の変更を最小化する。
 
 ログイン風の新規画面を追加する手順（ステップ）
 
@@ -111,8 +183,8 @@ export default YourScreen;
 
 可否: はい、現実的に商用リリース可能です。ただし下記の条件を満たす必要があります。
 必須項目:
-API スキーマの厳密な定義とランタイム検証（zot を全エンドポイントで適用）
-エラーハンドリングと再試行・タイムアウト戦略（http.ts の既存実装を拡充）
+API スキーマの厳密な定義とランタイム検証（**Zod** を全エンドポイントで適用 — `types/schemas/` に準備済み）
+エラーハンドリングと再試行・タイムアウト戦略（http.ts の既存実装 + ErrorBoundary 8 種対応済み）
 セキュリティ（認証・認可・XSS/CSRF対策・秘密管理）
 テスト（ユニット + E2E）、自動化された CI（型チェック・テスト・リント）
 モニタリング／ロギング／アラート（Sentry / CloudWatch 等）
@@ -122,3 +194,33 @@ API スキーマの厳密な定義とランタイム検証（zot を全エンド
 バックエンドの API 仕様変更への追従（OpenAPI ベースで自動同期推奨）
 トークン周りの競合・リフレッシュ失敗パスの未網羅
 不十分なテストカバレッジによるリグレッション
+
+---
+
+テスト
+
+テスト実行:
+```bash
+npx vitest run                                           # 全テスト
+npx vitest run src/components/ErrorBoundary/__tests__/   # ErrorBoundary のみ
+```
+
+テスト構成（68 tests）:
+
+| スイート | テスト数 | 内容 |
+|---|---|---|
+| classifyError | 34 | 全 8 エラー種別の分類ロジック検証 |
+| extractErrorMessage | 5 | Error/string/object/null からのメッセージ抽出 |
+| ErrorPage | 12 | 全種別の UI 表示・ボタン・コールバック |
+| ErrorBoundary | 11 | コンポーネントツリーのエラー捕捉・auto分類・リセット |
+| エッジケース | 6 | 非 Error throw、複合条件、循環参照 |
+
+エラーバウンダリー対応種別（8 種）:
+- `network` — ネットワーク接続エラー
+- `chunk` — 遅延読み込み失敗（React.lazy）
+- `auth` — 認証エラー（401）
+- `forbidden` — 権限不足（403）
+- `not-found` — ページ未検出（404）
+- `server` — サーバーエラー（5xx）
+- `timeout` — タイムアウト
+- `unknown` — 不明なランタイムエラー

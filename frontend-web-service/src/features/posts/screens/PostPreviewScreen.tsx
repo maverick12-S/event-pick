@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Box, ButtonBase, Chip, Typography } from '@mui/material';
 import { FiArrowLeft, FiClock, FiLink, FiMapPin, FiTag } from 'react-icons/fi';
+import { toFourByFiveUnsplash } from '../../../api/db/mockImages';
 import { CarouselIndicator } from '../components';
 
 type PreviewPostPayload = {
@@ -30,7 +31,7 @@ const cardSx = {
 };
 
 const fallbackImage =
-  'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80';
+  toFourByFiveUnsplash('https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80', 1200);
 
 const PostPreviewScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -127,6 +128,7 @@ const PostPreviewScreen: React.FC = () => {
         <Box
           sx={{
             ...cardSx,
+            borderRadius: 0,
             overflow: 'hidden',
             mb: 1.5,
             position: 'relative',

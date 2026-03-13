@@ -1,21 +1,7 @@
-export type PostDraftPayload = {
-  title: string;
-  images: string[];
-  summary: string;
-  detail: string;
-  reservation: string;
-  address: string;
-  venueName: string;
-  budget: string;
-  startTime: string;
-  endTime: string;
-  category: string;
-};
+import { toFourByFiveUnsplash } from './mockImages';
 
-export type PostDraftItem = PostDraftPayload & {
-  id: string;
-  savedAt: string;
-};
+export type { PostDraftPayload, PostDraftItem } from '../../types/models/postDraft';
+import type { PostDraftPayload, PostDraftItem } from '../../types/models/postDraft';
 
 const STORAGE_KEY = 'eventpick-post-drafts-v1';
 
@@ -25,7 +11,7 @@ export const postDraftsDb: PostDraftItem[] = [
     savedAt: '2026-03-06T15:40:00',
     title: 'サマーミュージックフェス2026 先行告知',
     images: [
-      'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=80',
+      toFourByFiveUnsplash('https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=80', 1200),
     ],
     summary: '夏の大型音楽フェス開催告知。出演者情報と開始時刻を掲載予定。',
     detail:
@@ -43,7 +29,7 @@ export const postDraftsDb: PostDraftItem[] = [
     savedAt: '2026-03-05T11:15:00',
     title: '初めて向け料理教室 体験会',
     images: [
-      'https://images.unsplash.com/photo-1556911220-bda9f7f7597e?auto=format&fit=crop&w=1200&q=80',
+      toFourByFiveUnsplash('https://images.unsplash.com/photo-1556911220-bda9f7f7597e?auto=format&fit=crop&w=1200&q=80', 1200),
     ],
     summary: '初心者向けの料理体験イベント。持ち物と集合時刻を明記する下書き。',
     detail:
@@ -61,7 +47,7 @@ export const postDraftsDb: PostDraftItem[] = [
     savedAt: '2026-03-02T20:05:00',
     title: '週末アート展覧会 ハイライト投稿',
     images: [
-      'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&w=1200&q=80',
+      toFourByFiveUnsplash('https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&w=1200&q=80', 1200),
     ],
     summary: '展示内容の見どころを短くまとめた紹介投稿の下書き。',
     detail:

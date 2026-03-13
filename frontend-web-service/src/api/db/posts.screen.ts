@@ -1,21 +1,7 @@
-export type PostsTabKey = 'today' | 'tomorrow' | 'scheduled';
+export type { PostsTabKey, PostEventDbItem } from '../../types/models/post';
+import type { PostsTabKey, PostEventDbItem } from '../../types/models/post';
 
-export interface PostEventDbItem {
-  id: string;
-  title: string;
-  ward: string;
-  venue: string;
-  description: string;
-  category: string;
-  dateLabel: string;
-  timeLabel: string;
-  imageUrl: string;
-  imageUrls: string[];
-  detailPath: string;
-  detailLabel: string;
-  reservationContact: string;
-  tab: PostsTabKey;
-}
+import { toFourByFiveUnsplash } from './mockImages';
 
 export const cityOptions = [
   '渋谷区',
@@ -65,7 +51,7 @@ const imagePool = [
   'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=960&q=80',
   'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=960&q=80',
   'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?auto=format&fit=crop&w=960&q=80',
-];
+].map((url) => toFourByFiveUnsplash(url, 960));
 
 const buildImageUrls = (index: number): string[] => {
   const count = 4 + (index % 7);
