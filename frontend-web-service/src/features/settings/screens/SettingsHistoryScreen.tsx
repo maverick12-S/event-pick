@@ -2,7 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, ButtonBase, Grid, InputBase, MenuItem, Select, Typography } from '@mui/material';
 import { FiArrowLeft, FiClock, FiFileText, FiSearch } from 'react-icons/fi';
-import { getExecutionHistories, type ExecutionHistoryCategory, type ExecutionHistoryItem } from '../../../api/db/executionHistory.db';
+import { getExecutionHistories } from '../../../api/db/executionHistory.db';
+import type { ExecutionHistoryCategory, ExecutionHistoryItem } from '../../../types/models/executionHistory';
 
 const HISTORY_SCREEN_SCALE = 1.2;
 

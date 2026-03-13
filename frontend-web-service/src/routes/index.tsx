@@ -1,6 +1,9 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
+import OperatorRoute from './OperatorRoute';
 import BaseLayout from '../layouts/BaseLayout';
+import AdminLayout from '../features/admin/components/AdminLayout/AdminLayout';
+import RouteErrorBoundary from '../components/ErrorBoundary/RouteErrorBoundary';
 import { lazyLoad } from './lazyLoad';
 
 // Code Splitting: 画面ごとにJSを分割読み込み
@@ -10,6 +13,7 @@ export const router = createBrowserRouter([
   // ─── 認証系画面（ダークテーマ BaseLayout） ───────────────
   {
     element: <BaseLayout />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       // 公開ルート
       {
@@ -36,6 +40,7 @@ export const router = createBrowserRouter([
       // 認証必須ルート（ProtectedRouteが門番）
       {
         element: <ProtectedRoute />,
+        errorElement: <RouteErrorBoundary />,
         children: [
           {
             path: '/dashboard',
@@ -142,6 +147,61 @@ export const router = createBrowserRouter([
 
       // ルートアクセス → ログインへ
       { path: '/',  element: <Navigate to="/login" replace /> },
+    ],
+  },
+
+  // ─── 運営管理画面（AdminLayout + OperatorRoute） ─────────
+  // NOTE: BaseLayout の外に配置し、独自レイアウトを使用する
+  {
+    element: <OperatorRoute />,
+    errorElement: <RouteErrorBoundary />,
+    children: [
+      {
+        element: <AdminLayout />,
+        errorElement: <RouteErrorBoundary />,
+        children: [
+          {
+            path: '/admin',
+            element: <Navigate to="/admin/dashboard" replace />,
+          },
+          {
+            path: '/admin/dashboard',
+            element: lazyLoad(() => import('../features/admin/screens/AdminDashboardScreen')),
+          },
+          {
+            path: '/admin/consumers',
+            element: lazyLoad(() => import('../features/admin/screens/AdminConsumersScreen')),
+          },
+          {
+            path: '/admin/accounts',
+            element: lazyLoad(() => import('../features/admin/screens/AdminLocationAccountsScreen')),
+          },
+          {
+            path: '/admin/reviews',
+            element: lazyLoad(() => import('../features/admin/screens/AdminReviewsScreen')),
+          },
+          {
+            path: '/admin/categories',
+            element: lazyLoad(() => import('../features/admin/screens/AdminCategoriesScreen')),
+          },
+          {
+            path: '/admin/coupons',
+            element: lazyLoad(() => import('../features/admin/screens/AdminCouponsScreen')),
+          },
+          {
+            path: '/admin/inquiries',
+            element: lazyLoad(() => import('../features/admin/screens/AdminInquiriesScreen')),
+          },
+          {
+            path: '/admin/activity-log',
+            element: lazyLoad(() => import('../features/admin/screens/AdminActivityLogScreen')),
+          },
+          {
+            path: '/admin/settings',
+            element: lazyLoad(() => import('../features/admin/screens/AdminSettingsScreen')),
+          },
+        ],
+      },
     ],
   },
 

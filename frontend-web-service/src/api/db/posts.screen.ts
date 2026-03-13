@@ -1,23 +1,7 @@
-export type PostsTabKey = 'today' | 'tomorrow' | 'scheduled';
+export type { PostsTabKey, PostEventDbItem } from '../../types/models/post';
+import type { PostsTabKey, PostEventDbItem } from '../../types/models/post';
 
 import { toFourByFiveUnsplash } from './mockImages';
-
-export interface PostEventDbItem {
-  id: string;
-  title: string;
-  ward: string;
-  venue: string;
-  description: string;
-  category: string;
-  dateLabel: string;
-  timeLabel: string;
-  imageUrl: string;
-  imageUrls: string[];
-  detailPath: string;
-  detailLabel: string;
-  reservationContact: string;
-  tab: PostsTabKey;
-}
 
 export const cityOptions = [
   '渋谷区',

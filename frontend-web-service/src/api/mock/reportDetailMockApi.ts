@@ -1,4 +1,5 @@
-import { reportDetailDb, type ReportDetailItem } from '../db/reportDetail.screen';
+import { reportDetailDb } from '../db/reportDetail.screen';
+import type { ReportDetailItem } from '../../types/models/reportDetail';
 
 export const reportDetailMockApi = {
   getById: async (id: string): Promise<ReportDetailItem | null> => {

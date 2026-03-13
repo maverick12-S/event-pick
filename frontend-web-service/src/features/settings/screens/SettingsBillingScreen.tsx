@@ -14,7 +14,7 @@ import {
   FiPlus,
 } from 'react-icons/fi';
 import { getBillingData } from '../../../api/db/billing.db';
-import type { BillingData } from '../../../api/db/billing.db';
+import type { BillingData } from '../../../types/models/billing';
 
 const BILLING_SCREEN_SCALE = 1.2;
 

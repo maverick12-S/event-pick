@@ -1,31 +1,8 @@
 import { categoryOptions, cityOptions } from './posts.screen';
 import { toFourByFiveUnsplash } from './mockImages';
 
-export interface PostCondition {
-  hashtags: string[];
-  platforms: Array<'Instagram' | 'Twitter' | 'Facebook' | 'LINE'>;
-  autoPost: boolean;
-  repeatInterval: '毎日' | '毎週' | '毎月' | 'なし';
-  captionTemplate?: string;
-}
-
-export interface ScheduledPostItem {
-  id: string;
-  locationId: string;
-  title: string;
-  ward: string;
-  venue: string;
-  category: string;
-  description: string;
-  dateLabel: string;
-  timeLabel: string;
-  imageUrl: string;
-  condition: PostCondition;
-  nextPostDate: string;
-  status: 'scheduled' | 'posted' | 'paused';
-  createdAt: string;
-  updatedAt: string;
-}
+export type { PostCondition, ScheduledPostItem } from '../../types/models/scheduledPost';
+import type { ScheduledPostItem } from '../../types/models/scheduledPost';
 
 const imagePool = [
   'https://images.unsplash.com/photo-1532635241-17e820acc59f?auto=format&fit=crop&w=400&q=80',

@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { FiArrowLeft } from 'react-icons/fi';
 import { getBillingAddress, updateBillingAddress } from '../../../api/db/billing.db';
-import type { BillingAddress } from '../../../api/db/billing.db';
+import type { BillingAddress } from '../../../types/models/billing';
 
 const BILLING_EDIT_SCALE = 1.2;
 

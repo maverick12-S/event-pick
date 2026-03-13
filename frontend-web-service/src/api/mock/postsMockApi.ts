@@ -1,6 +1,8 @@
-import { postsDb, type PostEventDbItem, type PostsTabKey } from '../db/posts.screen';
+import { postsDb } from '../db/posts.screen';
+import type { PostEventDbItem, PostsTabKey } from '../../types/models/post';
+import type { PostListSortKey } from '../../types/models/postSort';
 
-export type PostListSortKey = 'postedAtDesc' | 'postedAtAsc' | 'titleAsc' | 'likesDesc' | 'recommendedDesc';
+export type { PostListSortKey } from '../../types/models/postSort';
 
 export interface GetPostsParams {
   tab: PostsTabKey;

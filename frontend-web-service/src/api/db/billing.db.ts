@@ -2,66 +2,27 @@
 // 将来 API に差し替える際は型定義をそのまま流用し、
 // 取得関数を fetch / axios 呼び出しに置き換えるだけで移行可能にしている。
 
-// ===================== 型定義 =====================
+// ===================== 型定義 (types/models/billing.ts から re-export) =====================
 
-export type SubscriptionStatus = 'active' | 'past_due' | 'canceled' | 'trialing';
+export type {
+  SubscriptionStatus,
+  BillingSubscription,
+  PaymentMethod,
+  BillingAddress,
+  InvoiceStatus,
+  Invoice,
+  BillingCompany,
+  BillingData,
+} from '../../types/models/billing';
 
-export interface BillingSubscription {
-  id: string;
-  planName: string;
-  cycle: string;
-  unitAmount: string;
-  status: SubscriptionStatus;
-  renewalDate: string;
-  nextEstimate: string;
-  /** Stripe price ID 等、将来連携用 */
-  stripePriceId?: string;
-}
-
-export interface PaymentMethod {
-  id: string;
-  brand: string;
-  last4: string;
-  expMonth: number;
-  expYear: number;
-  isDefault: boolean;
-}
-
-export interface BillingAddress {
-  name: string;
-  email: string;
-  country: string;
-  postalCode: string;
-  prefecture: string;
-  city: string;
-  address1: string;
-  address2: string;
-  phoneCountry: string;
-  phoneNumber: string;
-}
-
-export type InvoiceStatus = '支払い済み' | '未払い' | '失敗';
-
-export interface Invoice {
-  id: string;
-  date: string;
-  amount: string;
-  status: InvoiceStatus;
-  pdfUrl?: string;
-}
-
-export interface BillingCompany {
-  companyName: string;
-  stripeCustomerId?: string;
-}
-
-export interface BillingData {
-  company: BillingCompany;
-  subscription: BillingSubscription;
-  paymentMethods: PaymentMethod[];
-  billingAddress: BillingAddress;
-  invoices: Invoice[];
-}
+import type {
+  BillingSubscription,
+  PaymentMethod,
+  BillingAddress,
+  Invoice,
+  BillingCompany,
+  BillingData,
+} from '../../types/models/billing';
 
 // ===================== モックデータ =====================
 

@@ -1,23 +1,7 @@
 import { toFourByFiveUnsplash } from './mockImages';
 
-export type PostDraftPayload = {
-  title: string;
-  images: string[];
-  summary: string;
-  detail: string;
-  reservation: string;
-  address: string;
-  venueName: string;
-  budget: string;
-  startTime: string;
-  endTime: string;
-  category: string;
-};
-
-export type PostDraftItem = PostDraftPayload & {
-  id: string;
-  savedAt: string;
-};
+export type { PostDraftPayload, PostDraftItem } from '../../types/models/postDraft';
+import type { PostDraftPayload, PostDraftItem } from '../../types/models/postDraft';
 
 const STORAGE_KEY = 'eventpick-post-drafts-v1';
 

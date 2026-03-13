@@ -1,14 +1,8 @@
-import type { ReportListItem } from '../db/reports.screen';
+import type { ReportListItem } from '../../types/models/report';
+import type { ReportAggregateSummary } from '../../types/models/reportSummary';
 import { reportDetailDb } from '../db/reportDetail.screen';
 
-export interface ReportAggregateSummary {
-  totalPosts: number;
-  totalImpressions: number;
-  totalViews: number;
-  totalLikes: number;
-  totalFavorites: number;
-  totalUsersWhoFavoriteCompanies: number;
-}
+export type { ReportAggregateSummary } from '../../types/models/reportSummary';
 
 export const reportSummaryMockApi = {
   buildSummary: (rows: ReportListItem[]): ReportAggregateSummary => {

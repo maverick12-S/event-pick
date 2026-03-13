@@ -32,7 +32,7 @@ import {
   YAxis,
 } from 'recharts';
 import useReportDetailMock from '../hooks/useReportDetailMock';
-import type { DemographicAccountBlock, ReportMetricKey } from '../../../api/db/reportDetail.screen';
+import type { DemographicAccountBlock, ReportMetricKey } from '../../../types/models/reportDetail';
 
 const PALETTE = {
   bg: 'linear-gradient(135deg, #0f1923 0%, #0f2236 50%, #0a1a2e 100%)',

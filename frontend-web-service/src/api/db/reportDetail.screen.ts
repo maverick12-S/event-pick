@@ -1,45 +1,9 @@
-import { reportRowsDb, type ReportListItem } from './reports.screen';
+import { reportRowsDb } from './reports.screen';
+import type { ReportListItem } from '../../types/models/report';
 import { toFourByFiveUnsplash } from './mockImages';
 
-export type ReportMetricKey = 'views' | 'likes' | 'favorites';
-
-export interface DemographicRow {
-  gender: string;
-  values: number[];
-}
-
-export interface DemographicAccountBlock {
-  accountId: string;
-  rows: DemographicRow[];
-}
-
-export interface ReportDetailItem {
-  id: string;
-  accountId: string;
-  title: string;
-  summary: string;
-  postedAt: string;
-  postedTimeRange: string;
-  location: string;
-  tags: string[];
-  overview: string;
-  images: string[];
-  views: number;
-  likes: number;
-  favoritesCount: number;
-  trendLabels: string[];
-  trendValues: {
-    views: number[];
-    likes: number[];
-    favorites: number[];
-  };
-  demographics: {
-    ageBins: string[];
-    views: DemographicAccountBlock[];
-    likes: DemographicAccountBlock[];
-    favorites: DemographicAccountBlock[];
-  };
-}
+export type { ReportMetricKey, DemographicRow, DemographicAccountBlock, ReportDetailItem } from '../../types/models/reportDetail';
+import type { DemographicRow, DemographicAccountBlock, ReportDetailItem } from '../../types/models/reportDetail';
 
 const ageBins = Array.from({ length: 17 }, (_, index) => {
   const start = index * 5;

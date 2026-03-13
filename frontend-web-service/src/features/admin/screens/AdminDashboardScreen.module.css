@@ -1,0 +1,400 @@
+/* ============================================================
+   AdminDashboardScreen
+   ============================================================ */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.kpiStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.kpiTopRow,
+.kpiBottomRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+/* ---- KPI グリッド ---- */
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+}
+
+.kpiCard {
+  padding: var(--space-5) var(--space-6);
+  border-radius: var(--radius-xl);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.kpiCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+}
+
+.kpiTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kpiLabel {
+  font-size: var(--font-size-sm);
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: var(--font-weight-medium);
+}
+
+.kpiIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.kpiIcon_blue   { background: rgba(10, 102, 255, 0.2); color: #60a5fa; }
+.kpiIcon_green  { background: rgba(34, 197, 94, 0.2);  color: #4ade80; }
+.kpiIcon_purple { background: rgba(124, 58, 237, 0.2); color: #c084fc; }
+.kpiIcon_red    { background: rgba(239, 68, 68, 0.2);  color: #f87171; }
+
+.kpiCard_blue   { border-color: rgba(10, 102, 255, 0.2); }
+.kpiCard_green  { border-color: rgba(34, 197, 94, 0.2); }
+.kpiCard_purple { border-color: rgba(124, 58, 237, 0.2); }
+.kpiCard_red    { border-color: rgba(239, 68, 68, 0.2); }
+
+.kpiValue {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-extrabold);
+  color: var(--text-primary);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+/* ---- デルタバッジ ---- */
+.deltaBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  width: fit-content;
+}
+
+.deltaPositive { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+.deltaNegative { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+.deltaNeutral  { background: rgba(255, 255, 255, 0.08); color: rgba(255,255,255,0.5); }
+
+/* ---- チャートグリッド ---- */
+.chartsGrid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-4);
+}
+
+/* ---- 汎用カード ---- */
+.card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  overflow: hidden;
+}
+
+.cardHeader {
+  padding: var(--space-5) var(--space-6) var(--space-4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.cardTitle {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* ---- 期間セレクタ ---- */
+.periodSelector {
+  display: flex;
+  gap: var(--space-1);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-md);
+  padding: 3px;
+}
+
+.periodBtn {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  font-family: var(--font-family-base);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.periodBtn:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.periodBtnActive {
+  background: rgba(10, 102, 255, 0.25);
+  color: #60a5fa;
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ---- 折れ線グラフ ---- */
+.chartWrap {
+  padding: var(--space-4) var(--space-4) 0;
+}
+
+.chartLegend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6) var(--space-5);
+  font-size: var(--font-size-xs);
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.legendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* ---- 円グラフ ---- */
+.pieWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: var(--space-4);
+}
+
+.pieLegend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0 var(--space-5);
+  width: 100%;
+}
+
+.pieLegendItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+}
+
+.pieLegendLabel {
+  flex: 1;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.pieLegendValue {
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+/* ---- テーブル ---- */
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.table th {
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  color: rgba(255, 255, 255, 0.45);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  white-space: nowrap;
+}
+
+.table td {
+  padding: var(--space-3) var(--space-4);
+  color: rgba(255, 255, 255, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  white-space: nowrap;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.table tr:hover td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+/* ---- ステータスバッジ ---- */
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+}
+
+.status_success { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+.status_failure { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+.status_timeout { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+
+/* ---- 収益サマリー ---- */
+.revenueTotal {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: 0 var(--space-4) var(--space-3);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  margin-bottom: var(--space-4);
+}
+
+.revenueTotalLabel {
+  font-size: var(--font-size-sm);
+  color: rgba(255,255,255,0.55);
+  font-weight: var(--font-weight-medium);
+}
+
+.revenueTotalValue {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-extrabold);
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.revenueGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+  padding: 0 var(--space-4) var(--space-4);
+}
+
+.revenueItem {
+  background: rgba(255,255,255,0.04);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.revenueItemHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.revenueItemDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.revenueItemName {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.revenueItemPrice {
+  font-size: var(--font-size-xs);
+  color: rgba(255,255,255,0.45);
+}
+
+.revenueItemTotal {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+}
+
+.revenueItemBar {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.08);
+  overflow: hidden;
+}
+
+.revenueItemBarFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.revenueItemPct {
+  font-size: var(--font-size-xs);
+  color: rgba(255,255,255,0.4);
+  text-align: right;
+}
+
+/* ---- レスポンシブ ---- */
+@media (max-width: 1024px) {
+  .kpiGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .periodSelector {
+    flex-wrap: wrap;
+  }
+  .revenueGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .kpiTopRow,
+  .kpiBottomRow,
+  .kpiGrid {
+    grid-template-columns: 1fr;
+  }
+  .cardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .revenueGrid {
+    grid-template-columns: 1fr;
+  }
+}

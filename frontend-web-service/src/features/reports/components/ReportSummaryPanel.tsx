@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Stack, Typography } from '@mui/material';
 import { FiBookmark, FiEye, FiHeart, FiUsers } from 'react-icons/fi';
-import type { ReportAggregateSummary } from '../../../api/mock/reportSummaryMockApi';
+import type { ReportAggregateSummary } from '../../../types/models/reportSummary';
 import {
   summaryGridSx,
   summaryMetricCardSx,

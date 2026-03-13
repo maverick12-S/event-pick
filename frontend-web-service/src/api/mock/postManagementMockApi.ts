@@ -1,12 +1,13 @@
-import { CURRENT_LOCATION_ID, scheduledPostsDb, type ScheduledPostItem } from '../db/scheduledPosts.db';
+import { CURRENT_LOCATION_ID, scheduledPostsDb } from '../db/scheduledPosts.db';
+import type { ScheduledPostItem } from '../../types/models/scheduledPost';
 import {
   listPostDrafts,
   upsertPostDraft,
   deletePostDraft,
-  type PostDraftItem,
-  type PostDraftPayload,
 } from '../db/postDrafts.db';
-import { postsDb, type PostEventDbItem } from '../db/posts.screen';
+import type { PostDraftItem, PostDraftPayload } from '../../types/models/postDraft';
+import { postsDb } from '../db/posts.screen';
+import type { PostEventDbItem } from '../../types/models/post';
 import { categoryOptions, cityOptions, prefectureOptions, timeSlotOptions } from '../db/posts.screen';
 
 const mapScheduledToPostEvent = (item: ScheduledPostItem): PostEventDbItem => ({

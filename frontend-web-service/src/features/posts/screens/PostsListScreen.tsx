@@ -3,11 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Box, Button, ButtonBase, CircularProgress, Collapse, Grid, InputBase, MenuItem, Select, Typography } from '@mui/material';
 import { FiSearch } from 'react-icons/fi';
 import usePostsMock from '../hooks/usePostsMock';
-import {
-  type PostEventDbItem,
-  type PostsTabKey,
-} from '../../../api/db/posts.screen';
-import type { PostListSortKey } from '../../../api/mock/postsMockApi';
+import type { PostEventDbItem, PostsTabKey } from '../../../types/models/post';
+import type { PostListSortKey } from '../../../types/models/postSort';
 import postManagementMockApi from '../../../api/mock/postManagementMockApi';
 import { PostEventCard, PostSortSelect } from '../components';
 import {

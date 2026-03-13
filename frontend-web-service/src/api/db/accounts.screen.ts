@@ -1,15 +1,5 @@
-export type AccountStatus = '利用中' | '停止中' | '削除予定';
-export type ContractPlan = 'プレミアムプラン' | 'スタンダードプラン' | 'ライトプラン';
-
-export interface BaseAccountItem {
-  id: string;
-  companyCode: string;
-  baseName: string;
-  accountId: string;
-  status: AccountStatus;
-  plan: ContractPlan;
-  scheduledDeletionAt?: string;
-}
+export type { AccountStatus, ContractPlan, BaseAccountItem } from '../../types/models/account';
+import type { BaseAccountItem } from '../../types/models/account';
 
 export const defaultCompanyCode = 'CORP-EP-001';
 

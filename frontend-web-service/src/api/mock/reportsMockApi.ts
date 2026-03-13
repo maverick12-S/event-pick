@@ -1,4 +1,5 @@
-import { reportRowsDb, type ReportListItem, type ReportSortKey } from '../db/reports.screen';
+import { reportRowsDb } from '../db/reports.screen';
+import type { ReportListItem, ReportSortKey } from '../../types/models/report';
 
 export interface GetReportsParams {
   from?: string;

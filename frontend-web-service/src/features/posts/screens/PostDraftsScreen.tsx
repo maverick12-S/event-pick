@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, ButtonBase, Collapse, Grid, InputBase, Typography } from '@mui/material';
 import { FiArrowLeft, FiCalendar, FiClock, FiFileText, FiSearch, FiX } from 'react-icons/fi';
-import { type PostDraftItem } from '../../../api/db/postDrafts.db.ts';
+import { type PostDraftItem } from '../../../types/models/postDraft';
 import postManagementMockApi from '../../../api/mock/postManagementMockApi';
 
 const formatDate = (iso: string): string => {

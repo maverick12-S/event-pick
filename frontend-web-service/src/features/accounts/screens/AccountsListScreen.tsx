@@ -12,12 +12,23 @@ import {
   Typography,
 } from '@mui/material';
 import EditOutlined from '@mui/icons-material/EditOutlined';
-import { FiArrowLeft, FiSearch, FiSend } from 'react-icons/fi';
-import type { AccountsSortKey } from '../../../api/mock/accountsMockApi';
+import { FiArrowLeft, FiDownload, FiSearch, FiSend } from 'react-icons/fi';
+import type { AccountsSortKey } from '../../../types/models/accountQuery';
 import useAccountsMock from '../hooks/useAccountsMock';
 import { cellAlignSx, desktopTableMinWidth, rowGridTemplate } from '../styles/accountsList.styles';
+import ContractLicenseDialog from '../components/ContractLicenseDialog';
 
 const ACCOUNTS_LIST_SCALE = 1.25;
+const CONTRACT_TEMPLATE_NAME = 'EventPick利用支援・拠点アカウント提供契約書 v4.0 完全改訂版';
+const CONTRACT_TEMPLATE_VERSION = 'v4.0';
+const CONTRACT_DOWNLOAD_PATH = '/contracts/eventpick-location-account-agreement-v4.pdf';
+
+const CONTRACT_COMPANY_PROFILE = {
+  companyName: '株式会社イベントプロ',
+  corporationNumber: '0100-01-012345',
+  representativeName: '田中 太郎',
+  contactEmail: 'admin@eventpick.jp',
+};
 
 const getDeletionDaysLeft = (scheduledDeletionAt?: string): number | null => {
   if (!scheduledDeletionAt) return null;
@@ -44,6 +55,7 @@ const AccountsListScreen: React.FC = () => {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [sortKey, setSortKey] = useState<AccountsSortKey>('name-asc');
+  const [licenseOpen, setLicenseOpen] = useState(false);
 
   const accountsQuery = useAccountsMock({ query, sortBy: sortKey });
   const companyCode = accountsQuery.data?.companyCode ?? '-';
@@ -59,6 +71,35 @@ const AccountsListScreen: React.FC = () => {
 
   const handleEdit = (item: { id: string }) => {
     navigate(`/accounts/edit/${item.id}`);
+  };
+
+  const handleOpenLicense = () => {
+    setLicenseOpen(true);
+  };
+
+  const handleAcceptLicense = () => {
+    const acceptedAt = new Date().toISOString();
+    const existingLogs = JSON.parse(localStorage.getItem('eventpick-contract-download-logs') ?? '[]') as Array<Record<string, string>>;
+    existingLogs.unshift({
+      companyName: CONTRACT_COMPANY_PROFILE.companyName,
+      corporationNumber: CONTRACT_COMPANY_PROFILE.corporationNumber,
+      representativeName: CONTRACT_COMPANY_PROFILE.representativeName,
+      contactEmail: CONTRACT_COMPANY_PROFILE.contactEmail,
+      templateName: CONTRACT_TEMPLATE_NAME,
+      templateVersion: CONTRACT_TEMPLATE_VERSION,
+      acceptedAt,
+      ipAddress: '未取得（モック環境）',
+      downloadLog: `download:${acceptedAt}`,
+    });
+    localStorage.setItem('eventpick-contract-download-logs', JSON.stringify(existingLogs));
+
+    const anchor = document.createElement('a');
+    anchor.href = CONTRACT_DOWNLOAD_PATH;
+    anchor.download = 'EventPick利用支援・拠点アカウント提供契約書_v4.0_完全改訂版.pdf';
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    setLicenseOpen(false);
   };
 
   return (
@@ -208,28 +249,57 @@ const AccountsListScreen: React.FC = () => {
               <MenuItem value="plan">並び替え: 契約プラン</MenuItem>
             </Select>
 
-            <ButtonBase
-              onClick={handleIssue}
+            <Box
               sx={{
-                height: 42,
-                px: 1.5,
-                borderRadius: 999,
-                justifySelf: { xs: 'stretch', md: 'stretch', lg: 'end' },
+                display: 'flex',
+                gap: 0.7,
+                flexWrap: 'wrap',
+                justifyContent: { xs: 'stretch', lg: 'flex-end' },
                 gridColumn: { xs: 'auto', md: '1 / -1', lg: 'auto' },
-                border: '1px solid rgba(142, 199, 255, 0.44)',
-                background: 'linear-gradient(135deg, #2d91ff, #1666c7)',
-                color: '#f4faff',
-                fontWeight: 800,
-                fontSize: '0.84rem',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 0.55,
-                boxShadow: '0 7px 16px rgba(16, 87, 176, 0.42)',
               }}
             >
-              <FiSend size={14} />
-              拠点アカウント払出
-            </ButtonBase>
+              <ButtonBase
+                onClick={handleOpenLicense}
+                sx={{
+                  height: 42,
+                  px: 1.4,
+                  borderRadius: 999,
+                  border: '1px solid rgba(186, 216, 252, 0.46)',
+                  background: 'linear-gradient(160deg, rgba(228, 241, 255, 0.16), rgba(166, 196, 230, 0.12))',
+                  color: '#e6f2ff',
+                  fontWeight: 800,
+                  fontSize: '0.82rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0.55,
+                  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 4px 10px rgba(6, 20, 43, 0.26)',
+                }}
+              >
+                <FiDownload size={14} />
+                契約書PDFをダウンロード
+              </ButtonBase>
+
+              <ButtonBase
+                onClick={handleIssue}
+                sx={{
+                  height: 42,
+                  px: 1.5,
+                  borderRadius: 999,
+                  border: '1px solid rgba(142, 199, 255, 0.44)',
+                  background: 'linear-gradient(135deg, #2d91ff, #1666c7)',
+                  color: '#f4faff',
+                  fontWeight: 800,
+                  fontSize: '0.84rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0.55,
+                  boxShadow: '0 7px 16px rgba(16, 87, 176, 0.42)',
+                }}
+              >
+                <FiSend size={14} />
+                拠点アカウント払出
+              </ButtonBase>
+            </Box>
           </Box>
         </Box>
 
@@ -452,6 +522,12 @@ const AccountsListScreen: React.FC = () => {
             )}
         </Box>
       </Box>
+
+      <ContractLicenseDialog
+        open={licenseOpen}
+        onClose={() => setLicenseOpen(false)}
+        onAccept={handleAcceptLicense}
+      />
     </Box>
   );
 };

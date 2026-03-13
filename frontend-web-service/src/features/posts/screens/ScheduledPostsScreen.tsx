@@ -31,14 +31,9 @@ import {
   FiHash,
   FiTag,
 } from 'react-icons/fi';
-import {
-  type ScheduledPostItem,
-} from '../../../api/db/scheduledPosts.db.ts';
-import {
-  type PostEventDbItem,
-  type PostsTabKey,
-} from '../../../api/db/posts.screen';
-import type { PostListSortKey } from '../../../api/mock/postsMockApi';
+import type { ScheduledPostItem } from '../../../types/models/scheduledPost';
+import type { PostEventDbItem, PostsTabKey } from '../../../types/models/post';
+import type { PostListSortKey } from '../../../types/models/postSort';
 import postManagementMockApi from '../../../api/mock/postManagementMockApi';
 import { PostEventCard, PostSortSelect } from '../components';
 import {

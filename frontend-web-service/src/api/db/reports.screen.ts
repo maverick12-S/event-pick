@@ -1,15 +1,5 @@
-export type ReportSortKey = 'postedAtDesc' | 'postedAtAsc' | 'viewsDesc' | 'likesDesc' | 'titleAsc';
-
-export interface ReportListItem {
-  id: string;
-  accountId: string;
-  title: string;
-  summary: string;
-  postedAt: string;
-  views: number;
-  likes: number;
-  detailPath: string;
-}
+export type { ReportSortKey, ReportListItem } from '../../types/models/report';
+import type { ReportListItem } from '../../types/models/report';
 
 export const reportRowsDb: ReportListItem[] = [
   {

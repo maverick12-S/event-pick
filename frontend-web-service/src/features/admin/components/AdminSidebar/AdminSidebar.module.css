@@ -1,0 +1,265 @@
+/* ============================================================
+   AdminSidebar
+   ============================================================
+   運営管理画面のサイドバーナビゲーション。
+   既存のデザイントークン（design-tokens.css）を継承し、
+   ダークネイビー系でグラスモーフィズムを適用。
+   ============================================================ */
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100dvh;
+  width: 260px;
+  background: linear-gradient(
+    180deg,
+    rgba(7, 12, 24, 0.97) 0%,
+    rgba(5, 10, 20, 0.98) 100%
+  );
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex;
+  flex-direction: column;
+  z-index: var(--z-header, 60);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ---- ロゴエリア ---- */
+.logoArea {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-6) var(--space-5);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.logoIcon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-primary-dark));
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px var(--color-brand-primary-glow);
+}
+
+.logoText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.logoTitle {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+.logoSubtitle {
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ---- ナビゲーション ---- */
+.nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  scrollbar-width: none;
+}
+
+.nav::-webkit-scrollbar {
+  display: none;
+}
+
+/* セクションラベル */
+.navSection {
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: var(--space-4) var(--space-3) var(--space-1);
+  user-select: none;
+}
+
+/* ナビメニューアイテム */
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 10px var(--space-3);
+  border-radius: var(--radius-md);
+  color: rgba(255, 255, 255, 0.65);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
+  letter-spacing: 0.01em;
+  text-decoration: none;
+}
+
+.navItem:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.navItem.active {
+  background: rgba(10, 102, 255, 0.18);
+  color: #fff;
+  font-weight: var(--font-weight-semibold);
+  box-shadow: inset 3px 0 0 var(--color-brand-primary);
+}
+
+.navItem.active .navItemIcon {
+  color: var(--color-brand-primary);
+}
+
+.navItemIcon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.5);
+  transition: color var(--transition-fast);
+}
+
+.navItemLabel {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.navItemBadge {
+  background: var(--color-brand-primary);
+  color: #fff;
+  font-size: 10px;
+  font-weight: var(--font-weight-bold);
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+/* ---- ボトムユーザーエリア ---- */
+.bottomArea {
+  padding: var(--space-4) var(--space-4) var(--space-5);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.userBlock {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-2);
+  border-radius: var(--radius-md);
+}
+
+.userAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-brand-primary), #7c3aed);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.userInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.userName {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.userRole {
+  font-size: 11px;
+  color: rgba(10, 102, 255, 0.9);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.04em;
+}
+
+.logoutButton {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 9px var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+  width: 100%;
+  text-align: left;
+}
+
+.logoutButton:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+/* ---- モバイルオーバーレイ ---- */
+.mobileOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: calc(var(--z-header, 60) - 1);
+  backdrop-filter: blur(2px);
+}
+
+/* ---- レスポンシブ ---- */
+@media (max-width: 1024px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .mobileOverlay {
+    display: block;
+  }
+}

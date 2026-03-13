@@ -19,7 +19,7 @@ import {
 import { FiCalendar, FiChevronDown, FiEye, FiHeart } from 'react-icons/fi';
 import { useAuth } from '../../../contexts/AuthContext';
 import useReportsMock from '../hooks/useReportsMock';
-import type { ReportSortKey } from '../../../api/db/reports.screen';
+import type { ReportSortKey } from '../../../types/models/report';
 import useReportAggregateSummary from '../hooks/useReportAggregateSummary';
 import ReportSummaryPanel from '../components/ReportSummaryPanel';
 import {

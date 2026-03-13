@@ -1,13 +1,5 @@
-export type ExecutionHistoryCategory = '投稿' | 'アカウント払出' | '情報変更' | '削除' | '削除予定';
-
-export interface ExecutionHistoryItem {
-  id: string;
-  executedAt: string;
-  category: ExecutionHistoryCategory;
-  title: string;
-  description: string;
-  actor: string;
-}
+export type { ExecutionHistoryCategory, ExecutionHistoryItem } from '../../types/models/executionHistory';
+import type { ExecutionHistoryItem } from '../../types/models/executionHistory';
 
 const now = new Date();
 

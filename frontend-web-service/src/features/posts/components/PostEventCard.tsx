@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { Box, ButtonBase, IconButton, Menu, MenuItem, Typography } from '@mui/material';
-import type { PostEventDbItem } from '../../../api/db/posts.screen';
+import type { PostEventDbItem } from '../../../types/models/post';
 import CarouselIndicator from './CarouselIndicator';
 
 interface PostEventCardProps {

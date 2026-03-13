@@ -1,4 +1,4 @@
-import type { PostListSortKey } from '../../../api/mock/postsMockApi';
+import type { PostListSortKey } from '../../../types/models/postSort';
 
 const toSortableDate = (value: string): number => {
   const normalized = value.replace(/[^0-9-]/g, '');

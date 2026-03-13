@@ -1,4 +1,4 @@
-import type { ContractPlan } from '../../../api/db/accounts.screen';
+import type { ContractPlan } from '../../../types/models/account';
 import type { IssueAccountFormState, PlanGuideDetail, PlanGuideVisual } from '../types/issueAccount';
 
 export const ISSUE_SCREEN_SCALE = 1.45;

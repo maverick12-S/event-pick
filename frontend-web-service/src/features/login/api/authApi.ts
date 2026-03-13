@@ -1,5 +1,7 @@
 import { apiClient } from '../../../api/client'; 
+import { tokenService } from '../../../api/tokenService';
 import type { LoginRequest, LoginResponse } from '../../../types/auth';
+import { isOperatorCredential } from '../constants/operatorCredentials';
 
 // 開発中はモック認証を固定（ログイン導線を安定させる）
 const USE_MOCK_AUTH = true;
@@ -12,16 +14,17 @@ export const authApi = {
   login: async (data: LoginRequest): Promise<LoginResponse> => {
     // モックモード: ダミーレスポンスを返す
     if (USE_MOCK_AUTH) {
+      const isOperator = isOperatorCredential(data);
       console.log('🎭 authApi: Mock auth enabled, returning mock response');
       await new Promise((res) => setTimeout(res, 300));
       return {
-        access_token: 'mock-access-token-' + Date.now(),
+        access_token: `${isOperator ? 'mock-ops-access-token-' : 'mock-access-token-'}${Date.now()}`,
         expires_in: 3600,
         refresh_expires_in: 604800,
         refresh_token: 'mock-refresh-token-' + Date.now(),
         token_type: 'Bearer',
         session_state: 'mock-session-state',
-        scope: 'openid profile email',
+        scope: isOperator ? 'openid profile email eventpick:ops' : 'openid profile email',
       };
     }
     const response = await apiClient.post<LoginResponse>('/auth/login', data);
@@ -41,6 +44,15 @@ export const authApi = {
   getMe: async (): Promise<import('../../../types/auth').AuthUser> => {
     if (USE_MOCK_AUTH) {
       await new Promise((res) => setTimeout(res, 120));
+      const accessToken = tokenService.getAccessToken();
+      if (accessToken?.startsWith('mock-ops-access-token-')) {
+        return {
+          id: 'operator-root',
+          username: 'test',
+          realm: '08001234',
+          displayName: '運営管理者',
+        };
+      }
       return {
         id: 'mock-user-1',
         username: 'mock.user',

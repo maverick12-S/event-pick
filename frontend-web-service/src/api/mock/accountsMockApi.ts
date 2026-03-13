@@ -1,17 +1,9 @@
-import {
-  baseAccountsDb,
-  defaultCompanyCode,
-  type AccountStatus,
-  type BaseAccountItem,
-  type ContractPlan,
-} from '../db/accounts.screen';
+import { baseAccountsDb, defaultCompanyCode } from '../db/accounts.screen';
+import type { AccountStatus, BaseAccountItem, ContractPlan } from '../../types/models/account';
+import type { AccountsSortKey, GetAccountsParams } from '../../types/models/accountQuery';
 
-export type AccountsSortKey = 'name-asc' | 'name-desc' | 'id-asc' | 'status' | 'plan';
-
-export interface GetAccountsParams {
-  query?: string;
-  sortBy?: AccountsSortKey;
-}
+export type { AccountsSortKey } from '../../types/models/accountQuery';
+export type { GetAccountsParams } from '../../types/models/accountQuery';
 
 export interface AccountsListResponse {
   companyCode: string;

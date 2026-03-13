@@ -1,6 +1,6 @@
 import React from 'react';
 import { MenuItem, Select } from '@mui/material';
-import type { PostListSortKey } from '../../../api/mock/postsMockApi';
+import type { PostListSortKey } from '../../../types/models/postSort';
 
 export const POST_SORT_OPTIONS: Array<{ value: PostListSortKey; label: string }> = [
   { value: 'postedAtDesc', label: '投稿日が新しい順' },

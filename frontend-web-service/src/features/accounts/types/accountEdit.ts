@@ -1,4 +1,4 @@
-import type { AccountStatus, ContractPlan } from '../../../api/db/accounts.screen';
+import type { AccountStatus, ContractPlan } from '../../../types/models/account';
 
 export interface AccountEditFormState {
   baseName: string;

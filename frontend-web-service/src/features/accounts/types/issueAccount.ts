@@ -1,4 +1,4 @@
-import type { ContractPlan } from '../../../api/db/accounts.screen';
+import type { ContractPlan } from '../../../types/models/account';
 
 export type IssueAccountFormState = {
   baseName: string;
