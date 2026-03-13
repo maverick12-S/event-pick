@@ -30,11 +30,19 @@ import {
   FiUploadCloud,
   FiX,
 } from 'react-icons/fi';
-import { upsertPostDraft } from '../../../api/db/postDrafts.db.ts';
+import postManagementMockApi from '../../../api/mock/postManagementMockApi';
+import {
+  ASSIST_NONE_VALUE,
+  DEFAULT_APPLY_FIELDS,
+  getPostQuickAssistSettings,
+  type AssistFieldKey,
+} from '../utils/postQuickAssistSettings';
 
 const MAX_IMAGES = 10;
 const DETAIL_MAX_LENGTH = 1200;
-const POST_CREATE_SCALE = 1.62;
+const POST_CREATE_FULLSCREEN_SCALE = 1.1;
+const IMAGE_DRAG_SENSITIVITY = 0.6;
+const IMAGE_BASE_OFFSET_LIMIT = 10;
 
 const GLASS_BG = 'rgba(255,255,255,0.1)';
 const GLASS_BORDER = '1px solid rgba(255,255,255,0.2)';
@@ -47,7 +55,7 @@ const CATEGORIES = [
 
 interface PostFormData {
   title: string;
-  images: { file: File; preview: string }[];
+  images: { file: File; preview: string; positionX: number; positionY: number; zoom: number }[];
   summary: string;
   detail: string;
   reservation: string;
@@ -59,9 +67,19 @@ interface PostFormData {
   category: string;
 }
 
+type QuickAssistMode = 'replace' | 'append';
+
+type PreviewImagePayload = {
+  preview: string;
+  positionX: number;
+  positionY: number;
+  zoom: number;
+};
+
 type PreviewFormPayload = {
   title: string;
   images: string[];
+  imageEdits?: PreviewImagePayload[];
   summary: string;
   detail: string;
   reservation: string;
@@ -91,8 +109,19 @@ const INITIAL_FORM: PostFormData = {
   category: '',
 };
 
-const WEEKDAY_JA = ['日', '月', '火', '水', '木', '金', '土'];
+const QUICK_ASSIST_SETTINGS = getPostQuickAssistSettings();
+const QUICK_ASSIST_TEMPLATES = QUICK_ASSIST_SETTINGS.templates;
+const EVENT_TIME_TEMPLATES = QUICK_ASSIST_SETTINGS.eventTimes;
+const BUDGET_TEMPLATES = QUICK_ASSIST_SETTINGS.budgets;
+const ASSIST_FIELD_OPTIONS = QUICK_ASSIST_SETTINGS.fieldOptions;
 
+const WEEKDAY_JA = ['日', '月', '火', '水', '木', '金', '土'];
+const clampZoom = (value: number): number => Math.max(0.4, Math.min(3.2, value));
+const getImageOffsetLimit = (zoom: number): number => Math.min(50, IMAGE_BASE_OFFSET_LIMIT + Math.max(0, zoom - 1) * 50);
+const clampImagePosition = (value: number, zoom: number): number => {
+  const limit = getImageOffsetLimit(zoom);
+  return Math.max(50 - limit, Math.min(50 + limit, value));
+};
 const toLocalIsoDate = (date: Date): string => {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -221,138 +250,403 @@ const ImageUploadArea: React.FC<{
   images: PostFormData['images'];
   onAdd: (files: FileList) => void;
   onRemove: (index: number) => void;
-}> = ({ images, onAdd, onRemove }) => {
+  onPositionChange: (index: number, positionX: number, positionY: number) => void;
+  onZoomChange: (index: number, zoom: number) => void;
+}> = ({ images, onAdd, onRemove, onPositionChange, onZoomChange }) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const longPressTimerRef = useRef<number | null>(null);
+  const dragStateRef = useRef<{
+    pointerId: number;
+    index: number;
+    startX: number;
+    startY: number;
+    startPosX: number;
+    startPosY: number;
+    stageWidth: number;
+    stageHeight: number;
+  } | null>(null);
 
-  const emptySlots = Math.max(0, Math.min(3, MAX_IMAGES - images.length));
-  const showSlots = [...images, ...Array(emptySlots).fill(null)].slice(0, Math.max(3, images.length + 1 <= MAX_IMAGES ? images.length + 1 : images.length));
+  const openFilePicker = () => {
+    if (!inputRef.current) return;
+    // Allow selecting the same file again by clearing previous value.
+    inputRef.current.value = '';
+    inputRef.current.click();
+  };
+
+  useEffect(() => {
+    if (images.length === 0) {
+      setSelectedIndex(0);
+      return;
+    }
+    if (selectedIndex >= images.length) {
+      setSelectedIndex(images.length - 1);
+    }
+  }, [images.length, selectedIndex]);
+
+  const clearLongPressTimer = () => {
+    if (longPressTimerRef.current !== null) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  const startDrag = (
+    targetElement: HTMLDivElement,
+    pointerId: number,
+    clientX: number,
+    clientY: number,
+    index: number,
+  ) => {
+    const target = images[index];
+    if (!target) return;
+    dragStateRef.current = {
+      pointerId,
+      index,
+      startX: clientX,
+      startY: clientY,
+      startPosX: target.positionX,
+      startPosY: target.positionY,
+      stageWidth: targetElement.getBoundingClientRect().width || 1,
+      stageHeight: targetElement.getBoundingClientRect().height || 1,
+    };
+    targetElement.setPointerCapture(pointerId);
+  };
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    const pointerType = event.pointerType;
+    const isLeftMouse = pointerType === 'mouse' && event.button === 0;
+    const isRightMouse = pointerType === 'mouse' && event.button === 2;
+    const isTouchLike = pointerType === 'touch' || pointerType === 'pen';
+    if (!isLeftMouse && !isRightMouse && !isTouchLike) return;
+
+    event.preventDefault();
+
+    if (isLeftMouse || isRightMouse) {
+      startDrag(event.currentTarget, event.pointerId, event.clientX, event.clientY, selectedIndex);
+      return;
+    }
+
+    clearLongPressTimer();
+    const { currentTarget, pointerId, clientX, clientY } = event;
+    longPressTimerRef.current = window.setTimeout(() => {
+      startDrag(currentTarget, pointerId, clientX, clientY, selectedIndex);
+      longPressTimerRef.current = null;
+    }, 260);
+  };
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const state = dragStateRef.current;
+    if (!state || state.pointerId !== event.pointerId) return;
+
+    event.preventDefault();
+    const dx = event.clientX - state.startX;
+    const dy = event.clientY - state.startY;
+    const target = images[state.index];
+    if (!target) return;
+    onPositionChange(
+      state.index,
+      clampImagePosition(state.startPosX + (dx / state.stageWidth) * 100 * IMAGE_DRAG_SENSITIVITY, target.zoom),
+      clampImagePosition(state.startPosY + (dy / state.stageHeight) * 100 * IMAGE_DRAG_SENSITIVITY, target.zoom),
+    );
+  };
+
+  const endDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    clearLongPressTimer();
+    if (dragStateRef.current?.pointerId === event.pointerId) {
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+      dragStateRef.current = null;
+    }
+  };
+
+  const selectedImage = images[selectedIndex] ?? null;
+
+  const handleWheel: React.WheelEventHandler<HTMLDivElement> = (event) => {
+    if (!selectedImage) return;
+    event.preventDefault();
+    const nextZoom = clampZoom(selectedImage.zoom + (event.deltaY < 0 ? 0.08 : -0.08));
+    onZoomChange(selectedIndex, nextZoom);
+  };
+
+  const handleRemove = (index: number) => {
+    if (index < selectedIndex) {
+      setSelectedIndex((prev) => Math.max(0, prev - 1));
+    } else if (index === selectedIndex && selectedIndex > 0) {
+      setSelectedIndex((prev) => prev - 1);
+    }
+    onRemove(index);
+  };
 
   return (
-    <Box>
+    <Box sx={{ display: 'grid', gap: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.65 }}>
+          <FiImage size={13} style={{ color: 'rgba(228, 238, 252, 0.92)' }} />
+          <Typography sx={{ color: 'rgba(228, 238, 252, 0.92)', fontSize: '0.75rem', fontWeight: 700 }}>
+            {images.length} / {MAX_IMAGES} 枚
+          </Typography>
+        </Box>
+        <ButtonBase
+          onClick={openFilePicker}
+          disabled={images.length >= MAX_IMAGES}
+          sx={{
+            minHeight: 36,
+            px: 1.2,
+            borderRadius: '8px',
+            border: '1px solid rgba(243, 248, 255, 0.72)',
+            backgroundColor: 'rgba(248, 252, 255, 0.1)',
+            color: 'rgba(236, 246, 255, 0.95)',
+            fontSize: '0.73rem',
+            fontWeight: 700,
+          }}
+        >
+          <FiUploadCloud size={14} style={{ marginRight: 6 }} />
+          写真を追加
+        </ButtonBase>
+      </Box>
+
       <Box
         sx={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 1,
+          borderRadius: '12px',
+          border: GLASS_BORDER,
+          backgroundColor: 'rgba(255,255,255,0.08)',
+          boxShadow: '0 0 10px rgba(80,160,255,0.5)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          p: 1,
         }}
       >
-        {showSlots.map((img, idx) =>
-          img ? (
+        {selectedImage ? (
+          <>
             <Box
-              key={idx}
+              onContextMenu={(event) => event.preventDefault()}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={endDrag}
+              onPointerCancel={endDrag}
+              onWheel={handleWheel}
               sx={{
-                width: { xs: 120, sm: 140 },
-                height: { xs: 94, sm: 110 },
-                borderRadius: '14px',
-                overflow: 'hidden',
                 position: 'relative',
-                border: GLASS_BORDER,
-                background: 'rgba(255,255,255,0.08)',
-                backdropFilter: 'blur(10px)',
-                WebkitBackdropFilter: 'blur(10px)',
-                boxShadow: '0 0 10px rgba(80,160,255,0.6)',
-                flexShrink: 0,
+                width: '100%',
+                maxWidth: 460,
+                mx: 'auto',
+                borderRadius: 0,
+                overflow: 'hidden',
+                aspectRatio: '4 / 5',
+                border: '1px solid rgba(186, 211, 242, 0.42)',
+                touchAction: 'none',
+                backgroundColor: '#0f1724',
               }}
             >
               <Box
-                component="img"
-                src={img.preview}
-                alt={`upload-${idx}`}
-                sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                sx={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transform: `translate(${selectedImage.positionX - 50}%, ${selectedImage.positionY - 50}%)`,
+                }}
+              >
+                <Box
+                  component="img"
+                  src={selectedImage.preview}
+                  alt={`editor-${selectedIndex}`}
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                    transform: `scale(${selectedImage.zoom})`,
+                    transformOrigin: 'center center',
+                    display: 'block',
+                    userSelect: 'none',
+                    WebkitUserDrag: 'none',
+                  }}
+                />
+              </Box>
+
+              <Box
+                sx={{
+                  position: 'absolute',
+                  left: '50%',
+                  top: '50%',
+                  width: { xs: '84%', md: '80%' },
+                  aspectRatio: '4 / 5',
+                  transform: 'translate(-50%, -50%)',
+                  pointerEvents: 'none',
+                }}
+              >
+                <Box sx={{ position: 'absolute', left: 0, right: 0, top: 0, height: 0, borderRadius: 0 }} />
+              </Box>
+
+              <Box
+                sx={{
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  height: { xs: '8%', md: '10%' },
+                  backgroundColor: 'rgba(8, 12, 19, 0.42)',
+                  pointerEvents: 'none',
+                }}
               />
               <Box
                 sx={{
                   position: 'absolute',
-                  top: 3,
-                  right: 3,
-                  width: 18,
-                  height: 18,
-                  borderRadius: '50%',
-                  backgroundColor: 'rgba(0,0,0,0.7)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  '&:hover': { backgroundColor: 'rgba(220,60,80,0.85)' },
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: { xs: '8%', md: '10%' },
+                  backgroundColor: 'rgba(8, 12, 19, 0.42)',
+                  pointerEvents: 'none',
                 }}
-                onClick={() => onRemove(idx)}
-              >
-                <FiX size={10} color="#fff" />
-              </Box>
+              />
               <Box
                 sx={{
                   position: 'absolute',
-                  bottom: 3,
-                  left: 4,
-                  fontSize: '0.55rem',
-                  color: 'rgba(255,255,255,0.7)',
+                  left: 0,
+                  top: { xs: '8%', md: '10%' },
+                  bottom: { xs: '8%', md: '10%' },
+                  width: { xs: '8%', md: '10%' },
+                  backgroundColor: 'rgba(8, 12, 19, 0.42)',
+                  pointerEvents: 'none',
+                }}
+              />
+              <Box
+                sx={{
+                  position: 'absolute',
+                  right: 0,
+                  top: { xs: '8%', md: '10%' },
+                  bottom: { xs: '8%', md: '10%' },
+                  width: { xs: '8%', md: '10%' },
+                  backgroundColor: 'rgba(8, 12, 19, 0.42)',
+                  pointerEvents: 'none',
+                }}
+              />
+
+              <Box
+                sx={{
+                  position: 'absolute',
+                  left: '50%',
+                  top: '50%',
+                  width: { xs: '84%', md: '80%' },
+                  aspectRatio: '4 / 5',
+                  transform: 'translate(-50%, -50%)',
+                  borderRadius: 0,
+                  border: '2px solid rgba(232, 242, 255, 0.9)',
+                  boxSizing: 'border-box',
+                  pointerEvents: 'none',
+                }}
+              />
+
+              <Box
+                sx={{
+                  position: 'absolute',
+                  left: 8,
+                  bottom: 8,
+                  px: 0.7,
+                  py: 0.3,
+                  borderRadius: '999px',
+                  backgroundColor: 'rgba(6, 18, 35, 0.62)',
+                  color: '#eaf3ff',
+                  fontSize: '0.67rem',
                   fontWeight: 700,
                 }}
               >
-                {idx + 1}/{images.length}
+                左ドラッグで移動 / ホイールで拡大縮小 / 右クリック長押しも可
               </Box>
             </Box>
-          ) : (
-            <ButtonBase
-              key={`empty-${idx}`}
-              onClick={() => inputRef.current?.click()}
-              disabled={images.length >= MAX_IMAGES}
-              sx={{
-                width: { xs: 120, sm: 140 },
-                height: { xs: 94, sm: 110 },
-                borderRadius: '14px',
-                border: GLASS_BORDER,
-                backgroundColor: 'rgba(255,255,255,0.08)',
-                backdropFilter: 'blur(10px)',
-                WebkitBackdropFilter: 'blur(10px)',
-                boxShadow: '0 0 10px rgba(80,160,255,0.6)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 0.4,
-                flexShrink: 0,
-                transition: 'all 0.2s',
-                '&:hover:not(:disabled)': {
-                  border: '1px solid #6FB3FF',
-                  boxShadow: '0 0 12px rgba(111,179,255,0.7)',
-                },
-                '&:disabled': { opacity: 0.4 },
-              }}
-            >
-              <FiUploadCloud size={18} style={{ color: 'rgba(238,246,255,0.92)' }} />
-              <Typography sx={{ color: 'rgba(238,246,255,0.95)', fontSize: '0.66rem', fontWeight: 700, letterSpacing: '0.01em' }}>
-                Upload Image
-              </Typography>
-            </ButtonBase>
-          ),
-        )}
-      </Box>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mt: 0.75 }}>
-        <FiImage size={11} style={{ color: 'rgba(228, 238, 252, 0.92)' }} />
-        <Typography sx={{ color: 'rgba(228, 238, 252, 0.92)', fontSize: '0.7rem', fontWeight: 600 }}>
-          {images.length} / {MAX_IMAGES} 枚
-        </Typography>
-        {images.length < MAX_IMAGES && (
+            <Box sx={{ mt: 0.8, px: { xs: 0.2, md: 0.4 } }}>
+              <Typography sx={{ color: 'rgba(218, 233, 252, 0.9)', fontSize: '0.7rem', mb: 0.35 }}>ズーム</Typography>
+              <input
+                type="range"
+                min={0.4}
+                max={3.2}
+                step={0.01}
+                value={selectedImage.zoom}
+                onChange={(event) => onZoomChange(selectedIndex, Number(event.target.value))}
+                style={{ width: '100%' }}
+              />
+              <Typography sx={{ mt: 0.65, display: 'block', color: 'rgba(208, 225, 248, 0.72)', fontSize: '0.68rem' }}>
+                現在倍率: {selectedImage.zoom.toFixed(2)}x
+              </Typography>
+            </Box>
+
+            <Box sx={{ mt: 1, display: 'flex', gap: 0.8, overflowX: 'auto', pb: 0.4 }}>
+              {images.map((img, idx) => {
+                const active = idx === selectedIndex;
+                return (
+                  <Box
+                    key={`${img.preview}-${idx}`}
+                    sx={{
+                      position: 'relative',
+                      width: 88,
+                      height: 110,
+                      flexShrink: 0,
+                      borderRadius: 0,
+                      overflow: 'hidden',
+                      border: active ? '2px solid #8ec0ff' : '1px solid rgba(175, 199, 228, 0.44)',
+                      boxShadow: active ? '0 0 0 2px rgba(67, 123, 191, 0.2)' : 'none',
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => setSelectedIndex(idx)}
+                  >
+                    <Box
+                      component="img"
+                      src={img.preview}
+                      alt={`thumb-${idx}`}
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        objectPosition: `${img.positionX}% ${img.positionY}%`,
+                        transform: `scale(${img.zoom})`,
+                        transformOrigin: 'center center',
+                      }}
+                    />
+                    <IconButton
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleRemove(idx);
+                      }}
+                      size="small"
+                      sx={{
+                        position: 'absolute',
+                        top: 4,
+                        right: 4,
+                        width: 19,
+                        height: 19,
+                        backgroundColor: 'rgba(0,0,0,0.66)',
+                        color: '#fff',
+                        '&:hover': { backgroundColor: 'rgba(220,60,80,0.9)' },
+                      }}
+                    >
+                      <FiX size={10} />
+                    </IconButton>
+                  </Box>
+                );
+              })}
+            </Box>
+          </>
+        ) : (
           <ButtonBase
-            onClick={() => inputRef.current?.click()}
+            onClick={openFilePicker}
             sx={{
-              px: 0.9,
-              py: 0.25,
-              borderRadius: '4px',
-              border: '1px solid rgba(243, 248, 255, 0.72)',
-              backgroundColor: 'rgba(248, 252, 255, 0.1)',
-              color: 'rgba(236, 246, 255, 0.95)',
-              fontSize: '0.68rem',
+              width: '100%',
+              minHeight: 140,
+              borderRadius: '10px',
+              border: '1px dashed rgba(179, 205, 239, 0.55)',
+              color: 'rgba(225, 238, 255, 0.88)',
+              fontSize: '0.82rem',
               fontWeight: 700,
-              '&:hover': {
-                borderColor: 'rgba(33, 69, 120, 0.86)',
-                boxShadow: '0 0 0 2px rgba(35, 74, 128, 0.16)',
-              },
+              display: 'grid',
+              placeItems: 'center',
             }}
           >
-            + 追加
+            画像を追加してください
           </ButtonBase>
         )}
       </Box>
@@ -363,7 +657,13 @@ const ImageUploadArea: React.FC<{
         accept="image/*"
         multiple
         style={{ display: 'none' }}
-        onChange={(e) => e.target.files && onAdd(e.target.files)}
+        onChange={(e) => {
+          const { files } = e.currentTarget;
+          if (files && files.length > 0) {
+            onAdd(files);
+          }
+          e.currentTarget.value = '';
+        }}
       />
     </Box>
   );
@@ -772,6 +1072,11 @@ const PostCreateScreen: React.FC = () => {
   const [discardOpen, setDiscardOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [selectedPostDates, setSelectedPostDates] = useState<string[]>([]);
+  const [assistTemplateKey, setAssistTemplateKey] = useState<string>(QUICK_ASSIST_TEMPLATES[0]?.key ?? '');
+  const [assistEventTimeKey, setAssistEventTimeKey] = useState<string>(EVENT_TIME_TEMPLATES[0]?.key ?? '');
+  const [assistBudgetKey, setAssistBudgetKey] = useState<string>(BUDGET_TEMPLATES[0]?.key ?? '');
+  const [assistMode, setAssistMode] = useState<QuickAssistMode>('replace');
+  const [assistApplyFields, setAssistApplyFields] = useState<AssistFieldKey[]>(DEFAULT_APPLY_FIELDS);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'info' | 'error' }>({
     open: false,
     message: '',
@@ -792,13 +1097,26 @@ const PostCreateScreen: React.FC = () => {
     const restore = (location.state as PostCreateLocationState | null)?.restoreForm;
     if (!restore) return;
 
+    const restoredImages = (restore.imageEdits?.length
+      ? restore.imageEdits
+      : restore.images.map((preview) => ({
+        preview,
+        positionX: 50,
+        positionY: 50,
+        zoom: 1,
+      }))
+    ).map((image, idx) => ({
+      // Fileオブジェクトはプレビュー復元用のダミー。送信時はAPI実装側で扱いを決める。
+      file: new File([''], `restored-${idx + 1}.txt`, { type: 'text/plain' }),
+      preview: image.preview,
+      positionX: clampImagePosition(image.positionX, clampZoom(image.zoom)),
+      positionY: clampImagePosition(image.positionY, clampZoom(image.zoom)),
+      zoom: clampZoom(image.zoom),
+    }));
+
     setForm({
       title: restore.title,
-      images: restore.images.map((preview, idx) => ({
-        // Fileオブジェクトはプレビュー復元用のダミー。送信時はAPI実装側で扱いを決める。
-        file: new File([''], `restored-${idx + 1}.txt`, { type: 'text/plain' }),
-        preview,
-      })),
+      images: restoredImages,
       summary: restore.summary,
       detail: restore.detail,
       reservation: restore.reservation,
@@ -816,13 +1134,114 @@ const PostCreateScreen: React.FC = () => {
   const setField = <K extends keyof PostFormData>(key: K, value: PostFormData[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
+  const handleApplyQuickAssist = () => {
+    if (assistApplyFields.length === 0) {
+      setSnackbar({ open: true, message: '反映する項目を1つ以上選択してください', severity: 'error' });
+      return;
+    }
+
+    const needsPostTemplate = assistApplyFields.some((field) =>
+      field === 'summary' || field === 'detail' || field === 'reservation',
+    );
+    const needsTimeTemplate = assistApplyFields.some((field) =>
+      field === 'startTime' || field === 'endTime',
+    );
+    const needsBudgetTemplate = assistApplyFields.includes('budget');
+
+    const template = QUICK_ASSIST_TEMPLATES.find((item) => item.key === assistTemplateKey);
+    const eventTimeTemplate = EVENT_TIME_TEMPLATES.find((item) => item.key === assistEventTimeKey);
+    const budgetTemplate = BUDGET_TEMPLATES.find((item) => item.key === assistBudgetKey);
+
+    if (needsPostTemplate && !template) {
+      setSnackbar({ open: true, message: '入力補助テンプレートを選択してください', severity: 'error' });
+      return;
+    }
+    if (needsTimeTemplate && !eventTimeTemplate) {
+      setSnackbar({ open: true, message: 'イベント時間テンプレートを選択してください', severity: 'error' });
+      return;
+    }
+    if (needsBudgetTemplate && !budgetTemplate) {
+      setSnackbar({ open: true, message: '予算テンプレートを選択してください', severity: 'error' });
+      return;
+    }
+
+    setForm((prev) => {
+      const shouldReplace = assistMode === 'replace';
+      const nextStartTime = assistApplyFields.includes('startTime') && eventTimeTemplate
+        ? (shouldReplace ? eventTimeTemplate.startTime : (prev.startTime || eventTimeTemplate.startTime))
+        : prev.startTime;
+      const nextEndTime = assistApplyFields.includes('endTime') && eventTimeTemplate
+        ? (shouldReplace ? eventTimeTemplate.endTime : (prev.endTime || eventTimeTemplate.endTime))
+        : prev.endTime;
+      const nextBudget = assistApplyFields.includes('budget') && budgetTemplate
+        ? (shouldReplace ? budgetTemplate.value : (prev.budget.trim() ? prev.budget : budgetTemplate.value))
+        : prev.budget;
+
+      const generatedDetail = template
+        ? template.buildDetail({
+          title: prev.title,
+          category: prev.category,
+          venueName: prev.venueName,
+          address: prev.address,
+          startTime: nextStartTime,
+          endTime: nextEndTime,
+          budget: nextBudget,
+        }).trim()
+        : prev.detail;
+
+      const nextDetail = assistApplyFields.includes('detail')
+        ? (assistMode === 'append' && prev.detail.trim()
+          ? `${prev.detail.trim()}\n\n${generatedDetail}`
+          : generatedDetail)
+        : prev.detail;
+
+      return {
+        ...prev,
+        summary: assistApplyFields.includes('summary')
+          ? (template ? (shouldReplace ? template.summary : (prev.summary.trim() ? prev.summary : template.summary)) : prev.summary)
+          : prev.summary,
+        budget: nextBudget,
+        startTime: nextStartTime,
+        endTime: nextEndTime,
+        detail: nextDetail,
+        reservation: assistApplyFields.includes('reservation')
+          ? (template
+            ? (shouldReplace ? template.reservationHint : (prev.reservation.trim() ? prev.reservation : template.reservationHint))
+            : prev.reservation)
+          : prev.reservation,
+      };
+    });
+
+    setSnackbar({
+      open: true,
+      message: assistMode === 'append' ? '入力補助を追記しました' : '入力補助を反映しました',
+      severity: 'success',
+    });
+  };
+
+  const handleClearAssistFields = () => {
+    setAssistTemplateKey(ASSIST_NONE_VALUE);
+    setAssistEventTimeKey(ASSIST_NONE_VALUE);
+    setAssistBudgetKey(ASSIST_NONE_VALUE);
+    setAssistApplyFields([]);
+    setSnackbar({ open: true, message: '補助入力項目を --- にリセットしました', severity: 'info' });
+  };
+
   const handleAddImages = (files: FileList) => {
-    const remaining = MAX_IMAGES - form.images.length;
-    const toAdd = Array.from(files).slice(0, remaining).map((file) => ({
-      file,
-      preview: URL.createObjectURL(file),
-    }));
-    setField('images', [...form.images, ...toAdd]);
+    setForm((prev) => {
+      const remaining = MAX_IMAGES - prev.images.length;
+      if (remaining <= 0) return prev;
+
+      const toAdd = Array.from(files).slice(0, remaining).map((file) => ({
+        file,
+        preview: URL.createObjectURL(file),
+        positionX: 50,
+        positionY: 50,
+        zoom: 1,
+      }));
+
+      return { ...prev, images: [...prev.images, ...toAdd] };
+    });
   };
 
   const handleRemoveImage = (index: number) => {
@@ -830,6 +1249,35 @@ const PostCreateScreen: React.FC = () => {
     URL.revokeObjectURL(updated[index].preview);
     updated.splice(index, 1);
     setField('images', updated);
+  };
+
+  const handleChangeImagePosition = (index: number, positionX: number, positionY: number) => {
+    setForm((prev) => {
+      if (!prev.images[index]) return prev;
+      const next = [...prev.images];
+      const currentZoom = next[index].zoom;
+      next[index] = {
+        ...next[index],
+        positionX: clampImagePosition(positionX, currentZoom),
+        positionY: clampImagePosition(positionY, currentZoom),
+      };
+      return { ...prev, images: next };
+    });
+  };
+
+  const handleChangeImageZoom = (index: number, zoom: number) => {
+    setForm((prev) => {
+      if (!prev.images[index]) return prev;
+      const next = [...prev.images];
+      const nextZoom = clampZoom(zoom);
+      next[index] = {
+        ...next[index],
+        zoom: nextZoom,
+        positionX: clampImagePosition(next[index].positionX, nextZoom),
+        positionY: clampImagePosition(next[index].positionY, nextZoom),
+      };
+      return { ...prev, images: next };
+    });
   };
 
   const validate = (): string | null => {
@@ -855,7 +1303,7 @@ const PostCreateScreen: React.FC = () => {
       return;
     }
 
-    const saved = upsertPostDraft({
+    const saved = postManagementMockApi.upsertPostDraft({
       title: form.title,
       images: form.images.map((img) => img.preview),
       summary: form.summary,
@@ -885,6 +1333,12 @@ const PostCreateScreen: React.FC = () => {
     const previewPayload: PreviewFormPayload = {
       title: form.title,
       images: form.images.map((img) => img.preview),
+      imageEdits: form.images.map((img) => ({
+        preview: img.preview,
+        positionX: img.positionX,
+        positionY: img.positionY,
+        zoom: img.zoom,
+      })),
       summary: form.summary,
       detail: form.detail,
       reservation: form.reservation,
@@ -899,6 +1353,7 @@ const PostCreateScreen: React.FC = () => {
     navigate('/posts/preview', {
       state: {
         previewForm: previewPayload,
+        returnTo: '/posts/create',
       },
     });
   };
@@ -916,7 +1371,7 @@ const PostCreateScreen: React.FC = () => {
       return;
     }
 
-    const saved = upsertPostDraft({
+    const saved = postManagementMockApi.upsertPostDraft({
       title: form.title,
       images: form.images.map((img) => img.preview),
       summary: form.summary,
@@ -983,8 +1438,86 @@ const PostCreateScreen: React.FC = () => {
     >
       <Box
         sx={{
-          width: { xs: '100%', xl: `${100 / POST_CREATE_SCALE}%` },
-          zoom: { xs: 1, xl: POST_CREATE_SCALE },
+          width: { xs: '100%', xl: `${100 / POST_CREATE_FULLSCREEN_SCALE}%` },
+          zoom: { xs: 1, xl: POST_CREATE_FULLSCREEN_SCALE },
+          transformOrigin: 'top center',
+          maxWidth: 1820,
+          mx: 'auto',
+          mb: { xs: 1, md: 1.2 },
+          borderRadius: { xs: '12px', md: '14px' },
+          border: '1px solid rgba(120,170,240,0.32)',
+          backgroundColor: 'rgba(8,22,45,0.66)',
+          boxShadow: '0 0 12px rgba(80,160,255,0.24)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          p: { xs: 1.1, md: 1.3 },
+        }}
+      >
+        <Typography
+          sx={{
+            color: '#d7e9ff',
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            letterSpacing: '0.01em',
+          }}
+        >
+          タイトル
+        </Typography>
+        <Box sx={{ mt: 0.6 }}>
+          <FieldLabel num={1} label="タイトル" />
+          <DarkInput
+            value={form.title}
+            onChange={(v) => setField('title', v)}
+            placeholder="イベントタイトルを入力"
+            minHeight={56}
+            fontSize="1.1rem"
+          />
+        </Box>
+      </Box>
+
+      <Box
+        sx={{
+          width: { xs: '100%', xl: `${100 / POST_CREATE_FULLSCREEN_SCALE}%` },
+          zoom: { xs: 1, xl: POST_CREATE_FULLSCREEN_SCALE },
+          transformOrigin: 'top center',
+          maxWidth: 1820,
+          mx: 'auto',
+          mb: { xs: 1, md: 1.2 },
+          borderRadius: { xs: '12px', md: '14px' },
+          border: '1px solid rgba(120,170,240,0.32)',
+          backgroundColor: 'rgba(8,22,45,0.66)',
+          boxShadow: '0 0 12px rgba(80,160,255,0.24)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          p: { xs: 1.1, md: 1.3 },
+        }}
+      >
+        <Typography
+          sx={{
+            color: '#d7e9ff',
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            letterSpacing: '0.01em',
+          }}
+        >
+          写真アップロード
+        </Typography>
+        <Box sx={{ mt: 0.6 }}>
+          <FieldLabel num={2} label={`画像（最大${MAX_IMAGES}枚）`} />
+          <ImageUploadArea
+            images={form.images}
+            onAdd={handleAddImages}
+            onRemove={handleRemoveImage}
+            onPositionChange={handleChangeImagePosition}
+            onZoomChange={handleChangeImageZoom}
+          />
+        </Box>
+      </Box>
+
+      <Box
+        sx={{
+          width: { xs: '100%', xl: `${100 / POST_CREATE_FULLSCREEN_SCALE}%` },
+          zoom: { xs: 1, xl: POST_CREATE_FULLSCREEN_SCALE },
           transformOrigin: 'top center',
           maxWidth: 1820,
           mx: 'auto',
@@ -1003,38 +1536,6 @@ const PostCreateScreen: React.FC = () => {
             <Grid size={{ xs: 12, lg: 6 }}>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.35 }}>
                 <Box>
-                  <FieldLabel num={1} label="タイトル" />
-                  <DarkInput
-                    value={form.title}
-                    onChange={(v) => setField('title', v)}
-                    placeholder="イベントタイトルを入力"
-                    minHeight={56}
-                    fontSize="1.35rem"
-                  />
-                </Box>
-
-                <Box>
-                  <FieldLabel num={2} label={`画像（最大${MAX_IMAGES}枚）`} />
-                  <Box
-                    sx={{
-                      p: 1,
-                      borderRadius: '8px',
-                      border: GLASS_BORDER,
-                      backgroundColor: 'rgba(255,255,255,0.08)',
-                      boxShadow: '0 0 10px rgba(80,160,255,0.5)',
-                      backdropFilter: 'blur(10px)',
-                      WebkitBackdropFilter: 'blur(10px)',
-                    }}
-                  >
-                    <ImageUploadArea
-                      images={form.images}
-                      onAdd={handleAddImages}
-                      onRemove={handleRemoveImage}
-                    />
-                  </Box>
-                </Box>
-
-                <Box>
                   <FieldLabel num={3} label="説明概要" />
                   <DarkInput
                     value={form.summary}
@@ -1045,20 +1546,6 @@ const PostCreateScreen: React.FC = () => {
                   />
                 </Box>
 
-                <Box>
-                  <FieldLabel num={5} label="予約欄" />
-                  <DarkInput
-                    value={form.reservation}
-                    onChange={(v) => setField('reservation', v)}
-                    placeholder="予約サイトURL: https://... or 事前予約不要"
-                    icon={<FiLink />}
-                  />
-                </Box>
-              </Box>
-            </Grid>
-
-            <Grid size={{ xs: 12, lg: 6 }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.35 }}>
                 <Box>
                   <FieldLabel num={4} label="詳細説明" />
                   <DarkInput
@@ -1082,6 +1569,20 @@ const PostCreateScreen: React.FC = () => {
                   </Typography>
                 </Box>
 
+                <Box>
+                  <FieldLabel num={5} label="予約欄" />
+                  <DarkInput
+                    value={form.reservation}
+                    onChange={(v) => setField('reservation', v)}
+                    placeholder="予約サイトURL: https://... or 事前予約不要"
+                    icon={<FiLink />}
+                  />
+                </Box>
+              </Box>
+            </Grid>
+
+            <Grid size={{ xs: 12, lg: 6 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.35 }}>
                 <Box>
                   <FieldLabel num={6} label="住所欄" />
                   <DarkInput
@@ -1156,6 +1657,7 @@ const PostCreateScreen: React.FC = () => {
               </Box>
             </Grid>
           </Grid>
+
         </Box>
 
         <Box
@@ -1292,6 +1794,324 @@ const PostCreateScreen: React.FC = () => {
             </ButtonBase>
           </Box>
         </Box>
+      </Box>
+
+      <Box
+        sx={{
+          width: { xs: '100%', xl: `${100 / POST_CREATE_FULLSCREEN_SCALE}%` },
+          zoom: { xs: 1, xl: POST_CREATE_FULLSCREEN_SCALE },
+          transformOrigin: 'top center',
+          maxWidth: 1820,
+          mx: 'auto',
+          mt: { xs: 1, md: 1.2 },
+          borderRadius: { xs: '12px', md: '14px' },
+          border: '1px solid rgba(120,170,240,0.32)',
+          backgroundColor: 'rgba(8,22,45,0.66)',
+          boxShadow: '0 0 12px rgba(80,160,255,0.24)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          p: { xs: 1.1, md: 1.3 },
+        }}
+      >
+        <Typography
+          sx={{
+            color: '#d7e9ff',
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            letterSpacing: '0.01em',
+          }}
+        >
+          投稿内容の簡単入力補助
+        </Typography>
+        <Typography
+          sx={{
+            color: 'rgba(205,225,248,0.74)',
+            fontSize: '0.72rem',
+            lineHeight: 1.6,
+            mt: 0.35,
+          }}
+        >
+          複数選択した項目のみ反映するため、競合を避けながらテンプレート適用できます。解除項目も選択できます。
+        </Typography>
+
+        <Grid container spacing={0.8} sx={{ mt: 0.7 }}>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Select
+              value={assistTemplateKey}
+              onChange={(e) => setAssistTemplateKey(e.target.value)}
+              size="small"
+              fullWidth
+              displayEmpty
+              renderValue={(value) => {
+                if (!value) return '投稿テンプレ: ---';
+                const selected = QUICK_ASSIST_TEMPLATES.find((t) => t.key === value);
+                return selected ? selected.label : '投稿テンプレ: ---';
+              }}
+              sx={{
+                height: 38,
+                borderRadius: '8px',
+                backgroundColor: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(170,205,250,0.28)',
+                color: '#eaf3ff',
+                fontSize: '0.82rem',
+                '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                '& .MuiSelect-icon': { color: 'rgba(240,247,255,0.82)' },
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    backgroundColor: '#10213e',
+                    border: '1px solid rgba(155,183,225,0.42)',
+                    borderRadius: '8px',
+                  },
+                },
+              }}
+            >
+              <MenuItem value={ASSIST_NONE_VALUE} sx={{ color: '#9db7d8', fontSize: '0.82rem' }}>
+                ---
+              </MenuItem>
+              {QUICK_ASSIST_TEMPLATES.map((template) => (
+                <MenuItem
+                  key={template.key}
+                  value={template.key}
+                  sx={{
+                    color: '#e2eeff',
+                    fontSize: '0.82rem',
+                    '&:hover': { backgroundColor: 'rgba(60,120,255,0.18)' },
+                  }}
+                >
+                  {template.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 3 }}>
+            <Select
+              value={assistMode}
+              onChange={(e) => setAssistMode(e.target.value as QuickAssistMode)}
+              size="small"
+              fullWidth
+              sx={{
+                height: 38,
+                borderRadius: '8px',
+                backgroundColor: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(170,205,250,0.28)',
+                color: '#eaf3ff',
+                fontSize: '0.82rem',
+                '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                '& .MuiSelect-icon': { color: 'rgba(240,247,255,0.82)' },
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    backgroundColor: '#10213e',
+                    border: '1px solid rgba(155,183,225,0.42)',
+                    borderRadius: '8px',
+                  },
+                },
+              }}
+            >
+              <MenuItem value="replace" sx={{ color: '#e2eeff', fontSize: '0.82rem' }}>
+                上書き
+              </MenuItem>
+              <MenuItem value="append" sx={{ color: '#e2eeff', fontSize: '0.82rem' }}>
+                追記
+              </MenuItem>
+            </Select>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Select
+              multiple
+              value={assistApplyFields}
+              onChange={(e) => setAssistApplyFields((e.target.value as AssistFieldKey[]) ?? [])}
+              size="small"
+              fullWidth
+              displayEmpty
+              renderValue={(selected) => {
+                const values = selected as AssistFieldKey[];
+                if (!values.length) return '反映項目: ---';
+                return `反映: ${values.map((key) => ASSIST_FIELD_OPTIONS.find((o) => o.key === key)?.label ?? key).join(' / ')}`;
+              }}
+              sx={{
+                height: 38,
+                borderRadius: '8px',
+                backgroundColor: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(170,205,250,0.28)',
+                color: '#eaf3ff',
+                fontSize: '0.82rem',
+                '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                '& .MuiSelect-icon': { color: 'rgba(240,247,255,0.82)' },
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    backgroundColor: '#10213e',
+                    border: '1px solid rgba(155,183,225,0.42)',
+                    borderRadius: '8px',
+                  },
+                },
+              }}
+            >
+              {ASSIST_FIELD_OPTIONS.map((option) => (
+                <MenuItem
+                  key={option.key}
+                  value={option.key}
+                  sx={{
+                    color: '#e2eeff',
+                    fontSize: '0.82rem',
+                    '&:hover': { backgroundColor: 'rgba(60,120,255,0.18)' },
+                  }}
+                >
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Select
+              value={assistEventTimeKey}
+              onChange={(e) => setAssistEventTimeKey(e.target.value)}
+              size="small"
+              fullWidth
+              displayEmpty
+              renderValue={(value) => {
+                if (!value) return '時間テンプレ: ---';
+                const selected = EVENT_TIME_TEMPLATES.find((t) => t.key === value);
+                return selected ? `時間テンプレ: ${selected.label}（${selected.startTime} - ${selected.endTime}）` : '時間テンプレ: ---';
+              }}
+              sx={{
+                height: 38,
+                borderRadius: '8px',
+                backgroundColor: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(170,205,250,0.28)',
+                color: '#eaf3ff',
+                fontSize: '0.82rem',
+                '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                '& .MuiSelect-icon': { color: 'rgba(240,247,255,0.82)' },
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    backgroundColor: '#10213e',
+                    border: '1px solid rgba(155,183,225,0.42)',
+                    borderRadius: '8px',
+                  },
+                },
+              }}
+            >
+              <MenuItem value={ASSIST_NONE_VALUE} sx={{ color: '#9db7d8', fontSize: '0.82rem' }}>
+                ---
+              </MenuItem>
+              {EVENT_TIME_TEMPLATES.map((template) => (
+                <MenuItem
+                  key={template.key}
+                  value={template.key}
+                  sx={{
+                    color: '#e2eeff',
+                    fontSize: '0.82rem',
+                    '&:hover': { backgroundColor: 'rgba(60,120,255,0.18)' },
+                  }}
+                >
+                  時間テンプレ: {template.label}（{template.startTime} - {template.endTime}）
+                </MenuItem>
+              ))}
+            </Select>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 3 }}>
+            <Select
+              value={assistBudgetKey}
+              onChange={(e) => setAssistBudgetKey(e.target.value)}
+              size="small"
+              fullWidth
+              displayEmpty
+              renderValue={(value) => {
+                if (!value) return '予算テンプレ: ---';
+                const selected = BUDGET_TEMPLATES.find((t) => t.key === value);
+                return selected ? `予算テンプレ: ${selected.label}` : '予算テンプレ: ---';
+              }}
+              sx={{
+                height: 38,
+                borderRadius: '8px',
+                backgroundColor: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(170,205,250,0.28)',
+                color: '#eaf3ff',
+                fontSize: '0.82rem',
+                '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                '& .MuiSelect-icon': { color: 'rgba(240,247,255,0.82)' },
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    backgroundColor: '#10213e',
+                    border: '1px solid rgba(155,183,225,0.42)',
+                    borderRadius: '8px',
+                  },
+                },
+              }}
+            >
+              <MenuItem value={ASSIST_NONE_VALUE} sx={{ color: '#9db7d8', fontSize: '0.82rem' }}>
+                ---
+              </MenuItem>
+              {BUDGET_TEMPLATES.map((template) => (
+                <MenuItem
+                  key={template.key}
+                  value={template.key}
+                  sx={{
+                    color: '#e2eeff',
+                    fontSize: '0.82rem',
+                    '&:hover': { backgroundColor: 'rgba(60,120,255,0.18)' },
+                  }}
+                >
+                  予算テンプレ: {template.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 3 }}>
+            <ButtonBase
+              onClick={handleClearAssistFields}
+              sx={{
+                width: '100%',
+                height: 38,
+                borderRadius: '8px',
+                border: '1px solid rgba(255,170,170,0.45)',
+                backgroundColor: 'rgba(170,60,60,0.18)',
+                color: '#ffdede',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                letterSpacing: '0.01em',
+                '&:hover': { backgroundColor: 'rgba(170,60,60,0.28)' },
+              }}
+            >
+              補助項目を解除
+            </ButtonBase>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 3 }}>
+            <ButtonBase
+              onClick={handleApplyQuickAssist}
+              sx={{
+                width: '100%',
+                height: 38,
+                borderRadius: '8px',
+                border: '1px solid rgba(120,170,240,0.4)',
+                backgroundColor: 'rgba(40,105,210,0.2)',
+                color: '#d7e9ff',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                letterSpacing: '0.01em',
+                '&:hover': { backgroundColor: 'rgba(40,105,210,0.3)' },
+              }}
+            >
+              テンプレートを反映
+            </ButtonBase>
+          </Grid>
+        </Grid>
       </Box>
 
       <DiscardDialog

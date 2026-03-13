@@ -18,7 +18,7 @@ const LoginScreen: React.FC = () => {
     <MuiAuthLayout
       title="企業ログイン"
       subtitle="拠点アカウントでログインしてください"
-      layoutScale={1.25}
+      layoutScale={1}
     >
       <Box sx={{ mt: { xs: 2.5, sm: 3.25 } }}>
         <LoginForm

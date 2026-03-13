@@ -1,0 +1,470 @@
+/* ============================================================
+   AdminReviewsScreen — 審査ステータス一覧（刷新版）
+   ============================================================ */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* ── サマリー KPI ── */
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+}
+
+.summaryCard {
+  padding: var(--space-5) var(--space-6);
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: linear-gradient(160deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.04) 100%);
+  backdrop-filter: blur(22px) saturate(145%);
+  -webkit-backdrop-filter: blur(22px) saturate(145%);
+  box-shadow: 0 16px 40px rgba(3,10,28,0.45), inset 0 1px 0 rgba(255,255,255,0.35);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 200ms ease, border-color 200ms ease;
+}
+.summaryCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 48px rgba(3,10,28,0.55), inset 0 1px 0 rgba(255,255,255,0.45);
+}
+.summaryCardActive { border-color: rgba(96, 165, 250, 0.6); }
+
+.summaryIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+.iconPending  { background: rgba(245,158,11,0.18); color: #fbbf24; }
+.iconApproved { background: rgba(34,197,94,0.18);  color: #4ade80; }
+.iconRejected { background: rgba(239,68,68,0.18);  color: #f87171; }
+
+.summaryContent { display: flex; flex-direction: column; gap: 2px; }
+
+.summaryLabel {
+  font-size: var(--font-size-xs);
+  color: rgba(255,255,255,0.55);
+  font-weight: 500;
+}
+
+.summaryValue {
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+/* ── ツールバー ── */
+.toolbarRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.tabBar {
+  display: flex;
+  gap: 2px;
+  background: rgba(255,255,255,0.06);
+  border-radius: var(--radius-md);
+  padding: 3px;
+}
+
+.tabBtn {
+  padding: 7px 16px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.55);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  font-family: var(--font-family-base);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tabBtn:hover { color: rgba(255,255,255,0.85); }
+.tabBtnActive {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.tabCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  margin-left: 6px;
+  padding: 0 5px;
+}
+.countPending  { background: rgba(245,158,11,0.2); color: #fbbf24; }
+.countApproved { background: rgba(34,197,94,0.2);  color: #4ade80; }
+.countRejected { background: rgba(239,68,68,0.2);  color: #f87171; }
+.countAll      { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); }
+
+.searchWrap {
+  position: relative;
+  width: 280px;
+}
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255,255,255,0.35);
+  pointer-events: none;
+}
+.searchInput {
+  width: 100%;
+  padding: 8px 12px 8px 34px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.07);
+  color: var(--text-primary);
+  font-size: var(--font-size-xs);
+  font-family: var(--font-family-base);
+  outline: none;
+  box-sizing: border-box;
+}
+.searchInput::placeholder { color: rgba(255,255,255,0.35); }
+.searchInput:focus { border-color: rgba(10,102,255,0.6); background: rgba(255,255,255,0.1); }
+
+/* ── テーブル ── */
+.tableCard {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  overflow: hidden;
+}
+
+.tableWrap { overflow-x: auto; }
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-xs);
+}
+
+.table th {
+  text-align: left;
+  padding: 12px var(--space-4);
+  color: rgba(255,255,255,0.45);
+  font-weight: 600;
+  white-space: nowrap;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+}
+
+.table td {
+  padding: 14px var(--space-4);
+  color: var(--text-primary);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  vertical-align: middle;
+}
+
+.table tbody tr { transition: background 0.15s; }
+.table tbody tr:hover { background: rgba(255,255,255,0.04); }
+
+/* ── 企業情報セル ── */
+.companyCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.companyName {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+.companyDetail {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.45);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.companyDetail svg { font-size: 0.7rem; flex-shrink: 0; }
+
+/* ── ステータスバッジ ── */
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.status_pending  { background: rgba(245,158,11,0.15); color: #fbbf24; }
+.status_approved { background: rgba(34,197,94,0.15);  color: #4ade80; }
+.status_rejected { background: rgba(239,68,68,0.15);  color: #f87171; }
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.dotPending  { background: #fbbf24; }
+.dotApproved { background: #4ade80; }
+.dotRejected { background: #f87171; }
+
+/* ── アクション列 ── */
+.actionGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255,255,255,0.12);
+  background: transparent;
+  color: rgba(255,255,255,0.6);
+  font-size: var(--font-size-xs);
+  font-family: var(--font-family-base);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.actionBtn:hover { border-color: rgba(255,255,255,0.3); color: #fff; }
+
+.approveBtn {
+  composes: actionBtn;
+  border-color: rgba(34,197,94,0.3);
+  color: #4ade80;
+}
+.approveBtn:hover { background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.5); }
+
+.rejectBtn {
+  composes: actionBtn;
+  border-color: rgba(239,68,68,0.3);
+  color: #f87171;
+}
+.rejectBtn:hover { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.5); }
+
+.docBtn {
+  composes: actionBtn;
+  border-color: rgba(96,165,250,0.3);
+  color: #60a5fa;
+}
+.docBtn:hover { background: rgba(96,165,250,0.12); border-color: rgba(96,165,250,0.5); }
+
+/* ── 日付テキスト ── */
+.dateText {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.4);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: nowrap;
+}
+
+/* ── 空状態 ── */
+.emptyRow {
+  text-align: center;
+  color: rgba(255,255,255,0.3);
+  padding: var(--space-10) var(--space-4) !important;
+}
+
+/* ── モーダル ── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+}
+
+.modal {
+  background: linear-gradient(170deg, rgba(30,33,50,0.97) 0%, rgba(18,20,30,0.99) 100%);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  width: min(540px, 92vw);
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.55);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.modalTitle {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.modalBody {
+  font-size: var(--font-size-sm);
+  color: rgba(255,255,255,0.7);
+  line-height: 1.6;
+}
+
+/* ── 詳細モーダル情報テーブル ── */
+.detailGrid {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+.detailLabel {
+  color: rgba(255,255,255,0.4);
+  font-weight: 500;
+}
+
+.detailValue {
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.registryDocSection {
+  grid-column: 1 / -1;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.registryDocActions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.registryDocBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  background: rgba(10,102,255,0.15);
+  color: #5b9aff;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.registryDocBtn:hover {
+  background: rgba(10,102,255,0.3);
+  color: #80b4ff;
+}
+
+.registryDocDownloadBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.7);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.registryDocDownloadBtn:hover {
+  background: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.9);
+}
+
+.registryDocNote {
+  font-size: var(--font-size-xs);
+  color: rgba(255,255,255,0.35);
+  font-style: italic;
+  margin-top: var(--space-2);
+}
+
+/* ── 却下理由テキストエリア ── */
+.rejectReasonInput {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.07);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family-base);
+  outline: none;
+  box-sizing: border-box;
+  min-height: 80px;
+  resize: vertical;
+}
+.rejectReasonInput::placeholder { color: rgba(255,255,255,0.35); }
+.rejectReasonInput:focus { border-color: rgba(10,102,255,0.6); background: rgba(255,255,255,0.1); }
+
+/* ── モーダルアクション ── */
+.modalActions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: flex-end;
+}
+
+.modalCancelBtn {
+  padding: 8px 18px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255,255,255,0.15);
+  background: transparent;
+  color: rgba(255,255,255,0.6);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+.modalCancelBtn:hover { border-color: rgba(255,255,255,0.3); color: #fff; }
+
+.modalApproveBtn {
+  padding: 8px 18px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #fff;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+.modalApproveBtn:hover { filter: brightness(1.1); }
+
+.modalRejectBtn {
+  padding: 8px 18px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+.modalRejectBtn:hover { filter: brightness(1.1); }
+.modalRejectBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── レスポンシブ ── */
+@media (max-width: 1024px) {
+  .summaryGrid { grid-template-columns: 1fr; }
+  .toolbarRow { flex-direction: column; align-items: stretch; }
+  .searchWrap { width: 100%; }
+}

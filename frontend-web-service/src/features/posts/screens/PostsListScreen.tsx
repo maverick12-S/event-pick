@@ -3,60 +3,33 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Box, Button, ButtonBase, CircularProgress, Collapse, Grid, InputBase, MenuItem, Select, Typography } from '@mui/material';
 import { FiSearch } from 'react-icons/fi';
 import usePostsMock from '../hooks/usePostsMock';
+import type { PostEventDbItem, PostsTabKey } from '../../../types/models/post';
+import type { PostListSortKey } from '../../../types/models/postSort';
+import postManagementMockApi from '../../../api/mock/postManagementMockApi';
+import { PostEventCard, PostSortSelect } from '../components';
 import {
-  type PostEventDbItem,
-  categoryOptions,
-  cityOptions,
-  prefectureOptions,
-  timeSlotOptions,
-  type PostsTabKey,
-} from '../../../api/db/posts.screen';
-import { CURRENT_LOCATION_ID, scheduledPostsDb } from '../../../api/db/scheduledPosts.db.ts';
-import { PostEventCard } from '../components';
+  defaultPostSearchFilters,
+  detectTimeSlot,
+  toSelectedValues,
+  type PostSearchFilters,
+} from '../utils/postSearchFilters';
+import { sortPostsByKey } from '../utils/postSort';
+
+const {
+  categories: categoryOptions,
+  cities: cityOptions,
+  prefectures: prefectureOptions,
+  timeSlots: timeSlotOptions,
+} = postManagementMockApi.getPostFilterOptions();
 
 const PAGE_LIMIT = 60;
+const POSTS_LIST_SCALE = 0.96;
+
 const tabs: Array<{ key: PostsTabKey; label: string }> = [
   { key: 'today', label: '今日' },
   { key: 'tomorrow', label: '明日' },
   { key: 'scheduled', label: '投稿予約・確認' },
 ];
-
-type SearchFilters = {
-  title: string;
-  categories: string[];
-  prefectures: string[];
-  cities: string[];
-  timeSlots: string[];
-};
-
-const defaultFilters: SearchFilters = {
-  title: '',
-  categories: [],
-  prefectures: [],
-  cities: [],
-  timeSlots: [],
-};
-
-const toSelectedValues = (selected: unknown): string[] => {
-  if (Array.isArray(selected)) {
-    return selected.map((value) => String(value));
-  }
-
-  if (typeof selected === 'string' && selected.length > 0) {
-    return selected.split(',').map((value) => value.trim()).filter(Boolean);
-  }
-
-  return [];
-};
-
-const detectTimeSlot = (timeLabel: string): string => {
-  const startHour = Number.parseInt(timeLabel.slice(0, 2), 10);
-  if (Number.isNaN(startHour)) return '';
-  if (startHour < 12) return '朝';
-  if (startHour < 16) return '昼';
-  if (startHour < 19) return '夕方';
-  return '夜';
-};
 
 const PostsListScreen: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -68,21 +41,23 @@ const PostsListScreen: React.FC = () => {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [draftFilters, setDraftFilters] = useState<SearchFilters>(defaultFilters);
-  const [appliedFilters, setAppliedFilters] = useState<SearchFilters>(defaultFilters);
+  const [sortBy, setSortBy] = useState<PostListSortKey>('postedAtDesc');
+  const [draftFilters, setDraftFilters] = useState<PostSearchFilters>(defaultPostSearchFilters);
+  const [appliedFilters, setAppliedFilters] = useState<PostSearchFilters>(defaultPostSearchFilters);
 
   const params = useMemo(
     () => ({
       tab: activeTab,
       page,
       limit: PAGE_LIMIT,
+      sortBy,
       search: appliedFilters.title.trim(),
       categories: appliedFilters.categories,
       prefectures: appliedFilters.prefectures,
       cities: appliedFilters.cities,
       timeSlots: appliedFilters.timeSlots,
     }),
-    [activeTab, page, appliedFilters],
+    [activeTab, page, sortBy, appliedFilters],
   );
 
   const { data, isFetching } = usePostsMock(params);
@@ -90,24 +65,8 @@ const PostsListScreen: React.FC = () => {
   const accountLinkedItems = useMemo<PostEventDbItem[]>(() => {
     const query = appliedFilters.title.trim().toLowerCase();
 
-    const mapped = scheduledPostsDb
-      .filter((item) => item.locationId === CURRENT_LOCATION_ID)
-      .map<PostEventDbItem>((item) => ({
-        id: `scheduled-${item.id}`,
-        title: item.title,
-        ward: item.ward,
-        venue: item.venue,
-        description: item.description,
-        category: item.category,
-        dateLabel: item.dateLabel,
-        timeLabel: item.timeLabel,
-        imageUrl: item.imageUrl,
-        imageUrls: [item.imageUrl],
-        detailPath: `/posts/scheduled/${item.id}`,
-        detailLabel: '詳細を見る',
-        reservationContact: 'https://www.google.com/',
-        tab: 'scheduled',
-      }))
+    const mapped = postManagementMockApi
+      .listScheduledPostEventCardsByLocation(postManagementMockApi.getCurrentLocationId())
       .filter((item) => {
         if (query && !item.title.toLowerCase().includes(query)) {
           return false;
@@ -128,8 +87,8 @@ const PostsListScreen: React.FC = () => {
         return true;
       });
 
-    return mapped;
-  }, [appliedFilters]);
+    return sortPostsByKey(mapped, sortBy);
+  }, [appliedFilters, sortBy]);
 
   const accountTotalPages = Math.max(Math.ceil(accountLinkedItems.length / PAGE_LIMIT), 1);
   const accountPage = Math.min(page, accountTotalPages);
@@ -157,9 +116,17 @@ const PostsListScreen: React.FC = () => {
   const currentPage = isAccountScope ? accountPage : (data?.page ?? page);
 
   return (
-    <Box sx={{ width: '100%', px: { xs: 1.25, sm: 2, md: 2.5 }, pb: { xs: 3, md: 4 } }}>
+    <Box sx={{ width: '100%', overflowX: 'clip', px: { xs: 1.25, sm: 2, md: 2.5 }, pb: { xs: 3, md: 4 } }}>
       <Box sx={{ width: '100%', mx: 'auto' }}>
-        <Box sx={{ width: '100%', maxWidth: 1900, mx: 'auto' }}>
+        <Box
+          sx={{
+            width: `${100 / POSTS_LIST_SCALE}%`,
+            maxWidth: 1900,
+            mx: 'auto',
+            zoom: POSTS_LIST_SCALE,
+            transformOrigin: 'top center',
+          }}
+        >
         <Box
           sx={{
             mt: { xs: 1, md: 1.5 },
@@ -325,6 +292,7 @@ const PostsListScreen: React.FC = () => {
                       </ButtonBase>
                     );
                   })}
+
                 </Box>
               </Grid>
             </Grid>
@@ -502,11 +470,21 @@ const PostsListScreen: React.FC = () => {
                   </Grid>
 
                   <Grid size={{ xs: 12, md: 12 }}>
-                    <Box sx={{ display: 'flex', gap: 0.8, justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 0.9, flexWrap: 'wrap' }}>
+                      <PostSortSelect
+                        value={sortBy}
+                        onChange={(value) => {
+                          setSortBy(value);
+                          setPage(1);
+                        }}
+                        minHeight={42}
+                        minWidth={{ xs: '100%', sm: 240 }}
+                      />
+                      <Box sx={{ display: 'flex', gap: 0.8, justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
                       <Button
                         variant="outlined"
                         onClick={() => {
-                          setDraftFilters({ ...defaultFilters });
+                          setDraftFilters({ ...defaultPostSearchFilters });
                         }}
                         sx={{
                           color: '#e8f2ff',
@@ -525,6 +503,7 @@ const PostsListScreen: React.FC = () => {
                       >
                         検索
                       </Button>
+                      </Box>
                     </Box>
                   </Grid>
                 </Grid>

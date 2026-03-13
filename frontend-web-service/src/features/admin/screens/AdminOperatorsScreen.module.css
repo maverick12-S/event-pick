@@ -1,0 +1,316 @@
+/* ============================================================
+   AdminOperatorsScreen
+   ============================================================ */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+/* ---- セクション ---- */
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.sectionTitle {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-4);
+}
+
+/* ---- Root カード ---- */
+.rootCard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-6);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(
+    135deg,
+    rgba(124, 58, 237, 0.18) 0%,
+    rgba(10, 102, 255, 0.12) 100%
+  );
+  border: 1px solid rgba(124, 58, 237, 0.35);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.rootIconWrap {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, #7c3aed, #0a66ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.4);
+}
+
+.rootIcon {
+  color: #fff;
+  font-size: 1.4rem;
+}
+
+.rootInfo {
+  flex: 1;
+  min-width: 160px;
+}
+
+.rootName {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.rootUsername {
+  font-size: var(--font-size-sm);
+  color: rgba(255, 255, 255, 0.55);
+  margin-top: 2px;
+}
+
+.rootEmail {
+  font-size: var(--font-size-xs);
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 4px;
+  font-family: monospace;
+}
+
+.rootMeta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+
+.rootLastLogin {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: rgba(255, 255, 255, 0.45);
+  white-space: nowrap;
+}
+
+/* ---- 権限レベルバッジ ---- */
+.levelBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.levelBadge[data-level='root'] {
+  background: linear-gradient(135deg, rgba(124,58,237,0.25), rgba(10,102,255,0.25));
+  color: #c084fc;
+  border: 1px solid rgba(124,58,237,0.4);
+}
+
+.levelBadge[data-level='super'] {
+  background: rgba(10, 102, 255, 0.18);
+  color: #60a5fa;
+  border: 1px solid rgba(10,102,255,0.3);
+}
+
+.levelBadge[data-level='standard'] {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255,255,255,0.6);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+/* ---- ステータスバッジ ---- */
+.statusBadge {
+  display: inline-flex;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+}
+
+.statusBadge[data-status='active']   { background: rgba(34,197,94,0.15); color: #4ade80; }
+.statusBadge[data-status='inactive'] { background: rgba(239,68,68,0.15); color: #f87171; }
+
+/* ---- 追加ボタン ---- */
+.addButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 9px var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(10, 102, 255, 0.4);
+  background: rgba(10, 102, 255, 0.12);
+  color: #60a5fa;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  font-family: var(--font-family-base);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.addButton:hover {
+  background: rgba(10, 102, 255, 0.2);
+  border-color: rgba(10, 102, 255, 0.6);
+  color: #93c5fd;
+}
+
+/* ---- カードグリッド ---- */
+.cardsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-4);
+}
+
+.opCard {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.opCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+}
+
+.opCardInactive {
+  opacity: 0.55;
+}
+
+/* カードヘッダー */
+.opCardHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.opAvatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0a66ff, #7c3aed);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.opHeaderInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.opName {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.opUsername {
+  font-size: var(--font-size-xs);
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 2px;
+}
+
+.editBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.55);
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.editBtn:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+
+/* メタ情報行 */
+.opMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* 権限チップ */
+.permissionList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.permChip {
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.55);
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+}
+
+/* フッター */
+.opFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--space-1);
+  padding-top: var(--space-3);
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.opFooterItem {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--font-size-xs);
+  color: rgba(255,255,255,0.4);
+}
+
+.metaIcon {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.35);
+}
+
+.opEmail {
+  font-size: 11px;
+  color: rgba(255,255,255,0.3);
+  font-family: monospace;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

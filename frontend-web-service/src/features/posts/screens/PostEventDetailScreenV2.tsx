@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import { FiArrowLeft, FiClock, FiExternalLink, FiMapPin } from 'react-icons/fi';
-import { postsDb } from '../../../api/db/posts.screen';
+import postManagementMockApi from '../../../api/mock/postManagementMockApi';
 import { CarouselIndicator } from '../components';
 
 // ------------------------------------------------------------
@@ -113,9 +113,12 @@ const PostEventDetailScreenV2: React.FC = () => {
   const navigate = useNavigate();
 
   const event = useMemo(() => {
-    const found = postsDb.find((e) => e.id === `${tab}-${id}`);
-    return found ?? postsDb[0];
+    const found = postManagementMockApi.findPostEventByRoute(tab, id);
+    const fallback = postManagementMockApi.findPostEventByRoute('today', '1');
+    return found ?? fallback;
   }, [tab, id]);
+
+  if (!event) return null;
 
   const imageUrls = useMemo(
     () => (event.imageUrls?.length ? event.imageUrls.slice(0, 8) : [event.imageUrl]),
@@ -209,7 +212,7 @@ const PostEventDetailScreenV2: React.FC = () => {
             <Box
               sx={{
                 position: 'relative',
-                borderRadius: 3,
+                borderRadius: 0,
                 overflow: 'hidden',
                 aspectRatio: '16 / 9',
                 backgroundColor: 'rgba(4, 12, 28, 0.7)',

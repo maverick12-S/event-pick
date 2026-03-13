@@ -13,9 +13,8 @@
   right: 0;
   z-index: var(--z-header, 60);
   height: var(--header-height, 72px);
-  display: flex;
+  display: grid;
   align-items: center;
-  justify-content: space-between;
   padding: 0 var(--space-6, 24px);
   background: var(--color-bg-header, rgba(32, 37, 51, 0.55));
   backdrop-filter: var(--backdrop-blur, blur(8px));
@@ -23,12 +22,27 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   box-sizing: border-box;
   transition: background var(--transition-normal, 0.2s ease);
+  overflow: visible;
+}
+
+.headerAuthenticated {
+  grid-template-columns: max-content minmax(24px, 1fr) max-content max-content;
+  column-gap: 0;
+  padding-right: clamp(18px, 2.4vw, 32px);
+}
+
+.headerPublic {
+  grid-template-columns: max-content minmax(24px, 1fr) max-content;
+  padding-right: var(--space-6, 24px);
 }
 
 /* ---- ロゴ左エリア ---- */
 .left {
   display: flex;
   align-items: center;
+  min-width: max-content;
+  position: relative;
+  z-index: 1;
 }
 
 .logo {
@@ -36,20 +50,51 @@
   width: auto;
 }
 
-/* ---- 日付・時刻 右エリア ---- */
 .right {
   display: flex;
   align-items: center;
+  justify-self: end;
   color: rgba(255, 255, 255, 0.88);
+  min-width: 0;
+}
+
+.rightDatePanel {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  opacity: 1;
+  transform: translateX(0);
+  transition:
+    opacity var(--transition-slow, 0.3s ease),
+    transform var(--transition-slow, 0.3s ease);
+}
+
+.authDatePanel {
+  display: flex;
+  align-items: center;
+  justify-self: end;
+  min-width: 0;
+  padding-right: 8px;
+  overflow: hidden;
+}
+
+.authUserBlock {
+  display: inline-flex;
+  align-items: center;
+  justify-self: end;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .datePanel {
   display: flex;
   align-items: center;
-  gap: var(--space-5, 20px);  /* 20px */
+  gap: 16px;
   padding: 4px var(--space-2, 8px);
-  font-size: clamp(0.85rem, 1.8vw, 1.15rem); /* レスポンシブフォント */
+  font-size: clamp(0.85rem, 1.2vw, 1rem);
   font-variant-numeric: tabular-nums;         /* 時刻のガタつき防止 */
+  white-space: nowrap;
+  transition: transform var(--transition-slow, 0.3s ease), opacity var(--transition-slow, 0.3s ease);
 }
 
 .date,
@@ -67,12 +112,218 @@
   color: inherit;
 }
 
+.userInfoBlock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.separator {
+  width: 1px;
+  height: 26px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 0 9px;
+  flex: 0 0 auto;
+}
+
+.userButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  transition: background var(--transition-fast, 0.12s ease), transform var(--transition-fast, 0.12s ease);
+}
+
+.userButton:hover,
+.userButton:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  outline: none;
+}
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.9);
+  flex: 0 0 auto;
+  font-size: 0.9rem;
+}
+
+.userName {
+  font-size: 15px;
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  line-height: 1.2;
+  max-width: 188px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dropdownIcon {
+  margin-left: 8px;
+  font-size: 13px;
+  color: #fff;
+  opacity: 0.7;
+  transition: transform var(--transition-fast, 0.12s ease), opacity var(--transition-fast, 0.12s ease);
+}
+
+.dropdownIconOpen {
+  transform: rotate(180deg);
+  opacity: 0.95;
+}
+
+.menuPaper {
+  margin-top: 10px;
+  min-width: 230px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(180deg, rgba(26, 36, 54, 0.92), rgba(14, 20, 32, 0.94));
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.36);
+  color: #fff;
+}
+
+.menuItem {
+  min-height: 42px;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.menuItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.menuIcon {
+  min-width: 30px;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.menuItemDanger {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 221, 221, 0.94);
+}
+
+.menuItemDanger .menuIcon {
+  color: rgba(255, 221, 221, 0.82);
+}
+
 /* ---- 小さい画面: 時刻だけ表示 ---- */
+@media (max-width: 1080px) {
+  .headerAuthenticated {
+    grid-template-columns: max-content minmax(12px, 1fr) max-content max-content;
+  }
+
+  .authDatePanel {
+    padding-right: 4px;
+  }
+
+  .datePanel {
+    gap: 12px;
+    font-size: 0.9rem;
+    padding-inline: 6px;
+  }
+
+  .userName {
+    max-width: 132px;
+  }
+}
+
+@media (max-width: 920px) {
+  .authDatePanel .date {
+    display: none;
+  }
+
+  .separator {
+    margin-inline: 6px;
+  }
+
+  .userName {
+    max-width: 106px;
+  }
+}
+
+@media (max-width: 760px) {
+  .header {
+    padding: 0 14px;
+  }
+
+  .headerAuthenticated {
+    grid-template-columns: max-content minmax(8px, 1fr) max-content max-content;
+  }
+
+  .datePanel {
+    gap: 8px;
+    font-size: 0.82rem;
+    padding-inline: 0;
+  }
+
+  .separator {
+    display: none;
+  }
+
+  .userName {
+    max-width: 90px;
+  }
+
+  .userButton {
+    padding-inline: 8px;
+  }
+}
+
+@media (max-width: 620px) {
+  .headerAuthenticated {
+    grid-template-columns: max-content minmax(8px, 1fr) max-content;
+  }
+
+  .authDatePanel {
+    display: none;
+  }
+}
+
 @media (max-width: 480px) {
+  .headerAuthenticated {
+    grid-template-columns: max-content minmax(8px, 1fr) max-content;
+  }
+
+  .authDatePanel {
+    justify-self: end;
+    padding-right: 0;
+  }
+
+  .authUserBlock {
+    justify-self: end;
+  }
+
   .date {
     display: none;
   }
+
   .datePanel {
     gap: var(--space-3, 12px);
+    padding-inline: 0;
+  }
+
+  .userName {
+    display: none;
+  }
+
+  .dropdownIcon {
+    margin-left: 0;
+  }
+
+  .menuPaper {
+    min-width: 200px;
   }
 }

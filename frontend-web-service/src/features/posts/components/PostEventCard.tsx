@@ -1,14 +1,16 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { Box, ButtonBase, IconButton, Typography } from '@mui/material';
-import type { PostEventDbItem } from '../../../api/db/posts.screen';
+import { Box, ButtonBase, IconButton, Menu, MenuItem, Typography } from '@mui/material';
+import type { PostEventDbItem } from '../../../types/models/post';
 import CarouselIndicator from './CarouselIndicator';
 
 interface PostEventCardProps {
   event: PostEventDbItem;
+  onEdit?: (event: PostEventDbItem) => void;
+  onDelete?: (event: PostEventDbItem) => void;
 }
 
-const PostEventCard: React.FC<PostEventCardProps> = ({ event }) => {
+const PostEventCard: React.FC<PostEventCardProps> = ({ event, onEdit, onDelete }) => {
   const imageUrls = useMemo(() => {
     if (event.imageUrls && event.imageUrls.length > 0) {
       return event.imageUrls.slice(0, 10);
@@ -17,6 +19,7 @@ const PostEventCard: React.FC<PostEventCardProps> = ({ event }) => {
   }, [event.imageUrl, event.imageUrls]);
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const touchStartXRef = useRef<number | null>(null);
   const numericId = Number(event.id.split('-').pop() ?? '1');
   const likeCount = 20 + (Number.isNaN(numericId) ? 0 : numericId % 360);
@@ -55,6 +58,9 @@ const PostEventCard: React.FC<PostEventCardProps> = ({ event }) => {
 
     onPrevImage();
   };
+
+  const hasPostMenu = Boolean(onEdit || onDelete);
+  const isMenuOpen = Boolean(menuAnchorEl);
 
   return (
     <Box
@@ -103,19 +109,93 @@ const PostEventCard: React.FC<PostEventCardProps> = ({ event }) => {
             TOKYO EVENTS CO.
           </Typography>
         </Box>
-        <IconButton aria-label="投稿メニュー" size="small" sx={{ color: '#666666', fontSize: '1.1rem', p: 0.25 }}>
+        <IconButton
+          aria-label="投稿メニュー"
+          size="small"
+          disableRipple
+          onClick={(eventButton) => {
+            if (!hasPostMenu) return;
+            setMenuAnchorEl(eventButton.currentTarget);
+          }}
+          sx={{
+            color: hasPostMenu ? '#1f3d62' : '#7b8da4',
+            fontSize: '1.1rem',
+            p: 0.2,
+            opacity: hasPostMenu ? 1 : 0.62,
+            border: 'none',
+            backgroundColor: 'transparent',
+            borderRadius: '6px',
+            '&:hover': {
+              backgroundColor: 'transparent',
+            },
+          }}
+        >
           ⋯
         </IconButton>
       </Box>
+
+      {hasPostMenu && (
+        <Menu
+          anchorEl={menuAnchorEl}
+          open={isMenuOpen}
+          onClose={() => setMenuAnchorEl(null)}
+          disableScrollLock
+          MenuListProps={{ dense: true }}
+          PaperProps={{
+            sx: {
+              mt: 0.5,
+              borderRadius: 1.5,
+              border: '1px solid rgba(176, 201, 232, 0.72)',
+              backgroundColor: '#10243c',
+              boxShadow: '0 10px 24px rgba(2, 8, 22, 0.45)',
+              '& .MuiMenuItem-root': {
+                color: '#e9f2ff',
+                fontSize: '0.84rem',
+                fontWeight: 700,
+                minHeight: 34,
+              },
+            },
+          }}
+        >
+          {onEdit && (
+            <MenuItem
+              onClick={() => {
+                onEdit(event);
+                setMenuAnchorEl(null);
+              }}
+              sx={{ '&:hover': { backgroundColor: 'rgba(120, 180, 255, 0.2)' } }}
+            >
+              編集
+            </MenuItem>
+          )}
+          {onDelete && (
+            <MenuItem
+              onClick={() => {
+                onDelete(event);
+                setMenuAnchorEl(null);
+              }}
+              sx={{
+                color: '#ff9fb4',
+                '&:hover': { backgroundColor: 'rgba(235,97,131,0.2)' },
+              }}
+            >
+              削除
+            </MenuItem>
+          )}
+        </Menu>
+      )}
 
       <Box
         sx={{
           position: 'relative',
           overflow: 'hidden',
           touchAction: 'pan-y',
-          borderRadius: 1.5,
+          borderRadius: 0,
           mx: 1.5,
-          aspectRatio: { xs: '4 / 3', md: '16 / 10' },
+          aspectRatio: '4 / 5',
+          '&:hover .post-card-arrow[data-visible="true"]': {
+            opacity: 1,
+          },
         }}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
@@ -142,7 +222,22 @@ const PostEventCard: React.FC<PostEventCardProps> = ({ event }) => {
             opacity: isFirstImage ? 0.32 : 1,
           }}
         >
-          <Box component="span" aria-hidden sx={{ fontSize: 17, fontWeight: 500, transform: 'scaleX(-0.84) scaleY(1.74)', opacity: 0.86 }}>
+          <Box
+            className="post-card-arrow"
+            component="span"
+            aria-hidden
+            data-visible={isFirstImage ? 'false' : 'true'}
+            sx={{
+              fontSize: 17,
+              fontWeight: 500,
+              transform: 'scaleX(-0.84) scaleY(1.74)',
+              opacity: 0,
+              transition: 'opacity 180ms ease',
+              '@media (hover: none)': {
+                opacity: isFirstImage ? 0 : 0.86,
+              },
+            }}
+          >
             {'>'}
           </Box>
         </ButtonBase>
@@ -165,7 +260,22 @@ const PostEventCard: React.FC<PostEventCardProps> = ({ event }) => {
             opacity: isLastImage ? 0.32 : 1,
           }}
         >
-          <Box component="span" aria-hidden sx={{ fontSize: 17, fontWeight: 500, transform: 'scaleX(0.84) scaleY(1.74)', opacity: 0.86 }}>
+          <Box
+            className="post-card-arrow"
+            component="span"
+            aria-hidden
+            data-visible={isLastImage ? 'false' : 'true'}
+            sx={{
+              fontSize: 17,
+              fontWeight: 500,
+              transform: 'scaleX(0.84) scaleY(1.74)',
+              opacity: 0,
+              transition: 'opacity 180ms ease',
+              '@media (hover: none)': {
+                opacity: isLastImage ? 0 : 0.86,
+              },
+            }}
+          >
             {'>'}
           </Box>
         </ButtonBase>
