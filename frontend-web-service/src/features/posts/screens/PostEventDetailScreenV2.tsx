@@ -212,7 +212,7 @@ const PostEventDetailScreenV2: React.FC = () => {
             <Box
               sx={{
                 position: 'relative',
-                borderRadius: 3,
+                borderRadius: 0,
                 overflow: 'hidden',
                 aspectRatio: '16 / 9',
                 backgroundColor: 'rgba(4, 12, 28, 0.7)',

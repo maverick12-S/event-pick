@@ -139,6 +139,7 @@ const PostEventCard: React.FC<PostEventCardProps> = ({ event, onEdit, onDelete }
           anchorEl={menuAnchorEl}
           open={isMenuOpen}
           onClose={() => setMenuAnchorEl(null)}
+          disableScrollLock
           MenuListProps={{ dense: true }}
           PaperProps={{
             sx: {
@@ -189,9 +190,12 @@ const PostEventCard: React.FC<PostEventCardProps> = ({ event, onEdit, onDelete }
           position: 'relative',
           overflow: 'hidden',
           touchAction: 'pan-y',
-          borderRadius: 1.5,
+          borderRadius: 0,
           mx: 1.5,
-          aspectRatio: { xs: '4 / 3', md: '16 / 10' },
+          aspectRatio: '4 / 5',
+          '&:hover .post-card-arrow[data-visible="true"]': {
+            opacity: 1,
+          },
         }}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
@@ -218,7 +222,22 @@ const PostEventCard: React.FC<PostEventCardProps> = ({ event, onEdit, onDelete }
             opacity: isFirstImage ? 0.32 : 1,
           }}
         >
-          <Box component="span" aria-hidden sx={{ fontSize: 17, fontWeight: 500, transform: 'scaleX(-0.84) scaleY(1.74)', opacity: 0.86 }}>
+          <Box
+            className="post-card-arrow"
+            component="span"
+            aria-hidden
+            data-visible={isFirstImage ? 'false' : 'true'}
+            sx={{
+              fontSize: 17,
+              fontWeight: 500,
+              transform: 'scaleX(-0.84) scaleY(1.74)',
+              opacity: 0,
+              transition: 'opacity 180ms ease',
+              '@media (hover: none)': {
+                opacity: isFirstImage ? 0 : 0.86,
+              },
+            }}
+          >
             {'>'}
           </Box>
         </ButtonBase>
@@ -241,7 +260,22 @@ const PostEventCard: React.FC<PostEventCardProps> = ({ event, onEdit, onDelete }
             opacity: isLastImage ? 0.32 : 1,
           }}
         >
-          <Box component="span" aria-hidden sx={{ fontSize: 17, fontWeight: 500, transform: 'scaleX(0.84) scaleY(1.74)', opacity: 0.86 }}>
+          <Box
+            className="post-card-arrow"
+            component="span"
+            aria-hidden
+            data-visible={isLastImage ? 'false' : 'true'}
+            sx={{
+              fontSize: 17,
+              fontWeight: 500,
+              transform: 'scaleX(0.84) scaleY(1.74)',
+              opacity: 0,
+              transition: 'opacity 180ms ease',
+              '@media (hover: none)': {
+                opacity: isLastImage ? 0 : 0.86,
+              },
+            }}
+          >
             {'>'}
           </Box>
         </ButtonBase>

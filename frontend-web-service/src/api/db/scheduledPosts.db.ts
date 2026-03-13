@@ -1,4 +1,5 @@
 import { categoryOptions, cityOptions } from './posts.screen';
+import { toFourByFiveUnsplash } from './mockImages';
 
 export interface PostCondition {
   hashtags: string[];
@@ -37,7 +38,7 @@ const imagePool = [
   'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=400&q=80',
   'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=400&q=80',
   'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?auto=format&fit=crop&w=400&q=80',
-];
+].map((url) => toFourByFiveUnsplash(url, 400));
 
 const hashtagSets: string[][] = [
   ['#東京グルメ', '#食べ歩き', '#フェス'],

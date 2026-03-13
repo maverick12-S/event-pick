@@ -33,6 +33,7 @@ import {
   FiFileText,
 } from 'react-icons/fi';
 import postManagementMockApi from '../../../api/mock/postManagementMockApi';
+import { toFourByFiveUnsplash } from '../../../api/db/mockImages';
 import { CarouselIndicator } from '../components';
 
 /* ─────────────────────────────────────────────
@@ -90,6 +91,9 @@ const glassCardSx = {
   backgroundColor: '#ffffff',
   boxShadow: '0 8px 32px rgba(20, 48, 84, 0.10), 0 1.5px 4px rgba(20,48,84,0.06)',
 };
+
+const POST_DETAIL_CONTENT_MAX_WIDTH = 928;
+const POST_DETAIL_SCALE = 0.75;
 
 /* ─────────────────────────────────────────────
    セクションヘッダー（アクセントライン付き）
@@ -245,6 +249,12 @@ const PostDetailScreenB: React.FC = () => {
     previewForm?: {
       title: string;
       images: string[];
+      imageEdits?: Array<{
+        preview: string;
+        positionX: number;
+        positionY: number;
+        zoom: number;
+      }>;
       summary: string;
       detail: string;
       reservation: string;
@@ -332,7 +342,7 @@ const PostDetailScreenB: React.FC = () => {
   const imageUrls = useMemo(() => {
     if (previewForm) {
       if (previewForm.images.length > 0) return previewForm.images.slice(0, 10);
-      return ['https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80'];
+      return [toFourByFiveUnsplash('https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80', 1200)];
     }
 
     if (scheduledPost) {
@@ -486,64 +496,81 @@ const PostDetailScreenB: React.FC = () => {
     <Box
       sx={{
         width: '100%',
-        maxWidth: 1160,
         mx: 'auto',
-        px: { xs: 1, sm: 2, md: 2.5 },
-        py: { xs: 2, md: 3 },
-        fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-        WebkitFontSmoothing: 'antialiased',
-        textRendering: 'optimizeLegibility',
         display: 'flex',
-        flexDirection: 'column',
-        gap: 2.8,
+        justifyContent: 'center',
+        overflowX: 'clip',
       }}
     >
-
-      {/* ── 戻るボタン ── */}
-      <Box>
-        <ButtonBase
-          onClick={() => {
-            if (isPreviewMode && previewForm) {
-              navigate(previewReturnTo || '/posts/create', {
-                state: {
-                  restoreForm: previewForm,
-                  from: previewFrom,
-                  restoreSelectedPostDates: previewRestoreSelectedPostDates,
-                  restoreAutoPostEnabled: previewRestoreAutoPostEnabled,
-                },
-              });
-              return;
-            }
-            if (isScheduledEditMode) {
-              handleCancelScheduledEdit();
-              return;
-            }
-            navigate(-1);
-          }}
+      <Box
+        sx={{
+          width: `${100 / POST_DETAIL_SCALE}%`,
+          maxWidth: POST_DETAIL_CONTENT_MAX_WIDTH,
+          mx: 'auto',
+          zoom: POST_DETAIL_SCALE,
+          transformOrigin: 'top center',
+          px: { xs: 1, sm: 2, md: 2.5 },
+          py: { xs: 2, md: 3 },
+          fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+          WebkitFontSmoothing: 'antialiased',
+          textRendering: 'optimizeLegibility',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2.8,
+          boxSizing: 'border-box',
+          minWidth: 0,
+        }}
+      >
+        <Box
           sx={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 0.7,
-            color: '#2f4a78',
-            fontSize: '0.93rem',
-            fontWeight: 700,
-            borderRadius: 999,
-            px: 1.6,
-            py: 0.85,
-            border: '1px solid rgba(171,198,236,0.56)',
-            backgroundColor: '#f8fbff',
-            boxShadow: '0 2px 8px rgba(74,112,165,0.08)',
-            transition: 'background 0.18s, box-shadow 0.18s',
-            '&:hover': {
-              backgroundColor: '#eef5ff',
-              boxShadow: '0 4px 14px rgba(74,112,165,0.14)',
-            },
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
           }}
         >
-          <FiArrowLeft />
-          {isPreviewMode ? '投稿作成に戻る' : isScheduledEditMode ? '編集を終了する' : '投稿一覧に戻る'}
-        </ButtonBase>
-      </Box>
+          <ButtonBase
+            onClick={() => {
+              if (isPreviewMode && previewForm) {
+                navigate(previewReturnTo || '/posts/create', {
+                  state: {
+                    restoreForm: previewForm,
+                    from: previewFrom,
+                    restoreSelectedPostDates: previewRestoreSelectedPostDates,
+                    restoreAutoPostEnabled: previewRestoreAutoPostEnabled,
+                  },
+                });
+                return;
+              }
+              if (isScheduledEditMode) {
+                handleCancelScheduledEdit();
+                return;
+              }
+              navigate(-1);
+            }}
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 0.7,
+              color: '#2f4a78',
+              fontSize: '0.93rem',
+              fontWeight: 700,
+              borderRadius: 999,
+              px: 1.6,
+              py: 0.85,
+              border: '1px solid rgba(171,198,236,0.56)',
+              backgroundColor: '#f8fbff',
+              boxShadow: '0 2px 8px rgba(74,112,165,0.08)',
+              transition: 'background 0.18s, box-shadow 0.18s',
+              '&:hover': {
+                backgroundColor: '#eef5ff',
+                boxShadow: '0 4px 14px rgba(74,112,165,0.14)',
+              },
+            }}
+          >
+            <FiArrowLeft />
+            {isPreviewMode ? '投稿作成に戻る' : isScheduledEditMode ? '編集を終了する' : '投稿一覧に戻る'}
+          </ButtonBase>
+        </Box>
 
       {isScheduledEditMode && editForm && (
         <Box
@@ -659,89 +686,98 @@ const PostDetailScreenB: React.FC = () => {
       {/* ══════════════════════════════════
           1. フルワイドカルーセル
       ══════════════════════════════════ */}
-      <Box sx={{ ...glassCardSx, overflow: 'hidden' }}>
-        <Box
-          sx={{
-            position: 'relative',
-            aspectRatio: { xs: '16/10', md: '21/9' },
-            touchAction: 'pan-y',
-            overflow: 'hidden',
-          }}
-          onTouchStart={onTouchStart}
-          onTouchEnd={onTouchEnd}
-        >
-          {/* メイン画像 */}
-          <Box
-            component="img"
-            src={imageUrls[activeIdx]}
-            alt={title}
-            sx={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              display: 'block',
-              transition: 'transform 0.5s cubic-bezier(0.22,1,0.36,1)',
-            }}
-          />
-
-          {/* ボトムグラデーション */}
+      <Box
+        sx={{
+          overflow: 'hidden',
+          borderRadius: 0,
+          backgroundColor: 'transparent',
+          border: 'none',
+          boxShadow: 'none',
+        }}
+      >
+        <Box sx={{ width: '100%', mx: 'auto' }}>
           <Box
             sx={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: '55%',
-              background:
-                'linear-gradient(to top, rgba(10,20,40,0.82) 0%, rgba(10,20,40,0.45) 50%, transparent 100%)',
-              pointerEvents: 'none',
+              position: 'relative',
+              aspectRatio: '4 / 5',
+              touchAction: 'pan-y',
+              overflow: 'hidden',
+              '& .detail-carousel-nav': {
+                opacity: 0,
+                pointerEvents: 'none',
+                transition: 'opacity 0.18s ease, background 0.18s ease',
+              },
+              '@media (hover: hover)': {
+                '&:hover .detail-carousel-nav, &:focus-within .detail-carousel-nav': {
+                  opacity: 1,
+                  pointerEvents: 'auto',
+                },
+              },
             }}
-          />
-
-          {/* 左矢印 */}
-          {activeIdx > 0 && (
-            <ButtonBase
-              onClick={prev}
-              aria-label="前の画像"
+            onTouchStart={onTouchStart}
+            onTouchEnd={onTouchEnd}
+          >
+            {/* メイン画像 */}
+            <Box
+              component="img"
+              src={imageUrls[activeIdx]}
+              alt={title}
               sx={{
-                position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
-                width: 40, height: 40, borderRadius: 999,
-                background: 'rgba(5,15,32,0.52)',
-                backdropFilter: 'blur(6px)',
-                border: '1px solid rgba(255,255,255,0.2)',
-                color: '#fff', fontSize: '1.5rem',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'background 0.18s',
-                '&:hover': { background: 'rgba(5,15,32,0.72)' },
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                display: 'block',
+                transition: 'transform 0.5s cubic-bezier(0.22,1,0.36,1)',
               }}
-            >
-              ‹
-            </ButtonBase>
-          )}
+            />
 
-          {/* 右矢印 */}
-          {activeIdx < imageUrls.length - 1 && (
-            <ButtonBase
-              onClick={next}
-              aria-label="次の画像"
-              sx={{
-                position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                width: 40, height: 40, borderRadius: 999,
-                background: 'rgba(5,15,32,0.52)',
-                backdropFilter: 'blur(6px)',
-                border: '1px solid rgba(255,255,255,0.2)',
-                color: '#fff', fontSize: '1.5rem',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'background 0.18s',
-                '&:hover': { background: 'rgba(5,15,32,0.72)' },
-              }}
-            >
-              ›
-            </ButtonBase>
-          )}
+            {/* 左矢印 */}
+            {activeIdx > 0 && (
+              <ButtonBase
+                className="detail-carousel-nav"
+                onClick={prev}
+                aria-label="前の画像"
+                sx={{
+                  position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
+                  width: 40, height: 40, borderRadius: 999,
+                  background: 'rgba(5,15,32,0.52)',
+                  backdropFilter: 'blur(6px)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  color: '#fff', fontSize: '1.5rem',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'background 0.18s',
+                  '&:hover': { background: 'rgba(5,15,32,0.72)' },
+                }}
+              >
+                ‹
+              </ButtonBase>
+            )}
 
-          {/* インジケータードット */}
-          <CarouselIndicator total={imageUrls.length} currentIndex={activeIdx} />
+            {/* 右矢印 */}
+            {activeIdx < imageUrls.length - 1 && (
+              <ButtonBase
+                className="detail-carousel-nav"
+                onClick={next}
+                aria-label="次の画像"
+                sx={{
+                  position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                  width: 40, height: 40, borderRadius: 999,
+                  background: 'rgba(5,15,32,0.52)',
+                  backdropFilter: 'blur(6px)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  color: '#fff', fontSize: '1.5rem',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'background 0.18s',
+                  '&:hover': { background: 'rgba(5,15,32,0.72)' },
+                }}
+              >
+                ›
+              </ButtonBase>
+            )}
+
+            {/* インジケータードット */}
+            <CarouselIndicator total={imageUrls.length} currentIndex={activeIdx} />
+          </Box>
         </Box>
 
         {/* ── サムネイルストリップ ── */}
@@ -750,11 +786,14 @@ const PostDetailScreenB: React.FC = () => {
             sx={{
               display: 'flex',
               gap: 1,
+              width: '100%',
+              mx: 'auto',
               px: { xs: 1.2, sm: 1.5, md: 1.75 },
               py: { xs: 1, sm: 1.15, md: 1.25 },
               overflowX: 'auto',
-              background: 'linear-gradient(180deg, #f9fbfe 0%, #f3f8ff 100%)',
-              borderTop: '1px solid rgba(171,198,236,0.35)',
+              backgroundColor: 'rgba(255,255,255,0.98)',
+              borderTop: '1px solid rgba(214,226,242,0.9)',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.92)',
               scrollSnapType: 'x mandatory',
               '&::-webkit-scrollbar': { height: 4 },
               '&::-webkit-scrollbar-thumb': { borderRadius: 999, backgroundColor: 'rgba(74,112,165,0.24)' },
@@ -766,15 +805,16 @@ const PostDetailScreenB: React.FC = () => {
                 onClick={() => setActiveIdx(i)}
                 sx={{
                   flexShrink: 0,
-                  width: { xs: 72, sm: 76, md: 82 },
-                  height: { xs: 48, sm: 52, md: 56 },
-                  borderRadius: '10px',
+                  width: { xs: 74, sm: 80, md: 86 },
+                  aspectRatio: '4 / 5',
+                  borderRadius: 0,
                   overflow: 'hidden',
                   border: i === activeIdx
-                    ? '2.5px solid #4a7fd4'
-                    : '1.5px solid rgba(171,198,236,0.45)',
+                    ? '2px solid rgba(72, 129, 214, 0.95)'
+                    : '1px solid rgba(196,214,238,0.72)',
                   opacity: i === activeIdx ? 1 : 0.72,
-                  boxShadow: i === activeIdx ? '0 6px 16px rgba(74,127,212,0.25)' : 'none',
+                  background: 'linear-gradient(180deg, rgba(255,255,255,0.82), rgba(236,244,255,0.72))',
+                  boxShadow: i === activeIdx ? '0 10px 24px rgba(74,127,212,0.22)' : '0 4px 14px rgba(29, 54, 90, 0.08)',
                   scrollSnapAlign: 'start',
                   transition: 'opacity 0.2s, border-color 0.2s, transform 0.2s, box-shadow 0.2s',
                   '&:hover': { opacity: 1, transform: 'translateY(-1px)' },
@@ -1026,7 +1066,7 @@ const PostDetailScreenB: React.FC = () => {
           />
         </Box>
       </Box>
-
+    </Box>
     </Box>
   );
 };

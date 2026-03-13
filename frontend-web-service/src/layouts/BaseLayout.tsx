@@ -36,6 +36,7 @@ const BaseLayout: React.FC = () => {
   const publicRoutes = ['/login', '/signup', '/password-reset', '/mfa', '/password-change'];
   const isPublicRoute = publicRoutes.includes(location.pathname);
   const showDarkOverlay = isAuthenticated && !isPublicRoute;
+  const useAuthenticatedHeader = isAuthenticated && !isPublicRoute;
   const isNavigating = navigation.state !== 'idle';
 
   const readPostsTab = (search: string): 'today' | 'tomorrow' | null => {
@@ -76,7 +77,7 @@ const BaseLayout: React.FC = () => {
     >
       {/* z-index は Background の::before(0), ::after(1) より前面 */}
       <div style={{ position: 'relative', zIndex: 10, flex: '1 0 auto', display: 'flex', flexDirection: 'column' }}>
-        <Header />
+        <Header isAuthenticatedView={useAuthenticatedHeader} />
         {isNavigating && <div className="route-loading-bar" aria-hidden />}
         <main style={{ flex: '1 0 auto', display: 'flex', flexDirection: 'column' }}>
           <div

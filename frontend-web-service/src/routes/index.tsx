@@ -62,6 +62,46 @@ export const router = createBrowserRouter([
             element: lazyLoad(() => import('../features/plan/screens/PlanScreen')),
           },
           {
+            path: '/settings/account',
+            element: lazyLoad(() => import('../features/settings/screens/SettingsAccountScreen')),
+          },
+          {
+            path: '/settings/notifications',
+            element: lazyLoad(() => import('../features/settings/screens/SettingsNotificationsScreen')),
+          },
+          {
+            path: '/settings/billing',
+            element: lazyLoad(() => import('../features/settings/screens/SettingsBillingScreen')),
+          },
+          {
+            path: '/settings/billing/edit',
+            element: lazyLoad(() => import('../features/settings/screens/SettingsBillingEditScreen')),
+          },
+          {
+            path: '/settings/billing/subscription',
+            element: lazyLoad(() => import('../features/settings/screens/BillingSubscriptionScreen')),
+          },
+          {
+            path: '/settings/billing/stripe-info',
+            element: lazyLoad(() => import('../features/settings/screens/BillingStripeInfoScreen')),
+          },
+          {
+            path: '/settings/billing/terms',
+            element: lazyLoad(() => import('../features/settings/screens/BillingTermsScreen')),
+          },
+          {
+            path: '/settings/billing/privacy',
+            element: lazyLoad(() => import('../features/settings/screens/BillingPrivacyScreen')),
+          },
+          {
+            path: '/settings/history',
+            element: lazyLoad(() => import('../features/settings/screens/SettingsHistoryScreen')),
+          },
+          {
+            path: '/settings/contact',
+            element: lazyLoad(() => import('../features/settings/screens/SettingsContactScreen')),
+          },
+          {
             path: '/report',
             element: lazyLoad(() => import('../features/reports/screens/ReportScreen.tsx')),
           },

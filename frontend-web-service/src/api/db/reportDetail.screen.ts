@@ -1,4 +1,5 @@
 import { reportRowsDb, type ReportListItem } from './reports.screen';
+import { toFourByFiveUnsplash } from './mockImages';
 
 export type ReportMetricKey = 'views' | 'likes' | 'favorites';
 
@@ -53,7 +54,7 @@ const imagePool = [
   'https://images.unsplash.com/photo-1528605248644-14dd04022da1?auto=format&fit=crop&w=1400&q=80',
   'https://images.unsplash.com/photo-1481833761820-0509d3217039?auto=format&fit=crop&w=1400&q=80',
   'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1400&q=80',
-];
+].map((url) => toFourByFiveUnsplash(url, 1400));
 
 const buildValues = (base: number, seed: number) =>
   ageBins.map((_, index) => {

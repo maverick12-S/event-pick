@@ -17,7 +17,7 @@ const PlanGuideModal: React.FC<PlanGuideModalProps> = ({ open, onClose }) => {
       sx={{
         position: 'fixed',
         inset: 0,
-        zIndex: 20,
+        zIndex: 'var(--z-modal, 100)',
         display: 'grid',
         placeItems: 'center',
         p: 2,

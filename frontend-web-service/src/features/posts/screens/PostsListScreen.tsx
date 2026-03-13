@@ -26,7 +26,7 @@ const {
 } = postManagementMockApi.getPostFilterOptions();
 
 const PAGE_LIMIT = 60;
-const POSTS_LIST_SCALE = 1.1;
+const POSTS_LIST_SCALE = 0.96;
 
 const tabs: Array<{ key: PostsTabKey; label: string }> = [
   { key: 'today', label: '今日' },
@@ -119,14 +119,14 @@ const PostsListScreen: React.FC = () => {
   const currentPage = isAccountScope ? accountPage : (data?.page ?? page);
 
   return (
-    <Box sx={{ width: '100%', px: { xs: 1.25, sm: 2, md: 2.5 }, pb: { xs: 3, md: 4 } }}>
+    <Box sx={{ width: '100%', overflowX: 'clip', px: { xs: 1.25, sm: 2, md: 2.5 }, pb: { xs: 3, md: 4 } }}>
       <Box sx={{ width: '100%', mx: 'auto' }}>
         <Box
           sx={{
-            width: { xs: '100%', lg: `${100 / POSTS_LIST_SCALE}%` },
+            width: `${100 / POSTS_LIST_SCALE}%`,
             maxWidth: 1900,
             mx: 'auto',
-            zoom: { xs: 1, lg: POSTS_LIST_SCALE },
+            zoom: POSTS_LIST_SCALE,
             transformOrigin: 'top center',
           }}
         >

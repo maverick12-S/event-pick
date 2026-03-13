@@ -40,7 +40,9 @@ import {
 
 const MAX_IMAGES = 10;
 const DETAIL_MAX_LENGTH = 1200;
-const POST_CREATE_SCALE = 1.62;
+const POST_CREATE_FULLSCREEN_SCALE = 1.1;
+const IMAGE_DRAG_SENSITIVITY = 0.6;
+const IMAGE_BASE_OFFSET_LIMIT = 10;
 
 const GLASS_BG = 'rgba(255,255,255,0.1)';
 const GLASS_BORDER = '1px solid rgba(255,255,255,0.2)';
@@ -53,7 +55,7 @@ const CATEGORIES = [
 
 interface PostFormData {
   title: string;
-  images: { file: File; preview: string }[];
+  images: { file: File; preview: string; positionX: number; positionY: number; zoom: number }[];
   summary: string;
   detail: string;
   reservation: string;
@@ -67,9 +69,17 @@ interface PostFormData {
 
 type QuickAssistMode = 'replace' | 'append';
 
+type PreviewImagePayload = {
+  preview: string;
+  positionX: number;
+  positionY: number;
+  zoom: number;
+};
+
 type PreviewFormPayload = {
   title: string;
   images: string[];
+  imageEdits?: PreviewImagePayload[];
   summary: string;
   detail: string;
   reservation: string;
@@ -106,7 +116,12 @@ const BUDGET_TEMPLATES = QUICK_ASSIST_SETTINGS.budgets;
 const ASSIST_FIELD_OPTIONS = QUICK_ASSIST_SETTINGS.fieldOptions;
 
 const WEEKDAY_JA = ['日', '月', '火', '水', '木', '金', '土'];
-
+const clampZoom = (value: number): number => Math.max(0.4, Math.min(3.2, value));
+const getImageOffsetLimit = (zoom: number): number => Math.min(50, IMAGE_BASE_OFFSET_LIMIT + Math.max(0, zoom - 1) * 50);
+const clampImagePosition = (value: number, zoom: number): number => {
+  const limit = getImageOffsetLimit(zoom);
+  return Math.max(50 - limit, Math.min(50 + limit, value));
+};
 const toLocalIsoDate = (date: Date): string => {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -235,8 +250,22 @@ const ImageUploadArea: React.FC<{
   images: PostFormData['images'];
   onAdd: (files: FileList) => void;
   onRemove: (index: number) => void;
-}> = ({ images, onAdd, onRemove }) => {
+  onPositionChange: (index: number, positionX: number, positionY: number) => void;
+  onZoomChange: (index: number, zoom: number) => void;
+}> = ({ images, onAdd, onRemove, onPositionChange, onZoomChange }) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const longPressTimerRef = useRef<number | null>(null);
+  const dragStateRef = useRef<{
+    pointerId: number;
+    index: number;
+    startX: number;
+    startY: number;
+    startPosX: number;
+    startPosY: number;
+    stageWidth: number;
+    stageHeight: number;
+  } | null>(null);
 
   const openFilePicker = () => {
     if (!inputRef.current) return;
@@ -245,135 +274,379 @@ const ImageUploadArea: React.FC<{
     inputRef.current.click();
   };
 
-  const emptySlots = Math.max(0, Math.min(3, MAX_IMAGES - images.length));
-  const showSlots = [...images, ...Array(emptySlots).fill(null)].slice(0, Math.max(3, images.length + 1 <= MAX_IMAGES ? images.length + 1 : images.length));
+  useEffect(() => {
+    if (images.length === 0) {
+      setSelectedIndex(0);
+      return;
+    }
+    if (selectedIndex >= images.length) {
+      setSelectedIndex(images.length - 1);
+    }
+  }, [images.length, selectedIndex]);
+
+  const clearLongPressTimer = () => {
+    if (longPressTimerRef.current !== null) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  const startDrag = (
+    targetElement: HTMLDivElement,
+    pointerId: number,
+    clientX: number,
+    clientY: number,
+    index: number,
+  ) => {
+    const target = images[index];
+    if (!target) return;
+    dragStateRef.current = {
+      pointerId,
+      index,
+      startX: clientX,
+      startY: clientY,
+      startPosX: target.positionX,
+      startPosY: target.positionY,
+      stageWidth: targetElement.getBoundingClientRect().width || 1,
+      stageHeight: targetElement.getBoundingClientRect().height || 1,
+    };
+    targetElement.setPointerCapture(pointerId);
+  };
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    const pointerType = event.pointerType;
+    const isLeftMouse = pointerType === 'mouse' && event.button === 0;
+    const isRightMouse = pointerType === 'mouse' && event.button === 2;
+    const isTouchLike = pointerType === 'touch' || pointerType === 'pen';
+    if (!isLeftMouse && !isRightMouse && !isTouchLike) return;
+
+    event.preventDefault();
+
+    if (isLeftMouse || isRightMouse) {
+      startDrag(event.currentTarget, event.pointerId, event.clientX, event.clientY, selectedIndex);
+      return;
+    }
+
+    clearLongPressTimer();
+    const { currentTarget, pointerId, clientX, clientY } = event;
+    longPressTimerRef.current = window.setTimeout(() => {
+      startDrag(currentTarget, pointerId, clientX, clientY, selectedIndex);
+      longPressTimerRef.current = null;
+    }, 260);
+  };
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const state = dragStateRef.current;
+    if (!state || state.pointerId !== event.pointerId) return;
+
+    event.preventDefault();
+    const dx = event.clientX - state.startX;
+    const dy = event.clientY - state.startY;
+    const target = images[state.index];
+    if (!target) return;
+    onPositionChange(
+      state.index,
+      clampImagePosition(state.startPosX + (dx / state.stageWidth) * 100 * IMAGE_DRAG_SENSITIVITY, target.zoom),
+      clampImagePosition(state.startPosY + (dy / state.stageHeight) * 100 * IMAGE_DRAG_SENSITIVITY, target.zoom),
+    );
+  };
+
+  const endDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    clearLongPressTimer();
+    if (dragStateRef.current?.pointerId === event.pointerId) {
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+      dragStateRef.current = null;
+    }
+  };
+
+  const selectedImage = images[selectedIndex] ?? null;
+
+  const handleWheel: React.WheelEventHandler<HTMLDivElement> = (event) => {
+    if (!selectedImage) return;
+    event.preventDefault();
+    const nextZoom = clampZoom(selectedImage.zoom + (event.deltaY < 0 ? 0.08 : -0.08));
+    onZoomChange(selectedIndex, nextZoom);
+  };
+
+  const handleRemove = (index: number) => {
+    if (index < selectedIndex) {
+      setSelectedIndex((prev) => Math.max(0, prev - 1));
+    } else if (index === selectedIndex && selectedIndex > 0) {
+      setSelectedIndex((prev) => prev - 1);
+    }
+    onRemove(index);
+  };
 
   return (
-    <Box>
+    <Box sx={{ display: 'grid', gap: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.65 }}>
+          <FiImage size={13} style={{ color: 'rgba(228, 238, 252, 0.92)' }} />
+          <Typography sx={{ color: 'rgba(228, 238, 252, 0.92)', fontSize: '0.75rem', fontWeight: 700 }}>
+            {images.length} / {MAX_IMAGES} 枚
+          </Typography>
+        </Box>
+        <ButtonBase
+          onClick={openFilePicker}
+          disabled={images.length >= MAX_IMAGES}
+          sx={{
+            minHeight: 36,
+            px: 1.2,
+            borderRadius: '8px',
+            border: '1px solid rgba(243, 248, 255, 0.72)',
+            backgroundColor: 'rgba(248, 252, 255, 0.1)',
+            color: 'rgba(236, 246, 255, 0.95)',
+            fontSize: '0.73rem',
+            fontWeight: 700,
+          }}
+        >
+          <FiUploadCloud size={14} style={{ marginRight: 6 }} />
+          写真を追加
+        </ButtonBase>
+      </Box>
+
       <Box
         sx={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 1,
+          borderRadius: '12px',
+          border: GLASS_BORDER,
+          backgroundColor: 'rgba(255,255,255,0.08)',
+          boxShadow: '0 0 10px rgba(80,160,255,0.5)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          p: 1,
         }}
       >
-        {showSlots.map((img, idx) =>
-          img ? (
+        {selectedImage ? (
+          <>
             <Box
-              key={idx}
+              onContextMenu={(event) => event.preventDefault()}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={endDrag}
+              onPointerCancel={endDrag}
+              onWheel={handleWheel}
               sx={{
-                width: { xs: 120, sm: 140 },
-                height: { xs: 94, sm: 110 },
-                borderRadius: '14px',
-                overflow: 'hidden',
                 position: 'relative',
-                border: GLASS_BORDER,
-                background: 'rgba(255,255,255,0.08)',
-                backdropFilter: 'blur(10px)',
-                WebkitBackdropFilter: 'blur(10px)',
-                boxShadow: '0 0 10px rgba(80,160,255,0.6)',
-                flexShrink: 0,
+                width: '100%',
+                maxWidth: 460,
+                mx: 'auto',
+                borderRadius: 0,
+                overflow: 'hidden',
+                aspectRatio: '4 / 5',
+                border: '1px solid rgba(186, 211, 242, 0.42)',
+                touchAction: 'none',
+                backgroundColor: '#0f1724',
               }}
             >
               <Box
-                component="img"
-                src={img.preview}
-                alt={`upload-${idx}`}
-                sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                sx={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transform: `translate(${selectedImage.positionX - 50}%, ${selectedImage.positionY - 50}%)`,
+                }}
+              >
+                <Box
+                  component="img"
+                  src={selectedImage.preview}
+                  alt={`editor-${selectedIndex}`}
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                    transform: `scale(${selectedImage.zoom})`,
+                    transformOrigin: 'center center',
+                    display: 'block',
+                    userSelect: 'none',
+                    WebkitUserDrag: 'none',
+                  }}
+                />
+              </Box>
+
+              <Box
+                sx={{
+                  position: 'absolute',
+                  left: '50%',
+                  top: '50%',
+                  width: { xs: '84%', md: '80%' },
+                  aspectRatio: '4 / 5',
+                  transform: 'translate(-50%, -50%)',
+                  pointerEvents: 'none',
+                }}
+              >
+                <Box sx={{ position: 'absolute', left: 0, right: 0, top: 0, height: 0, borderRadius: 0 }} />
+              </Box>
+
+              <Box
+                sx={{
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  height: { xs: '8%', md: '10%' },
+                  backgroundColor: 'rgba(8, 12, 19, 0.42)',
+                  pointerEvents: 'none',
+                }}
               />
               <Box
                 sx={{
                   position: 'absolute',
-                  top: 3,
-                  right: 3,
-                  width: 18,
-                  height: 18,
-                  borderRadius: '50%',
-                  backgroundColor: 'rgba(0,0,0,0.7)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  '&:hover': { backgroundColor: 'rgba(220,60,80,0.85)' },
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: { xs: '8%', md: '10%' },
+                  backgroundColor: 'rgba(8, 12, 19, 0.42)',
+                  pointerEvents: 'none',
                 }}
-                onClick={() => onRemove(idx)}
-              >
-                <FiX size={10} color="#fff" />
-              </Box>
+              />
               <Box
                 sx={{
                   position: 'absolute',
-                  bottom: 3,
-                  left: 4,
-                  fontSize: '0.55rem',
-                  color: 'rgba(255,255,255,0.7)',
+                  left: 0,
+                  top: { xs: '8%', md: '10%' },
+                  bottom: { xs: '8%', md: '10%' },
+                  width: { xs: '8%', md: '10%' },
+                  backgroundColor: 'rgba(8, 12, 19, 0.42)',
+                  pointerEvents: 'none',
+                }}
+              />
+              <Box
+                sx={{
+                  position: 'absolute',
+                  right: 0,
+                  top: { xs: '8%', md: '10%' },
+                  bottom: { xs: '8%', md: '10%' },
+                  width: { xs: '8%', md: '10%' },
+                  backgroundColor: 'rgba(8, 12, 19, 0.42)',
+                  pointerEvents: 'none',
+                }}
+              />
+
+              <Box
+                sx={{
+                  position: 'absolute',
+                  left: '50%',
+                  top: '50%',
+                  width: { xs: '84%', md: '80%' },
+                  aspectRatio: '4 / 5',
+                  transform: 'translate(-50%, -50%)',
+                  borderRadius: 0,
+                  border: '2px solid rgba(232, 242, 255, 0.9)',
+                  boxSizing: 'border-box',
+                  pointerEvents: 'none',
+                }}
+              />
+
+              <Box
+                sx={{
+                  position: 'absolute',
+                  left: 8,
+                  bottom: 8,
+                  px: 0.7,
+                  py: 0.3,
+                  borderRadius: '999px',
+                  backgroundColor: 'rgba(6, 18, 35, 0.62)',
+                  color: '#eaf3ff',
+                  fontSize: '0.67rem',
                   fontWeight: 700,
                 }}
               >
-                {idx + 1}/{images.length}
+                左ドラッグで移動 / ホイールで拡大縮小 / 右クリック長押しも可
               </Box>
             </Box>
-          ) : (
-            <ButtonBase
-              key={`empty-${idx}`}
-              onClick={openFilePicker}
-              disabled={images.length >= MAX_IMAGES}
-              sx={{
-                width: { xs: 120, sm: 140 },
-                height: { xs: 94, sm: 110 },
-                borderRadius: '14px',
-                border: GLASS_BORDER,
-                backgroundColor: 'rgba(255,255,255,0.08)',
-                backdropFilter: 'blur(10px)',
-                WebkitBackdropFilter: 'blur(10px)',
-                boxShadow: '0 0 10px rgba(80,160,255,0.6)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 0.4,
-                flexShrink: 0,
-                transition: 'all 0.2s',
-                '&:hover:not(:disabled)': {
-                  border: '1px solid #6FB3FF',
-                  boxShadow: '0 0 12px rgba(111,179,255,0.7)',
-                },
-                '&:disabled': { opacity: 0.4 },
-              }}
-            >
-              <FiUploadCloud size={18} style={{ color: 'rgba(238,246,255,0.92)' }} />
-              <Typography sx={{ color: 'rgba(238,246,255,0.95)', fontSize: '0.66rem', fontWeight: 700, letterSpacing: '0.01em' }}>
-                Upload Image
-              </Typography>
-            </ButtonBase>
-          ),
-        )}
-      </Box>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mt: 0.75 }}>
-        <FiImage size={11} style={{ color: 'rgba(228, 238, 252, 0.92)' }} />
-        <Typography sx={{ color: 'rgba(228, 238, 252, 0.92)', fontSize: '0.7rem', fontWeight: 600 }}>
-          {images.length} / {MAX_IMAGES} 枚
-        </Typography>
-        {images.length < MAX_IMAGES && (
+            <Box sx={{ mt: 0.8, px: { xs: 0.2, md: 0.4 } }}>
+              <Typography sx={{ color: 'rgba(218, 233, 252, 0.9)', fontSize: '0.7rem', mb: 0.35 }}>ズーム</Typography>
+              <input
+                type="range"
+                min={0.4}
+                max={3.2}
+                step={0.01}
+                value={selectedImage.zoom}
+                onChange={(event) => onZoomChange(selectedIndex, Number(event.target.value))}
+                style={{ width: '100%' }}
+              />
+              <Typography sx={{ mt: 0.65, display: 'block', color: 'rgba(208, 225, 248, 0.72)', fontSize: '0.68rem' }}>
+                現在倍率: {selectedImage.zoom.toFixed(2)}x
+              </Typography>
+            </Box>
+
+            <Box sx={{ mt: 1, display: 'flex', gap: 0.8, overflowX: 'auto', pb: 0.4 }}>
+              {images.map((img, idx) => {
+                const active = idx === selectedIndex;
+                return (
+                  <Box
+                    key={`${img.preview}-${idx}`}
+                    sx={{
+                      position: 'relative',
+                      width: 88,
+                      height: 110,
+                      flexShrink: 0,
+                      borderRadius: 0,
+                      overflow: 'hidden',
+                      border: active ? '2px solid #8ec0ff' : '1px solid rgba(175, 199, 228, 0.44)',
+                      boxShadow: active ? '0 0 0 2px rgba(67, 123, 191, 0.2)' : 'none',
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => setSelectedIndex(idx)}
+                  >
+                    <Box
+                      component="img"
+                      src={img.preview}
+                      alt={`thumb-${idx}`}
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        objectPosition: `${img.positionX}% ${img.positionY}%`,
+                        transform: `scale(${img.zoom})`,
+                        transformOrigin: 'center center',
+                      }}
+                    />
+                    <IconButton
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleRemove(idx);
+                      }}
+                      size="small"
+                      sx={{
+                        position: 'absolute',
+                        top: 4,
+                        right: 4,
+                        width: 19,
+                        height: 19,
+                        backgroundColor: 'rgba(0,0,0,0.66)',
+                        color: '#fff',
+                        '&:hover': { backgroundColor: 'rgba(220,60,80,0.9)' },
+                      }}
+                    >
+                      <FiX size={10} />
+                    </IconButton>
+                  </Box>
+                );
+              })}
+            </Box>
+          </>
+        ) : (
           <ButtonBase
             onClick={openFilePicker}
             sx={{
-              px: 0.9,
-              py: 0.25,
-              borderRadius: '4px',
-              border: '1px solid rgba(243, 248, 255, 0.72)',
-              backgroundColor: 'rgba(248, 252, 255, 0.1)',
-              color: 'rgba(236, 246, 255, 0.95)',
-              fontSize: '0.68rem',
+              width: '100%',
+              minHeight: 140,
+              borderRadius: '10px',
+              border: '1px dashed rgba(179, 205, 239, 0.55)',
+              color: 'rgba(225, 238, 255, 0.88)',
+              fontSize: '0.82rem',
               fontWeight: 700,
-              '&:hover': {
-                borderColor: 'rgba(33, 69, 120, 0.86)',
-                boxShadow: '0 0 0 2px rgba(35, 74, 128, 0.16)',
-              },
+              display: 'grid',
+              placeItems: 'center',
             }}
           >
-            + 追加
+            画像を追加してください
           </ButtonBase>
         )}
       </Box>
@@ -824,13 +1097,26 @@ const PostCreateScreen: React.FC = () => {
     const restore = (location.state as PostCreateLocationState | null)?.restoreForm;
     if (!restore) return;
 
+    const restoredImages = (restore.imageEdits?.length
+      ? restore.imageEdits
+      : restore.images.map((preview) => ({
+        preview,
+        positionX: 50,
+        positionY: 50,
+        zoom: 1,
+      }))
+    ).map((image, idx) => ({
+      // Fileオブジェクトはプレビュー復元用のダミー。送信時はAPI実装側で扱いを決める。
+      file: new File([''], `restored-${idx + 1}.txt`, { type: 'text/plain' }),
+      preview: image.preview,
+      positionX: clampImagePosition(image.positionX, clampZoom(image.zoom)),
+      positionY: clampImagePosition(image.positionY, clampZoom(image.zoom)),
+      zoom: clampZoom(image.zoom),
+    }));
+
     setForm({
       title: restore.title,
-      images: restore.images.map((preview, idx) => ({
-        // Fileオブジェクトはプレビュー復元用のダミー。送信時はAPI実装側で扱いを決める。
-        file: new File([''], `restored-${idx + 1}.txt`, { type: 'text/plain' }),
-        preview,
-      })),
+      images: restoredImages,
       summary: restore.summary,
       detail: restore.detail,
       reservation: restore.reservation,
@@ -949,6 +1235,9 @@ const PostCreateScreen: React.FC = () => {
       const toAdd = Array.from(files).slice(0, remaining).map((file) => ({
         file,
         preview: URL.createObjectURL(file),
+        positionX: 50,
+        positionY: 50,
+        zoom: 1,
       }));
 
       return { ...prev, images: [...prev.images, ...toAdd] };
@@ -960,6 +1249,35 @@ const PostCreateScreen: React.FC = () => {
     URL.revokeObjectURL(updated[index].preview);
     updated.splice(index, 1);
     setField('images', updated);
+  };
+
+  const handleChangeImagePosition = (index: number, positionX: number, positionY: number) => {
+    setForm((prev) => {
+      if (!prev.images[index]) return prev;
+      const next = [...prev.images];
+      const currentZoom = next[index].zoom;
+      next[index] = {
+        ...next[index],
+        positionX: clampImagePosition(positionX, currentZoom),
+        positionY: clampImagePosition(positionY, currentZoom),
+      };
+      return { ...prev, images: next };
+    });
+  };
+
+  const handleChangeImageZoom = (index: number, zoom: number) => {
+    setForm((prev) => {
+      if (!prev.images[index]) return prev;
+      const next = [...prev.images];
+      const nextZoom = clampZoom(zoom);
+      next[index] = {
+        ...next[index],
+        zoom: nextZoom,
+        positionX: clampImagePosition(next[index].positionX, nextZoom),
+        positionY: clampImagePosition(next[index].positionY, nextZoom),
+      };
+      return { ...prev, images: next };
+    });
   };
 
   const validate = (): string | null => {
@@ -1015,6 +1333,12 @@ const PostCreateScreen: React.FC = () => {
     const previewPayload: PreviewFormPayload = {
       title: form.title,
       images: form.images.map((img) => img.preview),
+      imageEdits: form.images.map((img) => ({
+        preview: img.preview,
+        positionX: img.positionX,
+        positionY: img.positionY,
+        zoom: img.zoom,
+      })),
       summary: form.summary,
       detail: form.detail,
       reservation: form.reservation,
@@ -1114,8 +1438,86 @@ const PostCreateScreen: React.FC = () => {
     >
       <Box
         sx={{
-          width: { xs: '100%', xl: `${100 / POST_CREATE_SCALE}%` },
-          zoom: { xs: 1, xl: POST_CREATE_SCALE },
+          width: { xs: '100%', xl: `${100 / POST_CREATE_FULLSCREEN_SCALE}%` },
+          zoom: { xs: 1, xl: POST_CREATE_FULLSCREEN_SCALE },
+          transformOrigin: 'top center',
+          maxWidth: 1820,
+          mx: 'auto',
+          mb: { xs: 1, md: 1.2 },
+          borderRadius: { xs: '12px', md: '14px' },
+          border: '1px solid rgba(120,170,240,0.32)',
+          backgroundColor: 'rgba(8,22,45,0.66)',
+          boxShadow: '0 0 12px rgba(80,160,255,0.24)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          p: { xs: 1.1, md: 1.3 },
+        }}
+      >
+        <Typography
+          sx={{
+            color: '#d7e9ff',
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            letterSpacing: '0.01em',
+          }}
+        >
+          タイトル
+        </Typography>
+        <Box sx={{ mt: 0.6 }}>
+          <FieldLabel num={1} label="タイトル" />
+          <DarkInput
+            value={form.title}
+            onChange={(v) => setField('title', v)}
+            placeholder="イベントタイトルを入力"
+            minHeight={56}
+            fontSize="1.1rem"
+          />
+        </Box>
+      </Box>
+
+      <Box
+        sx={{
+          width: { xs: '100%', xl: `${100 / POST_CREATE_FULLSCREEN_SCALE}%` },
+          zoom: { xs: 1, xl: POST_CREATE_FULLSCREEN_SCALE },
+          transformOrigin: 'top center',
+          maxWidth: 1820,
+          mx: 'auto',
+          mb: { xs: 1, md: 1.2 },
+          borderRadius: { xs: '12px', md: '14px' },
+          border: '1px solid rgba(120,170,240,0.32)',
+          backgroundColor: 'rgba(8,22,45,0.66)',
+          boxShadow: '0 0 12px rgba(80,160,255,0.24)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          p: { xs: 1.1, md: 1.3 },
+        }}
+      >
+        <Typography
+          sx={{
+            color: '#d7e9ff',
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            letterSpacing: '0.01em',
+          }}
+        >
+          写真アップロード
+        </Typography>
+        <Box sx={{ mt: 0.6 }}>
+          <FieldLabel num={2} label={`画像（最大${MAX_IMAGES}枚）`} />
+          <ImageUploadArea
+            images={form.images}
+            onAdd={handleAddImages}
+            onRemove={handleRemoveImage}
+            onPositionChange={handleChangeImagePosition}
+            onZoomChange={handleChangeImageZoom}
+          />
+        </Box>
+      </Box>
+
+      <Box
+        sx={{
+          width: { xs: '100%', xl: `${100 / POST_CREATE_FULLSCREEN_SCALE}%` },
+          zoom: { xs: 1, xl: POST_CREATE_FULLSCREEN_SCALE },
           transformOrigin: 'top center',
           maxWidth: 1820,
           mx: 'auto',
@@ -1134,38 +1536,6 @@ const PostCreateScreen: React.FC = () => {
             <Grid size={{ xs: 12, lg: 6 }}>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.35 }}>
                 <Box>
-                  <FieldLabel num={1} label="タイトル" />
-                  <DarkInput
-                    value={form.title}
-                    onChange={(v) => setField('title', v)}
-                    placeholder="イベントタイトルを入力"
-                    minHeight={56}
-                    fontSize="1.35rem"
-                  />
-                </Box>
-
-                <Box>
-                  <FieldLabel num={2} label={`画像（最大${MAX_IMAGES}枚）`} />
-                  <Box
-                    sx={{
-                      p: 1,
-                      borderRadius: '8px',
-                      border: GLASS_BORDER,
-                      backgroundColor: 'rgba(255,255,255,0.08)',
-                      boxShadow: '0 0 10px rgba(80,160,255,0.5)',
-                      backdropFilter: 'blur(10px)',
-                      WebkitBackdropFilter: 'blur(10px)',
-                    }}
-                  >
-                    <ImageUploadArea
-                      images={form.images}
-                      onAdd={handleAddImages}
-                      onRemove={handleRemoveImage}
-                    />
-                  </Box>
-                </Box>
-
-                <Box>
                   <FieldLabel num={3} label="説明概要" />
                   <DarkInput
                     value={form.summary}
@@ -1176,20 +1546,6 @@ const PostCreateScreen: React.FC = () => {
                   />
                 </Box>
 
-                <Box>
-                  <FieldLabel num={5} label="予約欄" />
-                  <DarkInput
-                    value={form.reservation}
-                    onChange={(v) => setField('reservation', v)}
-                    placeholder="予約サイトURL: https://... or 事前予約不要"
-                    icon={<FiLink />}
-                  />
-                </Box>
-              </Box>
-            </Grid>
-
-            <Grid size={{ xs: 12, lg: 6 }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.35 }}>
                 <Box>
                   <FieldLabel num={4} label="詳細説明" />
                   <DarkInput
@@ -1213,6 +1569,20 @@ const PostCreateScreen: React.FC = () => {
                   </Typography>
                 </Box>
 
+                <Box>
+                  <FieldLabel num={5} label="予約欄" />
+                  <DarkInput
+                    value={form.reservation}
+                    onChange={(v) => setField('reservation', v)}
+                    placeholder="予約サイトURL: https://... or 事前予約不要"
+                    icon={<FiLink />}
+                  />
+                </Box>
+              </Box>
+            </Grid>
+
+            <Grid size={{ xs: 12, lg: 6 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.35 }}>
                 <Box>
                   <FieldLabel num={6} label="住所欄" />
                   <DarkInput
@@ -1428,8 +1798,8 @@ const PostCreateScreen: React.FC = () => {
 
       <Box
         sx={{
-          width: { xs: '100%', xl: `${100 / POST_CREATE_SCALE}%` },
-          zoom: { xs: 1, xl: POST_CREATE_SCALE },
+          width: { xs: '100%', xl: `${100 / POST_CREATE_FULLSCREEN_SCALE}%` },
+          zoom: { xs: 1, xl: POST_CREATE_FULLSCREEN_SCALE },
           transformOrigin: 'top center',
           maxWidth: 1820,
           mx: 'auto',

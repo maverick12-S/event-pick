@@ -70,6 +70,7 @@ const genderColor: Record<string, string> = {
 };
 
 const genderOrder = ['男性', '女性', 'その他'] as const;
+const REPORT_DETAIL_IMAGE_MAX_WIDTH = { xs: '100%', sm: 420, md: 460, lg: 500 } as const;
 
 const toAgeLabel = (bin: string) => (bin.includes('以上') ? bin : `${bin}歳`);
 
@@ -402,15 +403,17 @@ const ReportDetailScreen: React.FC = () => {
 
         <Stack spacing={2.5}>
           <Section title="投稿詳細">
-            <Box
-              component="img"
-              src={detail.images[activeImageIndex] ?? detail.images[0]}
-              alt={detail.title}
-              sx={{ width: '100%', aspectRatio: { xs: '16/10', md: '21/9' }, objectFit: 'cover', borderRadius: 2, mb: 1.5 }}
-            />
+            <Box sx={{ width: '100%', maxWidth: REPORT_DETAIL_IMAGE_MAX_WIDTH, mx: 'auto', mb: 1.5 }}>
+              <Box
+                component="img"
+                src={detail.images[activeImageIndex] ?? detail.images[0]}
+                alt={detail.title}
+                sx={{ width: '100%', aspectRatio: '4 / 5', objectFit: 'cover', borderRadius: 2, display: 'block' }}
+              />
+            </Box>
 
             {detail.images.length > 1 && (
-              <Stack direction="row" spacing={1} sx={{ mb: 1.5, overflowX: 'auto', pb: 0.5 }}>
+              <Stack direction="row" spacing={1} sx={{ mb: 1.5, overflowX: 'auto', pb: 0.5, width: '100%', maxWidth: REPORT_DETAIL_IMAGE_MAX_WIDTH, mx: 'auto' }}>
                 {detail.images.map((src, i) => (
                   <ButtonBase
                     key={`${src}-${i}`}
@@ -427,7 +430,7 @@ const ReportDetailScreen: React.FC = () => {
                       component="img"
                       src={src}
                       alt={`sub-${i}`}
-                      sx={{ width: 90, height: 60, objectFit: 'cover', display: 'block' }}
+                      sx={{ width: 72, aspectRatio: '4 / 5', objectFit: 'cover', display: 'block' }}
                     />
                   </ButtonBase>
                 ))}
