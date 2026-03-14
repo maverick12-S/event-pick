@@ -79,3 +79,6 @@ export type {
   InquiryHistory,
   AdminUserEntity,
 } from './operation';
+
+// ===== 承諾ログ =====
+export type { AgreementLog } from './agreement';

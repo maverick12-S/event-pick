@@ -98,3 +98,10 @@ export {
   reportDetailParamsSchema,
   reportSummaryParamsSchema,
 } from './report.schema';
+
+// ─── 承諾ログ ──
+export {
+  agreementTypeSchema,
+  agreementLogCreateRequestSchema,
+  agreementLogCreateResponseSchema,
+} from './agreement.schema';

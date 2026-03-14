@@ -11,6 +11,16 @@
 import { z } from 'zod';
 import { safeString, safeEmail } from './sanitize';
 
+/** パスワード強度バリデーション — 8文字以上・大文字・小文字・数字・記号を各1つ以上含む */
+const strongPassword = (label = 'パスワード') =>
+  z.string()
+    .min(8, `${label}は8文字以上で入力してください`)
+    .max(128)
+    .regex(/[A-Z]/, `${label}に大文字(A-Z)を1文字以上含めてください`)
+    .regex(/[a-z]/, `${label}に小文字(a-z)を1文字以上含めてください`)
+    .regex(/[0-9]/, `${label}に数字(0-9)を1文字以上含めてください`)
+    .regex(/[^A-Za-z0-9]/, `${label}に記号(!@#$%等)を1文字以上含めてください`);
+
 // ─── Auth ────────────────────────────────────────
 
 /** ログインフォーム */
@@ -39,7 +49,7 @@ export type PasswordResetFormData = z.infer<typeof passwordResetFormSchema>;
 
 /** パスワード変更フォーム */
 export const passwordChangeFormSchema = z.object({
-  password: z.string().min(8, 'パスワードは8文字以上で入力してください').max(128),
+  password: strongPassword(),
   confirm: z.string().min(1, '確認用パスワードを入力してください'),
 }).refine((d) => d.password === d.confirm, {
   message: 'パスワードが一致しません',
@@ -60,7 +70,7 @@ export const accountIssueFormSchema = z.object({
   baseName: safeString({ min: 1, max: 40 }),
   displayName: safeString({ max: 40 }),
   address: safeString({ min: 1, max: 60 }),
-  initialPassword: z.string().min(8, '初期パスワードは8文字以上で入力してください').max(128),
+  initialPassword: strongPassword('初期パスワード'),
   plan: z.enum(['プレミアムプラン', 'スタンダードプラン', 'ライトプラン']),
   couponCode: z.string().max(20).optional(),
 });
@@ -159,7 +169,7 @@ export type AdminAccountFormData = z.infer<typeof adminAccountFormSchema>;
 /** 管理者パスワード変更フォーム */
 export const adminPasswordFormSchema = z.object({
   currentPassword: z.string().min(1, '現在のパスワードを入力してください'),
-  nextPassword: z.string().min(8, '新しいパスワードは8文字以上で入力してください').max(128),
+  nextPassword: strongPassword('新しいパスワード'),
   confirmPassword: z.string().min(1, '確認用パスワードを入力してください'),
 }).refine((d) => d.nextPassword === d.confirmPassword, {
   message: 'パスワードが一致しません',

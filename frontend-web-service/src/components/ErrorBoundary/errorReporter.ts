@@ -126,7 +126,7 @@ export function buildReport(
 let externalHandler: ErrorReportHandler | null = null;
 
 /** 外部エラーレポーティングサービス（Sentry等）のハンドラーを登録 */
-export function setErrorReportHandler(handler: ErrorReportHandler): void {
+export function setErrorReportHandler(handler: ErrorReportHandler | null): void {
   externalHandler = handler;
 }
 

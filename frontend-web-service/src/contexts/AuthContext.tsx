@@ -6,6 +6,10 @@ import { tokenService } from '../api/tokenService';
 import { useCurrentUser } from '../features/login/hooks/useCurrentUser';
 import type { LoginRequest, AuthUser, LoginResponse } from '../types/auth';
 
+// ─── 利用規約承諾バージョン ───
+const TERMS_VERSION = '2026-03-14';
+const TERMS_STORAGE_KEY = 'eventpick_terms_accepted';
+
 // 公開インターフェース（既存 API と互換）
 interface AuthContextValue {
   isAuthenticated: boolean;
@@ -14,9 +18,11 @@ interface AuthContextValue {
   isLoading: boolean;
   error: string | null;
   isInitialized: boolean;
+  termsAccepted: boolean;
   login: (credentials: LoginRequest) => Promise<void>;
   logout: () => void;
   clearAuthError: () => void;
+  acceptTerms: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -24,6 +30,9 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
+  const [termsAccepted, setTermsAccepted] = useState(
+    () => localStorage.getItem(TERMS_STORAGE_KEY) === TERMS_VERSION,
+  );
   const meQuery = useCurrentUser();
 
   const user = (meQuery.data as AuthUser | undefined) ?? null;
@@ -64,6 +73,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     queryClient.clear();
   };
 
+  const acceptTerms = () => {
+    localStorage.setItem(TERMS_STORAGE_KEY, TERMS_VERSION);
+    setTermsAccepted(true);
+  };
+
   const clearAuthError = () => setError(null);
 
   const value: AuthContextValue = {
@@ -74,9 +88,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isLoading: loginMutation.isPending,
     error,
     isInitialized,
+    termsAccepted,
     login,
     logout,
     clearAuthError,
+    acceptTerms,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -94,6 +110,7 @@ export const useAuth = (): AuthContextValue => {
       isLoading: false,
       error: '認証コンテキストが初期化されていません',
       isInitialized: true,
+      termsAccepted: false,
       login: async () => {
         throw new Error('AuthProvider が見つからないためログインできません');
       },
@@ -101,6 +118,9 @@ export const useAuth = (): AuthContextValue => {
         // no-op
       },
       clearAuthError: () => {
+        // no-op
+      },
+      acceptTerms: () => {
         // no-op
       },
     };

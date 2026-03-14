@@ -148,6 +148,9 @@ const endpoints = {
   adminLocationAccountSuspend: (companyId: string | number) => `${API_PREFIX}/admin/location-accounts/${companyId}/suspend`,
   adminLocationAccountDeleteSchedule: (companyId: string | number) => `${API_PREFIX}/admin/location-accounts/${companyId}/delete-schedule`,
 
+  // Agreement logs
+  agreementLogs: `${API_PREFIX}/agreement-logs`,
+
   // Master data
   master: {
     prefectures: `${API_PREFIX}/master/prefectures`,

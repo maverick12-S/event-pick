@@ -30,7 +30,7 @@ import {
   FiUploadCloud,
   FiX,
 } from 'react-icons/fi';
-import postManagementMockApi from '../../../api/mock/postManagementMockApi';
+import { postManagementApi } from '../hooks/usePostManagement';
 import {
   ASSIST_NONE_VALUE,
   DEFAULT_APPLY_FIELDS,
@@ -43,7 +43,7 @@ import { postFormSchema } from '../../../lib/formSchemas';
 
 const MAX_IMAGES = 10;
 const DETAIL_MAX_LENGTH = 1200;
-const POST_CREATE_FULLSCREEN_SCALE = 1.1;
+const POST_CREATE_FULLSCREEN_SCALE = 0.88;
 const IMAGE_DRAG_SENSITIVITY = 0.6;
 const IMAGE_BASE_OFFSET_LIMIT = 10;
 
@@ -914,7 +914,7 @@ const ScheduleCalendarDialog: React.FC<{
             onClick={() => onBulkSelect('weekends')}
             sx={{ px: 1.2, py: 0.5, borderRadius: '999px', border: '1px solid rgba(120,170,240,0.45)', color: '#b9d7ff', fontSize: '0.75rem', fontWeight: 700 }}
           >
-            土日祝風（週末）
+            土日祝
           </ButtonBase>
           <ButtonBase
             onClick={() => onBulkSelect('clear')}
@@ -1019,7 +1019,7 @@ const ScheduleCalendarDialog: React.FC<{
             boxShadow: '0 4px 14px rgba(20,80,240,0.38)',
           }}
         >
-          選択日で投稿する
+          投稿する
         </ButtonBase>
       </DialogActions>
     </Dialog>
@@ -1033,6 +1033,10 @@ const PostCreateScreen: React.FC = () => {
   const [discardOpen, setDiscardOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [selectedPostDates, setSelectedPostDates] = useState<string[]>([]);
+  const [ticketConfirmOpen, setTicketConfirmOpen] = useState(false);
+  const [hasToday, setHasToday] = useState(false);
+  const [hasTomorrow, setHasTomorrow] = useState(false);
+  const [immediateTicketCount, setImmediateTicketCount] = useState(0);
   const [assistTemplateKey, setAssistTemplateKey] = useState<string>(QUICK_ASSIST_TEMPLATES[0]?.key ?? '');
   const [assistEventTimeKey, setAssistEventTimeKey] = useState<string>(EVENT_TIME_TEMPLATES[0]?.key ?? '');
   const [assistBudgetKey, setAssistBudgetKey] = useState<string>(BUDGET_TEMPLATES[0]?.key ?? '');
@@ -1043,7 +1047,7 @@ const PostCreateScreen: React.FC = () => {
     message: '',
     severity: 'success',
   });
-  const { errors: fieldErrors, validate, clearError, firstError } = useFormValidation(postFormSchema);
+  const { validate, clearError, firstError } = useFormValidation(postFormSchema);
 
   const todayIso = useMemo(() => toLocalIsoDate(new Date()), []);
   const maxSelectableIso = useMemo(() => addDays(todayIso, 30), [todayIso]);
@@ -1260,7 +1264,7 @@ const PostCreateScreen: React.FC = () => {
       return;
     }
 
-    const saved = postManagementMockApi.upsertPostDraft({
+    const saved = postManagementApi.upsertPostDraft({
       title: form.title,
       images: form.images.map((img) => img.preview),
       summary: form.summary,
@@ -1328,7 +1332,7 @@ const PostCreateScreen: React.FC = () => {
       return;
     }
 
-    const saved = postManagementMockApi.upsertPostDraft({
+    const saved = postManagementApi.upsertPostDraft({
       title: form.title,
       images: form.images.map((img) => img.preview),
       summary: form.summary,
@@ -1371,12 +1375,29 @@ const PostCreateScreen: React.FC = () => {
     setSelectedPostDates(picked);
   };
 
-  const confirmScheduledPost = () => {
+  const confirmScheduledPost = async () => {
     if (selectedPostDates.length === 0) {
       setSnackbar({ open: true, message: '投稿日を1日以上選択してください', severity: 'error' });
       return;
     }
 
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+    setHasToday(selectedPostDates.includes(todayStr));
+    setHasTomorrow(selectedPostDates.includes(tomorrowStr));
+    setImmediateTicketCount(selectedPostDates.filter(d => d === todayStr || d === tomorrowStr).length);
+    setTicketConfirmOpen(true);
+  };
+
+  const handleTicketConfirmCancel = () => {
+    setTicketConfirmOpen(false);
+  };
+
+  const handleTicketConfirmOk = () => {
+    setTicketConfirmOpen(false);
     setScheduleOpen(false);
     setSnackbar({ open: true, message: `${selectedPostDates.length}日分の投稿予定を保存しました`, severity: 'success' });
     setTimeout(() => navigate('/posts/scheduled'), 1000);
@@ -2087,6 +2108,92 @@ const PostCreateScreen: React.FC = () => {
         onBulkSelect={applyBulkSelect}
         onConfirm={confirmScheduledPost}
       />
+
+      <Dialog
+        open={ticketConfirmOpen}
+        onClose={handleTicketConfirmCancel}
+        PaperProps={{
+          sx: {
+            background: 'linear-gradient(145deg, #0a1428 0%, #0d1f3c 100%)',
+            border: '1px solid rgba(130,170,230,0.32)',
+            borderRadius: '14px',
+            color: '#e8f2ff',
+            maxWidth: 440,
+            mx: 'auto',
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            fontWeight: 700,
+            fontSize: '1rem',
+            color: '#d8eaff',
+            borderBottom: '1px solid rgba(100,150,255,0.18)',
+            pb: 1.2,
+          }}
+        >
+          <FiAlertTriangle size={18} color="#fbbf24" />
+          チケット消費の確認
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2, pb: 1.5 }}>
+          {(hasToday || hasTomorrow) ? (
+            <>
+              <Typography sx={{ color: 'rgba(220,235,255,0.9)', fontSize: '0.9rem', lineHeight: 1.7 }}>
+                {[hasToday && '本日', hasTomorrow && '明日'].filter(Boolean).join(', ')}の投稿になります。
+              </Typography>
+              <Typography sx={{ color: '#7dd4fc', fontSize: '1.1rem', fontWeight: 800, mt: 1 }}>
+                {immediateTicketCount}枚消費
+              </Typography>
+              <Typography sx={{ color: 'rgba(220,235,255,0.9)', fontSize: '0.9rem', lineHeight: 1.7, mt: 0.5 }}>
+                チケットを消費しますか？
+              </Typography>
+            </>
+          ) : (
+            <>
+              <Typography sx={{ color: 'rgba(220,235,255,0.9)', fontSize: '0.9rem', lineHeight: 1.7 }}>
+                選択された日付にチケッが消費されます。
+              </Typography>
+              <Typography sx={{ color: 'rgba(220,235,255,0.9)', fontSize: '0.9rem', lineHeight: 1.7, mt: 0.5 }}>
+                よろしいですか？
+              </Typography>
+            </>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 2.2, pb: 1.8, gap: 1 }}>
+          <ButtonBase
+            onClick={handleTicketConfirmCancel}
+            sx={{
+              px: 2.2,
+              py: 0.95,
+              borderRadius: '8px',
+              border: '1px solid rgba(180,210,255,0.32)',
+              color: '#c8deff',
+              fontSize: '0.86rem',
+              fontWeight: 600,
+            }}
+          >
+            キャンセル
+          </ButtonBase>
+          <ButtonBase
+            onClick={handleTicketConfirmOk}
+            sx={{
+              px: 2.6,
+              py: 0.95,
+              borderRadius: '8px',
+              background: 'linear-gradient(135deg, #1a6eff 0%, #0a4fd4 100%)',
+              color: '#fff',
+              fontSize: '0.86rem',
+              fontWeight: 700,
+              boxShadow: '0 4px 14px rgba(20,80,240,0.38)',
+            }}
+          >
+            OK
+          </ButtonBase>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar
         open={snackbar.open}

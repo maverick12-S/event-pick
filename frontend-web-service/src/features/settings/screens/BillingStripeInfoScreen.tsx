@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import { FiArrowLeft } from 'react-icons/fi';
 
-const SCALE = 1.2;
+const SCALE = 0.96;
 
 const BillingStripeInfoScreen: React.FC = () => {
   const navigate = useNavigate();
