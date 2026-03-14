@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
   ButtonBase,
+  CircularProgress,
   Divider,
   Typography,
 } from '@mui/material';
@@ -13,10 +14,9 @@ import {
   FiChevronRight,
   FiPlus,
 } from 'react-icons/fi';
-import { getBillingData } from '../../../api/db/billing.db';
-import type { BillingData } from '../../../types/models/billing';
+import { useBillingData } from '../hooks/useBilling';
 
-const BILLING_SCREEN_SCALE = 1.2;
+const BILLING_SCREEN_SCALE = 0.96;
 
 // ---------- shared sx helpers ----------
 const sectionCardSx = {
@@ -86,7 +86,12 @@ const SettingsBillingScreen: React.FC = () => {
   const navigate = useNavigate();
   const [showAllInvoices, setShowAllInvoices] = useState(false);
 
-  const billing: BillingData = useMemo(() => getBillingData(), []);
+  const { data: billing, isLoading } = useBillingData();
+
+  if (isLoading || !billing) {
+    return <Box sx={{ display: 'flex', justifyContent: 'center', pt: 8 }}><CircularProgress sx={{ color: '#7dc8ff' }} /></Box>;
+  }
+
   const visibleInvoices = showAllInvoices ? billing.invoices : billing.invoices.slice(0, 3);
 
   return (

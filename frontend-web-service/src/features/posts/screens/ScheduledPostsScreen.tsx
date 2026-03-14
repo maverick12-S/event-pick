@@ -34,7 +34,7 @@ import {
 import type { ScheduledPostItem } from '../../../types/models/scheduledPost';
 import type { PostEventDbItem, PostsTabKey } from '../../../types/models/post';
 import type { PostListSortKey } from '../../../types/models/postSort';
-import postManagementMockApi from '../../../api/mock/postManagementMockApi';
+import { postManagementApi } from '../hooks/usePostManagement';
 import { PostEventCard, PostSortSelect } from '../components';
 import {
   defaultPostSearchFilters,
@@ -49,7 +49,7 @@ const {
   cities: cityOptions,
   prefectures: prefectureOptions,
   timeSlots: timeSlotOptions,
-} = postManagementMockApi.getPostFilterOptions();
+} = postManagementApi.getPostFilterOptions();
 
 type FooterTab = 'posts' | 'reservations';
 type MainTab = PostsTabKey;
@@ -60,7 +60,7 @@ const MAIN_TABS: Array<{ key: MainTab; label: string }> = [
   { key: 'scheduled', label: '予約・確認' },
 ];
 
-const ACCOUNT_POSTS_SCALE = 1.08;
+const ACCOUNT_POSTS_SCALE = 0.86;
 const POSTS_PAGE_LIMIT = 60;
 
 const formatDateLabel = (value: string, placeholder: string): string => {
@@ -444,7 +444,7 @@ const ScheduledPostsScreen: React.FC = () => {
   const [reservationPage, setReservationPage] = useState(1);
   const [postsPage, setPostsPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<ScheduledPostItem | null>(null);
-  const [items, setItems] = useState<ScheduledPostItem[]>(() => postManagementMockApi.listScheduledPosts());
+  const [items, setItems] = useState<ScheduledPostItem[]>(() => postManagementApi.listScheduledPosts());
 
   const filtered = useMemo(
     () => {
@@ -490,7 +490,7 @@ const ScheduledPostsScreen: React.FC = () => {
     () =>
       sortPostsByKey(
         items
-        .filter((item) => item.locationId === postManagementMockApi.getCurrentLocationId())
+        .filter((item) => item.locationId === postManagementApi.getCurrentLocationId())
         .filter((item) => {
           const search = appliedFilters.title.trim().toLowerCase();
           const prefecture = '東京都';

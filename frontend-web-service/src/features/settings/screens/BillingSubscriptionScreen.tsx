@@ -1,10 +1,10 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, ButtonBase, Divider, Typography } from '@mui/material';
+import { Box, ButtonBase, CircularProgress, Divider, Typography } from '@mui/material';
 import { FiArrowLeft } from 'react-icons/fi';
-import { getBillingData } from '../../../api/db/billing.db';
+import { useBillingData } from '../hooks/useBilling';
 
-const SCALE = 1.2;
+const SCALE = 0.96;
 
 const labelSx = { color: 'rgba(215, 232, 252, 0.72)', fontSize: '0.82rem', fontWeight: 700, mb: 0.2 };
 const valueSx = { color: '#f0f8ff', fontSize: '0.96rem', fontWeight: 700 };
@@ -12,7 +12,12 @@ const dividerSx = { borderColor: 'rgba(214, 233, 255, 0.14)', my: 1.4 };
 
 const BillingSubscriptionScreen: React.FC = () => {
   const navigate = useNavigate();
-  const billing = useMemo(() => getBillingData(), []);
+  const { data: billing, isLoading } = useBillingData();
+
+  if (isLoading || !billing) {
+    return <Box sx={{ display: 'flex', justifyContent: 'center', pt: 8 }}><CircularProgress sx={{ color: '#7dc8ff' }} /></Box>;
+  }
+
   const sub = billing.subscription;
 
   return (

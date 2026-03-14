@@ -15,3 +15,4 @@ export { planApi } from './planApi';
 export { settingsApi } from './settingsApi';
 export { reportApi } from './reportApi';
 export { adminApi } from './adminApi';
+export { agreementApi } from './agreementApi';

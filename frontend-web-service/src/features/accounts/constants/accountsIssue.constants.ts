@@ -1,7 +1,7 @@
 import type { ContractPlan } from '../../../types/models/account';
 import type { IssueAccountFormState, PlanGuideDetail, PlanGuideVisual } from '../types/issueAccount';
 
-export const ISSUE_SCREEN_SCALE = 1.45;
+export const ISSUE_SCREEN_SCALE = 1.16;
 
 export const PLAN_OPTIONS: ContractPlan[] = ['プレミアムプラン', 'スタンダードプラン', 'ライトプラン'];
 

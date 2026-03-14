@@ -30,7 +30,7 @@ const SignupScreen: React.FC = () => {
   const [notifyEmail, setNotifyEmail] = useState(initialState.signupData?.notifyEmail ?? '');
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
-  const { errors: fieldErrors, validate, clearError, firstError } = useFormValidation(signupFormSchema);
+  const { validate, clearError, firstError } = useFormValidation(signupFormSchema);
 
   const submitted = Boolean(initialState.mfaPassed);
 

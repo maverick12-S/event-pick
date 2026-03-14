@@ -5,7 +5,7 @@ import { FiSearch } from 'react-icons/fi';
 import usePostsMock from '../hooks/usePostsMock';
 import type { PostEventDbItem, PostsTabKey } from '../../../types/models/post';
 import type { PostListSortKey } from '../../../types/models/postSort';
-import postManagementMockApi from '../../../api/mock/postManagementMockApi';
+import { postManagementApi } from '../hooks/usePostManagement';
 import { PostEventCard, PostSortSelect } from '../components';
 import {
   defaultPostSearchFilters,
@@ -20,10 +20,10 @@ const {
   cities: cityOptions,
   prefectures: prefectureOptions,
   timeSlots: timeSlotOptions,
-} = postManagementMockApi.getPostFilterOptions();
+} = postManagementApi.getPostFilterOptions();
 
 const PAGE_LIMIT = 60;
-const POSTS_LIST_SCALE = 0.96;
+const POSTS_LIST_SCALE = 0.77;
 
 const tabs: Array<{ key: PostsTabKey; label: string }> = [
   { key: 'today', label: '今日' },
@@ -65,8 +65,8 @@ const PostsListScreen: React.FC = () => {
   const accountLinkedItems = useMemo<PostEventDbItem[]>(() => {
     const query = appliedFilters.title.trim().toLowerCase();
 
-    const mapped = postManagementMockApi
-      .listScheduledPostEventCardsByLocation(postManagementMockApi.getCurrentLocationId())
+    const mapped = postManagementApi
+      .listScheduledPostEventCardsByLocation(postManagementApi.getCurrentLocationId())
       .filter((item) => {
         if (query && !item.title.toLowerCase().includes(query)) {
           return false;

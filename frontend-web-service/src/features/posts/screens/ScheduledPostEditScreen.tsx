@@ -29,14 +29,14 @@ import {
   FiUploadCloud,
   FiX,
 } from 'react-icons/fi';
-import postManagementMockApi from '../../../api/mock/postManagementMockApi';
+import { postManagementApi } from '../hooks/usePostManagement';
 import type { PostFormData, PreviewFormPayload, CalendarMonth } from '../types/postForm';
 import { useFormValidation } from '../../../lib/useFormValidation';
 import { postFormSchema } from '../../../lib/formSchemas';
 
 const MAX_IMAGES = 10;
 const DETAIL_MAX_LENGTH = 1200;
-const POST_CREATE_SCALE = 1.62;
+const POST_CREATE_SCALE = 1.3;
 const IMAGE_DRAG_SENSITIVITY = 0.6;
 const IMAGE_BASE_OFFSET_LIMIT = 10;
 
@@ -933,7 +933,7 @@ const ScheduledPostEditScreen: React.FC = () => {
     message: '',
     severity: 'success',
   });
-  const { errors: fieldErrors, validate, clearError, firstError } = useFormValidation(postFormSchema);
+  const { validate, clearError, firstError } = useFormValidation(postFormSchema);
 
   const [editSource, setEditSource] = useState<'posts' | 'reservations'>(
     (location.state as ScheduledEditLocationState | null)?.from === 'posts' ? 'posts' : 'reservations',
@@ -941,7 +941,7 @@ const ScheduledPostEditScreen: React.FC = () => {
   const isAccountPostsEdit = editSource === 'posts';
   const backTo = editSource === 'posts' ? '/posts/scheduled?view=posts' : '/posts/scheduled?view=reservations';
 
-  const scheduledPost = useMemo(() => postManagementMockApi.findScheduledPostById(id), [id]);
+  const scheduledPost = useMemo(() => postManagementApi.findScheduledPostById(id), [id]);
   const todayIso = useMemo(() => toLocalIsoDate(new Date()), []);
   const maxSelectableIso = useMemo(() => addDays(todayIso, 30), [todayIso]);
   const calendarMonths = useMemo(() => buildCalendarMonths(todayIso, maxSelectableIso), [todayIso, maxSelectableIso]);
@@ -1123,7 +1123,7 @@ const ScheduledPostEditScreen: React.FC = () => {
       return;
     }
 
-    const updated = postManagementMockApi.updateScheduledPostById(scheduledPost.id, {
+    const updated = postManagementApi.updateScheduledPostById(scheduledPost.id, {
       title: form.title,
       ward: form.address,
       venue: form.venueName,

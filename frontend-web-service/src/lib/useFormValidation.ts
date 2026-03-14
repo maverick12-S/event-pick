@@ -48,7 +48,7 @@ export const useFormValidation = <T>(schema: ZodSchema<T>) => {
    * 失敗時: errors ステートを更新し、エラーマップを返す
    */
   const validate = useCallback(
-    (data: Record<string, unknown>): ValidationResult<T> => {
+    (data: object): ValidationResult<T> => {
       // string フィールドを一括サニタイズ
       const sanitized = sanitizeFields(data);
       const result = schema.safeParse(sanitized);

@@ -49,6 +49,8 @@ const MENU_ITEMS: MenuItem[] = [
   },
 ];
 
+const HOME_SCALE = 0.8;
+
 const HomeScreen: React.FC = () => {
   const navigate = useNavigate();
 
@@ -65,6 +67,7 @@ const HomeScreen: React.FC = () => {
         gap: { xs: 4.5, sm: 5.8 },
         minHeight: 'calc(100dvh - var(--header-height, 72px) - 60px)',
         boxSizing: 'border-box',
+        zoom: HOME_SCALE,
       }}
     >
       <Box sx={{ textAlign: 'center', color: '#fff' }}>

@@ -50,6 +50,9 @@ export const queryKeys = {
 
   // Plans
   plans: ['plans'] as const,
+
+  // Agreement logs
+  agreementLogs: ['agreement-logs'] as const,
 } as const;
 
 export default queryKeys;

@@ -67,15 +67,14 @@ export const sanitize = (value: string): string => {
 /**
  * オブジェクト全体のサニタイズ — string フィールドに sanitize を適用
  */
-export const sanitizeFields = <T extends Record<string, unknown>>(obj: T): T => {
-  const result = { ...obj };
+export const sanitizeFields = <T extends object>(obj: T): T => {
+  const result: Record<string, unknown> = { ...obj } as Record<string, unknown>;
   for (const key of Object.keys(result)) {
-    const val = result[key as keyof T];
-    if (typeof val === 'string') {
-      (result as Record<string, unknown>)[key] = sanitize(val as string);
+    if (typeof result[key] === 'string') {
+      result[key] = sanitize(result[key] as string);
     }
   }
-  return result;
+  return result as T;
 };
 
 // ─── Zod カスタムバリデータ（スキーマに組み込み用） ──

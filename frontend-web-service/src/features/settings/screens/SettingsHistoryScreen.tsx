@@ -2,10 +2,10 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, ButtonBase, Grid, InputBase, MenuItem, Select, Typography } from '@mui/material';
 import { FiArrowLeft, FiClock, FiFileText, FiSearch } from 'react-icons/fi';
-import { getExecutionHistories } from '../../../api/db/executionHistory.db';
+import { useExecutionHistories } from '../hooks/useExecutionHistories';
 import type { ExecutionHistoryCategory, ExecutionHistoryItem } from '../../../types/models/executionHistory';
 
-const HISTORY_SCREEN_SCALE = 1.2;
+const HISTORY_SCREEN_SCALE = 0.96;
 
 const toTimeLabel = (iso: string): string => {
   const d = new Date(iso);
@@ -171,7 +171,7 @@ const SettingsHistoryScreen: React.FC = () => {
   const [dateFilter, setDateFilter] = useState<string>(toDateInputValue(new Date()));
   const [categoryFilter, setCategoryFilter] = useState<'all' | ExecutionHistoryCategory>('all');
 
-  const histories = useMemo(() => getExecutionHistories(), []);
+  const { data: histories = [] } = useExecutionHistories();
 
   const filtered = useMemo(() => {
     const query = searchText.trim().toLowerCase();

@@ -39,7 +39,7 @@ const INITIAL_SETTINGS: NotificationState = {
   'error-alert': { email: true, push: true },
 };
 
-const NOTIFICATION_SCREEN_SCALE = 1.4;
+const NOTIFICATION_SCREEN_SCALE = 1.12;
 
 const switchSx = {
   width: 58,

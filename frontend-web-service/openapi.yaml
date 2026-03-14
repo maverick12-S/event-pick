@@ -11,7 +11,1607 @@ servers:
 security:
   - bearerAuth: []
 
-paths: {}
+paths:
+  # ── Auth ──────────────────────────────────────
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: ログイン
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 認証成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: 認証失敗
+
+  /api/v1/auth/logout:
+    post:
+      tags: [Auth]
+      summary: ログアウト
+      responses:
+        '200':
+          description: ログアウト成功
+
+  /api/v1/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: アクセストークン更新
+      responses:
+        '200':
+          description: トークン更新成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/LoginResponse'
+
+  /api/v1/auth/revoke:
+    post:
+      tags: [Auth]
+      summary: トークン無効化
+      responses:
+        '200':
+          description: 無効化成功
+
+  /api/v1/auth/signup:
+    post:
+      tags: [Auth]
+      summary: 新規登録
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      responses:
+        '201':
+          description: 登録成功
+
+  /api/v1/auth/mfa/verify:
+    post:
+      tags: [Auth]
+      summary: MFA 検証
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code:
+                  type: string
+      responses:
+        '200':
+          description: MFA 検証成功
+
+  /api/v1/auth/password-reset:
+    post:
+      tags: [Auth]
+      summary: パスワードリセット要求
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: リセットメール送信済み
+
+  /api/v1/auth/password-change:
+    post:
+      tags: [Auth]
+      summary: パスワード変更
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '200':
+          description: パスワード変更成功
+
+  # ── Companies / My ────────────────────────────
+  /api/v1/companies/me:
+    get:
+      tags: [Company]
+      summary: 自社情報取得
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/Company'
+    put:
+      tags: [Company]
+      summary: 自社情報更新
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Company'
+      responses:
+        '200':
+          description: 更新成功
+
+  /api/v1/companies/me/notifications:
+    get:
+      tags: [Company]
+      summary: 自社通知一覧
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/CompanyNotification'
+
+  # ── Company Accounts ──────────────────────────
+  /api/v1/company-accounts:
+    get:
+      tags: [CompanyAccount]
+      summary: 拠点アカウント一覧
+      parameters:
+        - $ref: '#/components/parameters/PaginationLimit'
+        - $ref: '#/components/parameters/PaginationPage'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/CompanyAccount'
+
+  /api/v1/company-accounts/{accountId}:
+    get:
+      tags: [CompanyAccount]
+      summary: 拠点アカウント詳細
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/CompanyAccount'
+    put:
+      tags: [CompanyAccount]
+      summary: 拠点アカウント更新
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanyAccount'
+      responses:
+        '200':
+          description: 更新成功
+
+  # ── Companies (CRUD) ──────────────────────────
+  /api/v1/companies:
+    get:
+      tags: [Company]
+      summary: 企業一覧
+      parameters:
+        - $ref: '#/components/parameters/PaginationLimit'
+        - $ref: '#/components/parameters/PaginationPage'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Company'
+    post:
+      tags: [Company]
+      summary: 企業作成
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Company'
+      responses:
+        '201':
+          description: 作成成功
+
+  /api/v1/companies/{companyId}:
+    get:
+      tags: [Company]
+      summary: 企業詳細
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+    put:
+      tags: [Company]
+      summary: 企業更新
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Company'
+      responses:
+        '200':
+          description: 更新成功
+    delete:
+      tags: [Company]
+      summary: 企業削除
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 削除成功
+
+  /api/v1/companies/{companyId}/status:
+    patch:
+      tags: [Company]
+      summary: 企業ステータス変更
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+      responses:
+        '200':
+          description: ステータス更新成功
+
+  /api/v1/companies/{companyId}/review:
+    post:
+      tags: [Company]
+      summary: 企業レビュー申請
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanyReview'
+      responses:
+        '201':
+          description: レビュー申請成功
+
+  /api/v1/companies/drafts:
+    get:
+      tags: [Company]
+      summary: 下書き企業一覧
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/corporations/validate:
+    post:
+      tags: [Corporation]
+      summary: 法人番号バリデーション
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [corporateCode]
+              properties:
+                corporateCode:
+                  type: string
+      responses:
+        '200':
+          description: バリデーション結果
+
+  # ── Events ────────────────────────────────────
+  /api/v1/events:
+    get:
+      tags: [Event]
+      summary: イベント一覧
+      parameters:
+        - $ref: '#/components/parameters/PaginationLimit'
+        - $ref: '#/components/parameters/PaginationPage'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/EventPost'
+    post:
+      tags: [Event]
+      summary: イベント作成
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostCreateRequest'
+      responses:
+        '201':
+          description: 作成成功
+
+  /api/v1/events/today:
+    get:
+      tags: [Event]
+      summary: 今日のイベント一覧
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/events/tomorrow:
+    get:
+      tags: [Event]
+      summary: 明日のイベント一覧
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/events/search:
+    get:
+      tags: [Event]
+      summary: イベント検索
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date
+        - $ref: '#/components/parameters/PaginationLimit'
+        - $ref: '#/components/parameters/PaginationPage'
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/events/scheduled:
+    get:
+      tags: [Event]
+      summary: 予約投稿一覧
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/events/drafts:
+    get:
+      tags: [Event]
+      summary: 下書きイベント一覧
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/events/preview:
+    post:
+      tags: [Event]
+      summary: イベントプレビュー
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostCreateRequest'
+      responses:
+        '200':
+          description: プレビュー成功
+
+  /api/v1/events/{eventId}:
+    get:
+      tags: [Event]
+      summary: イベント詳細
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+    put:
+      tags: [Event]
+      summary: イベント更新
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostCreateRequest'
+      responses:
+        '200':
+          description: 更新成功
+
+  /api/v1/events/{eventId}/publish:
+    post:
+      tags: [Event]
+      summary: イベント公開
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 公開成功
+
+  /api/v1/events/{eventId}/hide:
+    post:
+      tags: [Event]
+      summary: イベント非公開
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 非公開成功
+
+  /api/v1/events/{eventId}/schedule:
+    delete:
+      tags: [Event]
+      summary: 予約投稿削除
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 削除成功
+
+  /api/v1/events/{eventId}/media:
+    post:
+      tags: [Event]
+      summary: メディアアップロード
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: アップロード成功
+
+  /api/v1/events/{eventId}/media/{mediaId}:
+    delete:
+      tags: [Event]
+      summary: メディア削除
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: mediaId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 削除成功
+
+  # ── Users ─────────────────────────────────────
+  /api/v1/users:
+    get:
+      tags: [User]
+      summary: ユーザー一覧
+      parameters:
+        - $ref: '#/components/parameters/PaginationLimit'
+        - $ref: '#/components/parameters/PaginationPage'
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/users/{userId}:
+    get:
+      tags: [User]
+      summary: ユーザー詳細
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/users/{userId}/suspend:
+    post:
+      tags: [User]
+      summary: ユーザー停止
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 停止成功
+
+  # ── Maps ──────────────────────────────────────
+  /api/v1/maps/google:
+    get:
+      tags: [Maps]
+      summary: Google Maps 検索
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+
+  # ── Uploads ───────────────────────────────────
+  /api/v1/uploads/presigned-url:
+    post:
+      tags: [Upload]
+      summary: S3 署名付きURL取得
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fileName, contentType]
+              properties:
+                fileName:
+                  type: string
+                contentType:
+                  type: string
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - properties:
+                      data:
+                        type: object
+                        properties:
+                          uploadUrl:
+                            type: string
+                            format: uri
+                          publicUrl:
+                            type: string
+                            format: uri
+
+  # ── Reports ───────────────────────────────────
+  /api/v1/reports/summary:
+    get:
+      tags: [Report]
+      summary: レポートサマリー
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/reports/search:
+    get:
+      tags: [Report]
+      summary: レポート検索
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PaginationLimit'
+        - $ref: '#/components/parameters/PaginationPage'
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/reports/{accountId}:
+    get:
+      tags: [Report]
+      summary: アカウント別レポート
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/reports/{accountId}/{eventId}:
+    get:
+      tags: [Report]
+      summary: イベント別レポート詳細
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+
+  # ── Billing ───────────────────────────────────
+  /api/v1/billing:
+    get:
+      tags: [Billing]
+      summary: 請求情報取得
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/BillingData'
+
+  /api/v1/billing/checkout-session:
+    post:
+      tags: [Billing]
+      summary: Stripe チェックアウトセッション作成
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [priceId]
+              properties:
+                priceId:
+                  type: string
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - properties:
+                      data:
+                        type: object
+                        properties:
+                          sessionUrl:
+                            type: string
+                            format: uri
+
+  /api/v1/billing/plan/change:
+    post:
+      tags: [Billing]
+      summary: プラン変更
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [planId]
+              properties:
+                planId:
+                  type: string
+      responses:
+        '200':
+          description: プラン変更成功
+
+  /api/v1/billing/cancel:
+    post:
+      tags: [Billing]
+      summary: サブスクリプション解約
+      responses:
+        '200':
+          description: 解約成功
+
+  /api/v1/billing/address:
+    get:
+      tags: [Billing]
+      summary: 請求先住所取得
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/BillingAddress'
+    put:
+      tags: [Billing]
+      summary: 請求先住所更新
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BillingAddress'
+      responses:
+        '200':
+          description: 更新成功
+
+  /api/v1/billing/coupon/apply:
+    post:
+      tags: [Billing]
+      summary: クーポン適用
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [couponCode]
+              properties:
+                couponCode:
+                  type: string
+      responses:
+        '200':
+          description: 適用成功
+
+  # ── Audit / History / Tickets / Notifications ─
+  /api/v1/audit-logs:
+    get:
+      tags: [Audit]
+      summary: 監査ログ一覧
+      parameters:
+        - $ref: '#/components/parameters/PaginationLimit'
+        - $ref: '#/components/parameters/PaginationPage'
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/execution-history:
+    get:
+      tags: [ExecutionHistory]
+      summary: 実行履歴一覧
+      parameters:
+        - $ref: '#/components/parameters/PaginationLimit'
+        - $ref: '#/components/parameters/PaginationPage'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ExecutionHistoryItem'
+
+  /api/v1/inquiries:
+    get:
+      tags: [Inquiry]
+      summary: お問い合わせ一覧
+      responses:
+        '200':
+          description: 成功
+    post:
+      tags: [Inquiry]
+      summary: お問い合わせ送信
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, subject, body]
+              properties:
+                type:
+                  type: string
+                subject:
+                  type: string
+                body:
+                  type: string
+      responses:
+        '201':
+          description: 送信成功
+
+  /api/v1/notifications:
+    get:
+      tags: [Notification]
+      summary: 通知一覧
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/notifications/{notificationId}/read:
+    post:
+      tags: [Notification]
+      summary: 通知既読
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 既読成功
+
+  /api/v1/notifications/read-all:
+    post:
+      tags: [Notification]
+      summary: 全通知既読
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/tickets:
+    get:
+      tags: [Ticket]
+      summary: チケット残量取得
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CommonResponse'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/CompanyTicket'
+
+  # ── Webhooks ──────────────────────────────────
+  /api/v1/webhooks/stripe:
+    post:
+      tags: [Webhook]
+      summary: Stripe Webhook
+      security: []
+      responses:
+        '200':
+          description: 処理成功
+
+  # ── Agreement Logs ────────────────────────────
+  /api/v1/agreement-logs:
+    post:
+      tags: [Agreement]
+      summary: 同意ログ記録
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [agreementType]
+              properties:
+                agreementType:
+                  type: string
+                  enum: [PRIVACY_POLICY, TERMS_OF_SERVICE, LICENSE_AGREEMENT]
+      responses:
+        '201':
+          description: 記録成功
+
+  # ── Master Data ───────────────────────────────
+  /api/v1/master/prefectures:
+    get:
+      tags: [Master]
+      summary: 都道府県一覧
+      security: []
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/master/cities:
+    get:
+      tags: [Master]
+      summary: 市区町村一覧
+      security: []
+      parameters:
+        - name: prefectureCode
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+
+  # ── Admin ─────────────────────────────────────
+  /api/v1/admin/companies:
+    get:
+      tags: [Admin]
+      summary: '[管理] 企業一覧'
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/admin/companies/{companyId}:
+    get:
+      tags: [Admin]
+      summary: '[管理] 企業詳細'
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/admin/companies/{companyId}/status:
+    patch:
+      tags: [Admin]
+      summary: '[管理] 企業ステータス変更'
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/admin/companies/{companyId}/review:
+    post:
+      tags: [Admin]
+      summary: '[管理] 企業レビュー'
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/admin/events:
+    get:
+      tags: [Admin]
+      summary: '[管理] イベント一覧'
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/admin/events/{eventId}:
+    delete:
+      tags: [Admin]
+      summary: '[管理] イベント削除'
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 削除成功
+
+  /api/v1/admin/events/{eventId}/hide:
+    post:
+      tags: [Admin]
+      summary: '[管理] イベント非公開'
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/admin/users:
+    get:
+      tags: [Admin]
+      summary: '[管理] ユーザー一覧'
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/admin/users/{userId}:
+    get:
+      tags: [Admin]
+      summary: '[管理] ユーザー詳細'
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+    delete:
+      tags: [Admin]
+      summary: '[管理] ユーザー削除'
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 削除成功
+
+  /api/v1/admin/users/{userId}/suspend:
+    post:
+      tags: [Admin]
+      summary: '[管理] ユーザー停止'
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/admin/reports/overview:
+    get:
+      tags: [Admin]
+      summary: '[管理] レポート概要'
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/admin/coupons:
+    get:
+      tags: [Admin]
+      summary: '[管理] クーポン一覧'
+      responses:
+        '200':
+          description: 成功
+    post:
+      tags: [Admin]
+      summary: '[管理] クーポン作成'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, discountType, discountValue]
+              properties:
+                code:
+                  type: string
+                discountType:
+                  type: string
+                  enum: ['1', '2']
+                discountValue:
+                  type: number
+      responses:
+        '201':
+          description: 作成成功
+
+  /api/v1/admin/coupons/{couponId}:
+    delete:
+      tags: [Admin]
+      summary: '[管理] クーポン削除'
+      parameters:
+        - name: couponId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 削除成功
+
+  /api/v1/admin/inquiries:
+    get:
+      tags: [Admin]
+      summary: '[管理] お問い合わせ一覧'
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/admin/inquiries/{inquiryId}:
+    get:
+      tags: [Admin]
+      summary: '[管理] お問い合わせ詳細'
+      parameters:
+        - name: inquiryId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/admin/inquiries/{inquiryId}/reply:
+    post:
+      tags: [Admin]
+      summary: '[管理] お問い合わせ返信'
+      parameters:
+        - name: inquiryId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body:
+                  type: string
+      responses:
+        '200':
+          description: 返信成功
+
+  /api/v1/admin/inquiries/{inquiryId}/close:
+    post:
+      tags: [Admin]
+      summary: '[管理] お問い合わせクローズ'
+      parameters:
+        - name: inquiryId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: クローズ成功
+
+  /api/v1/admin/categories:
+    get:
+      tags: [Admin]
+      summary: '[管理] カテゴリ一覧'
+      responses:
+        '200':
+          description: 成功
+    post:
+      tags: [Admin]
+      summary: '[管理] カテゴリ作成'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [categoryCode, categoryName]
+              properties:
+                categoryCode:
+                  type: string
+                categoryName:
+                  type: string
+      responses:
+        '201':
+          description: 作成成功
+
+  /api/v1/admin/categories/{id}:
+    delete:
+      tags: [Admin]
+      summary: '[管理] カテゴリ削除'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 削除成功
+
+  /api/v1/admin/plans:
+    get:
+      tags: [Admin]
+      summary: '[管理] プラン一覧'
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/admin/plans/{id}:
+    put:
+      tags: [Admin]
+      summary: '[管理] プラン更新'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 更新成功
+
+  /api/v1/admin/reviews:
+    get:
+      tags: [Admin]
+      summary: '[管理] レビュー一覧'
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/admin/reviews/{reviewId}:
+    get:
+      tags: [Admin]
+      summary: '[管理] レビュー詳細'
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/admin/reviews/{reviewId}/approve:
+    post:
+      tags: [Admin]
+      summary: '[管理] レビュー承認'
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 承認成功
+
+  /api/v1/admin/reviews/{reviewId}/reject:
+    post:
+      tags: [Admin]
+      summary: '[管理] レビュー却下'
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: 却下成功
+
+  /api/v1/admin/settings:
+    get:
+      tags: [Admin]
+      summary: '[管理] 設定取得'
+      responses:
+        '200':
+          description: 成功
+    put:
+      tags: [Admin]
+      summary: '[管理] 設定更新'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: 更新成功
+
+  /api/v1/admin/auth-logs:
+    get:
+      tags: [Admin]
+      summary: '[管理] 認証ログ一覧'
+      parameters:
+        - $ref: '#/components/parameters/PaginationLimit'
+        - $ref: '#/components/parameters/PaginationPage'
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/admin/activity-logs:
+    get:
+      tags: [Admin]
+      summary: '[管理] アクティビティログ一覧'
+      parameters:
+        - $ref: '#/components/parameters/PaginationLimit'
+        - $ref: '#/components/parameters/PaginationPage'
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/admin/consumers:
+    get:
+      tags: [Admin]
+      summary: '[管理] 一般ユーザー一覧'
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/admin/consumers/{userId}:
+    get:
+      tags: [Admin]
+      summary: '[管理] 一般ユーザー詳細'
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/admin/consumers/{userId}/suspend:
+    post:
+      tags: [Admin]
+      summary: '[管理] 一般ユーザー停止'
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/admin/consumers/{userId}/delete-schedule:
+    post:
+      tags: [Admin]
+      summary: '[管理] 一般ユーザー削除予約'
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/admin/location-accounts:
+    get:
+      tags: [Admin]
+      summary: '[管理] 拠点アカウント一覧'
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/admin/location-accounts/{companyId}:
+    get:
+      tags: [Admin]
+      summary: '[管理] 拠点アカウント詳細'
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/admin/location-accounts/{companyId}/suspend:
+    post:
+      tags: [Admin]
+      summary: '[管理] 拠点アカウント停止'
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/admin/location-accounts/{companyId}/delete-schedule:
+    post:
+      tags: [Admin]
+      summary: '[管理] 拠点アカウント削除予約'
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+
+  /api/v1/admin/master/regions:
+    get:
+      tags: [Admin]
+      summary: '[管理] 地域マスタ一覧'
+      responses:
+        '200':
+          description: 成功
+    post:
+      tags: [Admin]
+      summary: '[管理] 地域マスタ作成'
+      responses:
+        '201':
+          description: 作成成功
+
+  /api/v1/admin/master/regions/{id}:
+    put:
+      tags: [Admin]
+      summary: '[管理] 地域マスタ更新'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 更新成功
+    delete:
+      tags: [Admin]
+      summary: '[管理] 地域マスタ削除'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 削除成功
 
 components:
   securitySchemes:
@@ -84,6 +1684,398 @@ components:
           type: array
           items:
             type: string
+
+    LoginRequest:
+      type: object
+      required: [realm, username, password]
+      properties:
+        realm:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+
+    LoginResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        expires_in:
+          type: integer
+        refresh_expires_in:
+          type: integer
+        refresh_token:
+          type: string
+        token_type:
+          type: string
+        session_state:
+          type: string
+        scope:
+          type: string
+
+    SignupRequest:
+      type: object
+      required: [corporateCode, companyName, representative, notifyEmail]
+      properties:
+        corporateCode:
+          type: string
+        companyName:
+          type: string
+        representative:
+          type: string
+        notifyEmail:
+          type: string
+          format: email
+
+    Company:
+      type: object
+      properties:
+        company_id:
+          type: string
+          description: ULID CHAR(26)
+        company_code:
+          type: string
+        company_name:
+          type: string
+        display_name:
+          type: string
+        company_type:
+          type: string
+          enum: ['1', '2']
+        representative_name:
+          type: string
+        admin_email:
+          type: string
+          format: email
+        admin_phone:
+          type: string
+
+    CompanyAccount:
+      type: object
+      properties:
+        company_account_id:
+          type: string
+        company_id:
+          type: string
+        company_role_id:
+          type: string
+          enum: ['01', '02', '03']
+        branch_code:
+          type: string
+        branch_name:
+          type: string
+        branch_display_name:
+          type: string
+        postal_code:
+          type: string
+        prefecture_code:
+          type: string
+        city:
+          type: string
+        address_line:
+          type: string
+        phone_number:
+          type: string
+        contact_email:
+          type: string
+        status:
+          type: string
+          enum: ['1', '2']
+
+    CompanyTicket:
+      type: object
+      properties:
+        ticket_id:
+          type: string
+        company_id:
+          type: string
+        daily_granted:
+          type: integer
+        daily_used:
+          type: integer
+        daily_remaining:
+          type: integer
+        daily_reset_at:
+          type: string
+          format: date-time
+        monthly_granted:
+          type: integer
+        monthly_used:
+          type: integer
+        monthly_remaining:
+          type: integer
+        monthly_target:
+          type: string
+          description: YYYYMM
+
+    CompanyReview:
+      type: object
+      properties:
+        review_id:
+          type: string
+        company_id:
+          type: string
+        review_type:
+          type: string
+          enum: ['1', '2', '3']
+        review_status:
+          type: string
+          enum: ['1', '2', '3', '4']
+        applied_at:
+          type: string
+          format: date-time
+        reviewed_at:
+          type: string
+          format: date-time
+        reviewer_id:
+          type: string
+        review_comment:
+          type: string
+        is_active:
+          type: boolean
+
+    EventPost:
+      type: object
+      properties:
+        post_id:
+          type: string
+        template_id:
+          type: string
+        company_account_id:
+          type: string
+        title:
+          type: string
+          maxLength: 20
+        summary:
+          type: string
+          maxLength: 80
+        description:
+          type: string
+          maxLength: 1000
+        reservation_url:
+          type: string
+          format: uri
+        address:
+          type: string
+        event_date:
+          type: string
+          format: date
+        event_start_time:
+          type: string
+        event_end_time:
+          type: string
+        category_id:
+          type: string
+        status:
+          $ref: '#/components/schemas/EventStatus'
+        like_count:
+          type: integer
+
+    PostCreateRequest:
+      type: object
+      required: [title, summary, event_date, event_start_time, event_end_time, category_id]
+      properties:
+        title:
+          type: string
+          maxLength: 20
+        summary:
+          type: string
+          maxLength: 80
+        description:
+          type: string
+          maxLength: 1000
+        reservation_url:
+          type: string
+          format: uri
+        address:
+          type: string
+        event_date:
+          type: string
+          format: date
+        event_start_time:
+          type: string
+        event_end_time:
+          type: string
+        category_id:
+          type: string
+        post_dates:
+          type: array
+          items:
+            type: string
+            format: date
+        condition:
+          type: object
+          properties:
+            hashtags:
+              type: array
+              items:
+                type: string
+            platforms:
+              type: array
+              items:
+                type: string
+            autoPost:
+              type: boolean
+            repeatInterval:
+              type: string
+            captionTemplate:
+              type: string
+
+    UserAccount:
+      type: object
+      properties:
+        user_id:
+          type: string
+        auth_sub:
+          type: string
+        login_type:
+          type: string
+          enum: [email, phone, google, line]
+        user_name:
+          type: string
+        user_email:
+          type: string
+          format: email
+        phone_number:
+          type: string
+        user_gender:
+          type: string
+          enum: [M, F, O]
+        birth_year:
+          type: string
+        terms_agreed:
+          type: boolean
+        is_active:
+          type: boolean
+
+    BillingAddress:
+      type: object
+      required: [name, email, country, postalCode, prefecture, city, address1, phoneCountry, phoneNumber]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        country:
+          type: string
+        postalCode:
+          type: string
+        prefecture:
+          type: string
+        city:
+          type: string
+        address1:
+          type: string
+        address2:
+          type: string
+        phoneCountry:
+          type: string
+        phoneNumber:
+          type: string
+
+    BillingData:
+      type: object
+      properties:
+        company:
+          type: object
+          properties:
+            company_name:
+              type: string
+            plan_name:
+              type: string
+        subscription:
+          type: object
+          properties:
+            id:
+              type: string
+            planName:
+              type: string
+            cycle:
+              type: string
+            unitAmount:
+              type: integer
+            status:
+              type: string
+              enum: [active, past_due, canceled, trialing]
+            renewalDate:
+              type: string
+              format: date
+        paymentMethods:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              brand:
+                type: string
+              last4:
+                type: string
+              expMonth:
+                type: integer
+              expYear:
+                type: integer
+              isDefault:
+                type: boolean
+        billingAddress:
+          $ref: '#/components/schemas/BillingAddress'
+        invoices:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              date:
+                type: string
+                format: date
+              amount:
+                type: integer
+              status:
+                type: string
+              pdfUrl:
+                type: string
+                format: uri
+
+    CompanyNotification:
+      type: object
+      properties:
+        notification_id:
+          type: string
+        company_id:
+          type: string
+        notification_type:
+          type: string
+          enum: ['1', '2', '3']
+        title:
+          type: string
+        message:
+          type: string
+        is_read:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    ExecutionHistoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+        executedAt:
+          type: string
+          format: date-time
+        category:
+          type: string
+          enum: [投稿, アカウント払出, 情報変更, 削除, 削除予定]
+        title:
+          type: string
+        description:
+          type: string
+        actor:
+          type: string
 
     Paging:
       type: object

@@ -19,8 +19,10 @@ import {
   FiSettings,
   FiUser,
 } from 'react-icons/fi';
+import { LuTicket } from 'react-icons/lu';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCompanyTicket } from '../../features/home/hooks/useCompanyTicket';
 import Logo from '../Logo';
 import styles from './Header.module.css';
 
@@ -41,6 +43,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticatedView = false }) => {
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const ticketQuery = useCompanyTicket(isAuthenticatedView);
 
   const displayName = useMemo(() => {
     const preferredName = user?.displayName?.trim();
@@ -111,6 +114,25 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticatedView = false }) => {
         </div>
       ) : (
         <>
+          {ticketQuery.data && (
+            <div className={styles.ticketBlock}>
+              <div className={styles.ticketRow}>
+                <LuTicket className={`${styles.ticketIcon} ${styles.ticketIconDaily}`} aria-hidden />
+                <span className={styles.ticketLabel}>Day</span>
+                <span className={styles.ticketNums}>
+                  <span className={styles.ticketValue}>{ticketQuery.data.daily_remaining}</span>
+                </span>
+              </div>
+              <div className={styles.ticketDivider} />
+              <div className={styles.ticketRow}>
+                <LuTicket className={`${styles.ticketIcon} ${styles.ticketIconMonthly}`} aria-hidden />
+                <span className={styles.ticketLabel}>Month</span>
+                <span className={styles.ticketNums}>
+                  <span className={styles.ticketValue}>{ticketQuery.data.monthly_remaining}</span>
+                </span>
+              </div>
+            </div>
+          )}
           <div className={styles.authDatePanel}>{dateTimePanel}</div>
           <div className={styles.authUserBlock}>
             <span className={styles.separator} aria-hidden />
