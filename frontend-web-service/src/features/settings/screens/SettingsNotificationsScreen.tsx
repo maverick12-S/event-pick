@@ -10,7 +10,6 @@ import {
 } from '@mui/material';
 import {
   FiArrowLeft,
-  FiBell,
   FiMail,
   FiSend,
 } from 'react-icons/fi';

@@ -10,30 +10,25 @@ import {
   Alert, Link, Stack,
 } from '@mui/material';
 import MuiAuthLayout from '../../../../../components/ui/MuiAuthLayout/MuiAuthLayout';
+import { useFormValidation } from '../../../../../lib/useFormValidation';
+import { passwordResetFormSchema } from '../../../../../lib/formSchemas';
 
 const PasswordResetScreen: React.FC = () => {
   const navigate = useNavigate();
   const [email, setEmail]     = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState<string | null>(null);
-  const [fieldError, setFieldError] = useState('');
+  const { errors: fieldErrors, validate, clearError } = useFormValidation(passwordResetFormSchema);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!email.trim()) {
-      setFieldError('メールアドレスを入力してください');
-      return;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim())) {
-      setFieldError('有効なメールアドレスを入力してください');
-      return;
-    }
+    const result = validate({ email });
+    if (!result.success) return;
     setLoading(true);
     try {
       await new Promise((r) => setTimeout(r, 700));
-      navigate('/mfa', { state: { from: 'password-reset', email: email.trim() } });
+      navigate('/mfa', { state: { from: 'password-reset', email: result.data.email } });
     } catch {
       setError('パスワードリセットの送信中にエラーが発生しました');
     } finally {
@@ -63,9 +58,9 @@ const PasswordResetScreen: React.FC = () => {
                 placeholder="example@company.com"
                 type="email"
                 value={email}
-                onChange={(e) => { setEmail(e.target.value); setFieldError(''); }}
-                error={Boolean(fieldError)}
-                helperText={fieldError}
+                onChange={(e) => { setEmail(e.target.value); clearError('email'); }}
+                error={Boolean(fieldErrors.email)}
+                helperText={fieldErrors.email}
                 autoComplete="email"
                 required
                 fullWidth

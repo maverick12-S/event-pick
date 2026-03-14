@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { companyApi, eventApi, userApi, authService } from './client';
+import type { LoginRequest } from '../types/auth';
 
 export const useCompanyList = (params?: Record<string, unknown>) => {
   return useQuery({
@@ -22,7 +23,7 @@ export const useCompanyGet = (companyId: string) => {
 export const useCompanyCreate = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: unknown) => companyApi.create(payload),
+    mutationFn: (payload: Record<string, unknown>) => companyApi.create(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
     },
@@ -32,7 +33,7 @@ export const useCompanyCreate = () => {
 export const useCompanyUpdate = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ companyId, payload }: { companyId: string; payload: unknown }) =>
+    mutationFn: ({ companyId, payload }: { companyId: string; payload: Record<string, unknown> }) =>
       companyApi.update(companyId, payload),
     onSuccess: (_, { companyId }) => {
       queryClient.invalidateQueries({ queryKey: ['company', companyId] });
@@ -72,7 +73,7 @@ export const useEventGet = (eventId: string) => {
 export const useEventCreate = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: unknown) => eventApi.create(payload),
+    mutationFn: (payload: Record<string, unknown>) => eventApi.create(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
     },
@@ -82,7 +83,7 @@ export const useEventCreate = () => {
 export const useEventUpdate = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ eventId, payload }: { eventId: string; payload: unknown }) =>
+    mutationFn: ({ eventId, payload }: { eventId: string; payload: Record<string, unknown> }) =>
       eventApi.update(eventId, payload),
     onSuccess: (_, { eventId }) => {
       queryClient.invalidateQueries({ queryKey: ['event', eventId] });
@@ -112,7 +113,7 @@ export const useUserGet = (userId: string) => {
 export const useAuthLogin = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: unknown) => authService.login(payload),
+    mutationFn: (payload: LoginRequest) => authService.login(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['auth'] });
     },

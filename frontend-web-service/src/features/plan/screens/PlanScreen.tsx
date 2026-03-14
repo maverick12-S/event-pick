@@ -15,6 +15,8 @@ import {
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
+import { useFormValidation } from '../../../lib/useFormValidation';
+import { couponFormSchema } from '../../../lib/formSchemas';
 
 // ────────────────────────────────────────────────
 // 型・定数
@@ -272,6 +274,7 @@ const PlanScreen: React.FC = () => {
   const [couponCode, setCouponCode]       = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponResult, setCouponResult]   = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const { errors: fieldErrors, validate, clearError } = useFormValidation(couponFormSchema);
 
   const handleSelectPlan = async (planId: PlanId) => {
     setSelectLoading(planId);
@@ -285,8 +288,9 @@ const PlanScreen: React.FC = () => {
   };
 
   const handleApplyCoupon = async () => {
-    if (!couponCode.trim()) {
-      setCouponResult({ type: 'error', message: 'クーポンコードを入力してください。' });
+    const result = validate({ couponCode });
+    if (!result.success) {
+      setCouponResult({ type: 'error', message: result.errors.couponCode ?? 'クーポンコードを入力してください。' });
       return;
     }
     setCouponLoading(true);
@@ -379,11 +383,13 @@ const PlanScreen: React.FC = () => {
           <TextField
             placeholder="クーポンコードを入力"
             value={couponCode}
-            onChange={(e) => { setCouponCode(e.target.value); setCouponResult(null); }}
+            onChange={(e) => { setCouponCode(e.target.value); clearError('couponCode'); setCouponResult(null); }}
             onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
             disabled={couponLoading}
             inputProps={{ maxLength: 30, 'aria-label': 'クーポンコード入力' }}
             size="medium"
+            error={Boolean(fieldErrors.couponCode)}
+            helperText={fieldErrors.couponCode}
             sx={{
               flex: 1,
               '& .MuiOutlinedInput-root': {

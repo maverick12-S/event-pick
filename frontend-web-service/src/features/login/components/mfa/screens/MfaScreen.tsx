@@ -11,6 +11,8 @@ import {
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import MuiAuthLayout from '../../../../../components/ui/MuiAuthLayout/MuiAuthLayout';
+import { useFormValidation } from '../../../../../lib/useFormValidation';
+import { mfaFormSchema } from '../../../../../lib/formSchemas';
 
 const MfaScreen: React.FC = () => {
   const location  = useLocation();
@@ -18,15 +20,13 @@ const MfaScreen: React.FC = () => {
   const [code, setCode]       = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState<string | null>(null);
-  const [fieldError, setFieldError] = useState<string>('');
+  const { errors: fieldErrors, validate, clearError } = useFormValidation(mfaFormSchema);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!code.trim()) {
-      setFieldError('認証コードを入力してください');
-      return;
-    }
+    const result = validate({ code });
+    if (!result.success) return;
     setLoading(true);
     try {
       await new Promise((r) => setTimeout(r, 600));
@@ -65,12 +65,12 @@ const MfaScreen: React.FC = () => {
                 value={code}
                 onChange={(e) => {
                   setCode(e.target.value);
-                  setFieldError('');
+                  clearError('code');
                   setError(null);
                 }}
                 inputProps={{ inputMode: 'numeric', autoComplete: 'one-time-code', maxLength: 6 }}
-                error={Boolean(fieldError)}
-                helperText={fieldError}
+                error={Boolean(fieldErrors.code)}
+                helperText={fieldErrors.code}
                 required
                 fullWidth
                 variant="outlined"

@@ -11,6 +11,8 @@ import {
   Typography,
 } from '@mui/material';
 import { FiArrowLeft } from 'react-icons/fi';
+import { useFormValidation } from '../../../lib/useFormValidation';
+import { contactFormSchema } from '../../../lib/formSchemas';
 
 const CONTACT_SCREEN_SCALE = 1.35;
 
@@ -59,15 +61,12 @@ const SettingsContactScreen: React.FC = () => {
     severity: 'success',
     message: '',
   });
+  const { errors: fieldErrors, validate, clearError, firstError } = useFormValidation(contactFormSchema);
 
   const handleSubmit = () => {
-    if (!subject.trim()) {
-      setSnackbar({ open: true, severity: 'error', message: '件名を入力してください' });
-      return;
-    }
-
-    if (!message.trim()) {
-      setSnackbar({ open: true, severity: 'error', message: 'お問い合わせ内容を入力してください' });
+    const result = validate({ subject, category, message });
+    if (!result.success) {
+      setSnackbar({ open: true, severity: 'error', message: firstError ?? 'エラーがあります' });
       return;
     }
 
@@ -176,8 +175,10 @@ const SettingsContactScreen: React.FC = () => {
               fullWidth
               size="small"
               value={subject}
-              onChange={(event) => setSubject(event.target.value)}
+              onChange={(event) => { setSubject(event.target.value); clearError('subject'); }}
               placeholder="件名を入力してください"
+              error={Boolean(fieldErrors.subject)}
+              helperText={fieldErrors.subject}
               sx={fieldSx}
             />
 
@@ -216,8 +217,10 @@ const SettingsContactScreen: React.FC = () => {
               multiline
               minRows={6}
               value={message}
-              onChange={(event) => setMessage(event.target.value)}
+              onChange={(event) => { setMessage(event.target.value); clearError('message'); }}
               placeholder="お問い合わせ内容をご記入ください"
+              error={Boolean(fieldErrors.message)}
+              helperText={fieldErrors.message}
               sx={fieldSx}
             />
 

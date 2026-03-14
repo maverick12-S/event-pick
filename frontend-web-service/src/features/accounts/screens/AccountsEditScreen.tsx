@@ -34,6 +34,8 @@ import {
 import { issueFieldSx, issueLabelSx } from '../styles/accountsIssue.styles';
 import type { AccountEditFormState } from '../types/accountEdit';
 import PlanGuideModal from '../components/PlanGuideModal';
+import { useFormValidation } from '../../../lib/useFormValidation';
+import { accountEditFormSchema } from '../../../lib/formSchemas';
 
 const AccountsEditScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -72,20 +74,19 @@ const AccountsEditScreen: React.FC = () => {
 
   const setField = <K extends keyof AccountEditFormState>(key: K, value: AccountEditFormState[K]) => {
     setForm((prev) => (prev ? { ...prev, [key]: value } : prev));
+    clearError(key);
   };
 
-  const validate = (): string | null => {
-    if (!form) return '入力情報を読み込めていません';
-    if (!form.baseName.trim()) return '拠点アカウント名を入力してください';
-    if (!form.address.trim()) return '住所を入力してください';
-    if (!form.email.trim()) return 'メールアドレスを入力してください';
-    return null;
-  };
+  const { errors: fieldErrors, validate, clearError, firstError } = useFormValidation(accountEditFormSchema);
 
   const handleSave = () => {
-    const error = validate();
-    if (error) {
-      setSnackbar({ open: true, message: error, severity: 'error' });
+    if (!form) {
+      setSnackbar({ open: true, message: '入力情報を読み込めていません', severity: 'error' });
+      return;
+    }
+    const result = validate(form);
+    if (!result.success) {
+      setSnackbar({ open: true, message: firstError ?? 'バリデーションエラー', severity: 'error' });
       return;
     }
     setConfirmSaveOpen(true);
@@ -257,6 +258,8 @@ const AccountsEditScreen: React.FC = () => {
                     onChange={(event) => setField('baseName', event.target.value)}
                     fullWidth
                     sx={issueFieldSx}
+                    error={Boolean(fieldErrors.baseName)}
+                    helperText={fieldErrors.baseName}
                     InputProps={{ startAdornment: <FiUser style={{ marginRight: 8, color: '#83d9ff' }} /> }}
                   />
                 </Box>
@@ -268,6 +271,8 @@ const AccountsEditScreen: React.FC = () => {
                     onChange={(event) => setField('address', event.target.value)}
                     fullWidth
                     sx={issueFieldSx}
+                    error={Boolean(fieldErrors.address)}
+                    helperText={fieldErrors.address}
                     InputProps={{ startAdornment: <FiMapPin style={{ marginRight: 8, color: '#83d9ff' }} /> }}
                   />
                 </Box>
@@ -280,6 +285,8 @@ const AccountsEditScreen: React.FC = () => {
                 fullWidth
                 type="email"
                 sx={issueFieldSx}
+                error={Boolean(fieldErrors.email)}
+                helperText={fieldErrors.email}
                 InputProps={{ startAdornment: <FiMail style={{ marginRight: 8, color: '#83d9ff' }} /> }}
               />
               <Typography sx={{ color: 'rgba(177, 219, 249, 0.84)', fontSize: '0.78rem', mt: 0.55 }}>

@@ -2,7 +2,7 @@ import { apiClient } from './http';
 import endpoints from './endpoints';
 
 // 共通レスポンスラッパー
-export interface CommonResponse<T = any> {
+export interface CommonResponse<T = unknown> {
   success: boolean;
   data: T | null;
   error: ErrorPayload | null;
@@ -34,13 +34,28 @@ export interface PaginatedEvents {
   pagination: Paging;
 }
 
+export interface ReportChartDataPoint {
+  date: string;
+  views: number;
+  favorites: number;
+  clicks: number;
+}
+
+export interface ReportTopEvent {
+  eventId: string;
+  title: string;
+  views: number;
+  favorites: number;
+  clicks: number;
+}
+
 export interface ReportSummary {
   period: { from: string; to: string };
   totalViews: number;
   totalFavorites: number;
   totalClicks: number;
-  chartData: Array<Record<string, any>>;
-  topEvents: Array<Record<string, any>>;
+  chartData: ReportChartDataPoint[];
+  topEvents: ReportTopEvent[];
 }
 
 export interface TicketTransaction {
@@ -97,16 +112,26 @@ export interface CheckoutSessionResponse {
   expiresAt: string;
 }
 
+class ApiError extends Error {
+  code: string;
+  details: string[];
+  constructor(message: string, code: string, details: string[]) {
+    super(message);
+    this.name = 'ApiError';
+    this.code = code;
+    this.details = details;
+  }
+}
+
+export type { ApiError };
+
 const unwrap = async <T>(p: Promise<{ data: CommonResponse<T> }>): Promise<T> => {
   const res = await p;
   const body = res.data;
   if (!body || body.success === false) {
     const code = body?.error?.code || 'E0000';
     const msg = body?.error?.message || 'API error';
-    const err: any = new Error(msg);
-    err.code = code;
-    err.details = body?.error?.details || [];
-    throw err;
+    throw new ApiError(msg, code, body?.error?.details || []);
   }
   return body.data as T;
 };

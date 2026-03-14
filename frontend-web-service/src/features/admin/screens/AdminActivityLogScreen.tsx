@@ -14,18 +14,7 @@ import {
   FiChevronRight,
 } from 'react-icons/fi';
 import styles from './AdminActivityLogScreen.module.css';
-
-// ──────── 型定義 ────────
-type ActivityCategory = 'review' | 'account' | 'coupon' | 'category' | 'inquiry' | 'settings' | 'system';
-
-interface ActivityEntry {
-  id: string;
-  category: ActivityCategory;
-  title: string;
-  description: string;
-  actor: string;
-  executedAt: string;
-}
+import type { ActivityCategory, ActivityEntry } from '../types/admin';
 
 // ──────── モックデータ ────────
 const CATEGORY_LABELS: Record<ActivityCategory, string> = {

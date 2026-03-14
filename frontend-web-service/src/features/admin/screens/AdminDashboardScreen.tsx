@@ -279,7 +279,7 @@ const AdminDashboardScreen: React.FC = () => {
                       borderRadius: 8,
                       color: '#fff',
                     }}
-                    formatter={(value: number) => [`¥${value.toLocaleString()}`, '収益']}
+                    formatter={(value: unknown) => [`¥${Number(value).toLocaleString()}`, '収益']}
                   />
                   <Bar dataKey="revenue" name="収益" radius={[6, 6, 0, 0]}>
                     {revenue.items.map((item) => (

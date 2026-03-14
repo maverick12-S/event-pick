@@ -7,13 +7,11 @@
 import React, { useState } from 'react';
 import { FiPlus, FiTrash2, FiTag } from 'react-icons/fi';
 import styles from './AdminCategoriesScreen.module.css';
+import type { AdminCategory } from '../types/admin';
+import { useFormValidation } from '../../../lib/useFormValidation';
+import { adminCategoryAddFormSchema } from '../../../lib/formSchemas';
 
-interface Category {
-  id: string;
-  name: string;
-  count: number;
-  createdAt: string;
-}
+type Category = AdminCategory;
 
 const INITIAL_CATEGORIES: Category[] = [
   { id: 'cat01', name: '音楽フェス', count: 124, createdAt: '2024-01-15' },
@@ -32,11 +30,13 @@ const AdminCategoriesScreen: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
   const [newName, setNewName] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
+  const { validate } = useFormValidation(adminCategoryAddFormSchema);
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
+    const result = validate({ name: newName });
+    if (!result.success) return;
     const trimmed = newName.trim();
-    if (!trimmed) return;
     const newCat: Category = {
       id: `cat_${Date.now()}`,
       name: trimmed,

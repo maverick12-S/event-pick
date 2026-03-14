@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import openapiClient, { ReportSummary } from '../../api/openapiClient';
+import openapiClient from '../../api/openapiClient';
+import type { ReportSummary } from '../../api/openapiClient';
 import { queryKeys } from '../../api/queryKeys';
 
 export const useReports = (params: { from: string; to: string; companyAccountId?: string; groupBy?: 'day' | 'week' | 'month'; metrics?: string[] } | null) => {

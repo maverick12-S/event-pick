@@ -4,9 +4,30 @@ on:
   push:
     branches:
       - 'feature/**'
+    paths:
+      - 'frontend-web-service/**'
+      - 'backend-service/**'
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'frontend-web-service/**'
+            backend:
+              - 'backend-service/**'
+
   frontend-test:
+    needs: changes
+    if: ${{ needs.changes.outputs.frontend == 'true' }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -29,6 +50,8 @@ jobs:
           fi
 
   backend-test:
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' }}
     runs-on: ubuntu-latest
     defaults:
       run:

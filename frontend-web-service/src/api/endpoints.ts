@@ -13,6 +13,8 @@ const endpoints = {
   authLogout: `${API_PREFIX}/auth/logout`,
   authRefresh: `${API_PREFIX}/auth/refresh`,
   authRevoke: `${API_PREFIX}/auth/revoke`,
+  authSignup: `${API_PREFIX}/auth/signup`,
+  authMfaVerify: `${API_PREFIX}/auth/mfa/verify`,
   authPasswordReset: `${API_PREFIX}/auth/password-reset`,
   authPasswordChange: `${API_PREFIX}/auth/password-change`,
 
@@ -62,6 +64,7 @@ const endpoints = {
   uploadsPresignedUrl: `${API_PREFIX}/uploads/presigned-url`,
 
   // Reports
+  reportsSummary: `${API_PREFIX}/reports/summary`,
   reportsSearch: `${API_PREFIX}/reports/search`,
   reportByAccount: (accountId: string | number) => `${API_PREFIX}/reports/${accountId}`,
   reportByAccountEvent: (accountId: string | number, eventId: string | number) => `${API_PREFIX}/reports/${accountId}/${eventId}`,
@@ -71,9 +74,12 @@ const endpoints = {
   billingCheckoutSession: `${API_PREFIX}/billing/checkout-session`,
   billingPlanChange: `${API_PREFIX}/billing/plan/change`,
   billingCancel: `${API_PREFIX}/billing/cancel`,
+  billingAddress: `${API_PREFIX}/billing/address`,
+  billingCouponApply: `${API_PREFIX}/billing/coupon/apply`,
 
-  // Audit, inquiries, tickets, notifications
+  // Audit, inquiries, tickets, notifications, execution history
   auditLogs: `${API_PREFIX}/audit-logs`,
+  executionHistory: `${API_PREFIX}/execution-history`,
   inquiries: `${API_PREFIX}/inquiries`,
   inquiriesReply: (inquiryId: string | number) => `${API_PREFIX}/admin/inquiries/${inquiryId}/reply`,
   notifications: `${API_PREFIX}/notifications`,
@@ -116,6 +122,31 @@ const endpoints = {
     plans: `${API_PREFIX}/admin/plans`,
     plan: (id: string | number) => `${API_PREFIX}/admin/plans/${id}`,
   },
+
+  // Admin - reviews
+  adminReviews: `${API_PREFIX}/admin/reviews`,
+  adminReview: (reviewId: string | number) => `${API_PREFIX}/admin/reviews/${reviewId}`,
+  adminReviewApprove: (reviewId: string | number) => `${API_PREFIX}/admin/reviews/${reviewId}/approve`,
+  adminReviewReject: (reviewId: string | number) => `${API_PREFIX}/admin/reviews/${reviewId}/reject`,
+
+  // Admin - settings
+  adminSettings: `${API_PREFIX}/admin/settings`,
+
+  // Admin - auth logs / activity logs
+  adminAuthLogs: `${API_PREFIX}/admin/auth-logs`,
+  adminActivityLogs: `${API_PREFIX}/admin/activity-logs`,
+
+  // Admin - consumers
+  adminConsumers: `${API_PREFIX}/admin/consumers`,
+  adminConsumer: (userId: string | number) => `${API_PREFIX}/admin/consumers/${userId}`,
+  adminConsumerSuspend: (userId: string | number) => `${API_PREFIX}/admin/consumers/${userId}/suspend`,
+  adminConsumerDeleteSchedule: (userId: string | number) => `${API_PREFIX}/admin/consumers/${userId}/delete-schedule`,
+
+  // Admin - location accounts
+  adminLocationAccounts: `${API_PREFIX}/admin/location-accounts`,
+  adminLocationAccount: (companyId: string | number) => `${API_PREFIX}/admin/location-accounts/${companyId}`,
+  adminLocationAccountSuspend: (companyId: string | number) => `${API_PREFIX}/admin/location-accounts/${companyId}/suspend`,
+  adminLocationAccountDeleteSchedule: (companyId: string | number) => `${API_PREFIX}/admin/location-accounts/${companyId}/delete-schedule`,
 
   // Master data
   master: {

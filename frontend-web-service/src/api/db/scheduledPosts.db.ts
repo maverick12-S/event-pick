@@ -2,7 +2,7 @@ import { categoryOptions, cityOptions } from './posts.screen';
 import { toFourByFiveUnsplash } from './mockImages';
 
 export type { PostCondition, ScheduledPostItem } from '../../types/models/scheduledPost';
-import type { ScheduledPostItem } from '../../types/models/scheduledPost';
+import type { PostCondition, ScheduledPostItem } from '../../types/models/scheduledPost';
 
 const imagePool = [
   'https://images.unsplash.com/photo-1532635241-17e820acc59f?auto=format&fit=crop&w=400&q=80',

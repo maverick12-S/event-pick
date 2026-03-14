@@ -30,6 +30,9 @@ import {
   FiX,
 } from 'react-icons/fi';
 import postManagementMockApi from '../../../api/mock/postManagementMockApi';
+import type { PostFormData, PreviewFormPayload, CalendarMonth } from '../types/postForm';
+import { useFormValidation } from '../../../lib/useFormValidation';
+import { postFormSchema } from '../../../lib/formSchemas';
 
 const MAX_IMAGES = 10;
 const DETAIL_MAX_LENGTH = 1200;
@@ -45,42 +48,6 @@ const CATEGORIES = [
   '食事', '体験', '買い物', 'イベント',
   'ライブ', '観光', '祭り', '温泉', '車',
 ];
-
-interface PostFormData {
-  title: string;
-  images: { file: File; preview: string; positionX: number; positionY: number; zoom: number }[];
-  summary: string;
-  detail: string;
-  reservation: string;
-  address: string;
-  venueName: string;
-  budget: string;
-  startTime: string;
-  endTime: string;
-  category: string;
-}
-
-type PreviewImagePayload = {
-  preview: string;
-  positionX: number;
-  positionY: number;
-  zoom: number;
-};
-
-type PreviewFormPayload = {
-  title: string;
-  images: string[];
-  imageEdits?: PreviewImagePayload[];
-  summary: string;
-  detail: string;
-  reservation: string;
-  address: string;
-  venueName: string;
-  budget: string;
-  startTime: string;
-  endTime: string;
-  category: string;
-};
 
 type ScheduledEditLocationState = {
   restoreForm?: PreviewFormPayload;
@@ -628,7 +595,8 @@ const CategorySelect: React.FC<{
   </Select>
 );
 
-const DiscardDialog: React.FC<{
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const _DiscardDialog: React.FC<{
   open: boolean;
   onClose: () => void;
   onDiscard: () => void;
@@ -726,12 +694,6 @@ const DiscardDialog: React.FC<{
   </Dialog>
 );
 
-type CalendarMonth = {
-  key: string;
-  label: string;
-  rows: Array<Array<string | null>>;
-};
-
 const buildCalendarMonths = (startIso: string, endIso: string): CalendarMonth[] => {
   const start = parseLocalIsoDate(startIso);
   const end = parseLocalIsoDate(endIso);
@@ -766,7 +728,8 @@ const buildCalendarMonths = (startIso: string, endIso: string): CalendarMonth[] 
   return months;
 };
 
-const ScheduleCalendarDialog: React.FC<{
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const _ScheduleCalendarDialog: React.FC<{
   open: boolean;
   selectedDates: string[];
   minDateIso: string;
@@ -970,6 +933,7 @@ const ScheduledPostEditScreen: React.FC = () => {
     message: '',
     severity: 'success',
   });
+  const { errors: fieldErrors, validate, clearError, firstError } = useFormValidation(postFormSchema);
 
   const [editSource, setEditSource] = useState<'posts' | 'reservations'>(
     (location.state as ScheduledEditLocationState | null)?.from === 'posts' ? 'posts' : 'reservations',
@@ -1083,8 +1047,10 @@ const ScheduledPostEditScreen: React.FC = () => {
     hasInitializedFormRef.current = true;
   }, [location.pathname, location.state, navigate, scheduledPost]);
 
-  const setField = <K extends keyof PostFormData>(key: K, value: PostFormData[K]) =>
+  const setField = <K extends keyof PostFormData>(key: K, value: PostFormData[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+    if (typeof key === 'string') clearError(key);
+  };
 
   const handleAddImages = (files: FileList) => {
     setForm((prev) => {
@@ -1139,22 +1105,15 @@ const ScheduledPostEditScreen: React.FC = () => {
     });
   };
 
-  const validate = (): string | null => {
-    if (!form.title.trim()) return 'タイトルを入力してください';
-    if (!form.category) return 'カテゴリーを選択してください';
-    if (!form.summary.trim()) return '説明概要を入力してください';
-    return null;
-  };
-
   const handleSubmit = () => {
     if (!scheduledPost) {
       setSnackbar({ open: true, message: '編集対象が見つかりません', severity: 'error' });
       return;
     }
 
-    const error = validate();
-    if (error) {
-      setSnackbar({ open: true, message: error, severity: 'error' });
+    const result = validate(form);
+    if (!result.success) {
+      setSnackbar({ open: true, message: firstError ?? 'エラーがあります', severity: 'error' });
       return;
     }
 
