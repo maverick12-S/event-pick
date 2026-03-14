@@ -2,12 +2,14 @@ import React, { lazy } from 'react';
 import type { ReactElement } from 'react';
 import SuspenseLoading from '../components/SuspenseWeather/SuspenseLoading';
 import ErrorBoundary from '../components/ErrorBoundary/ErrorBoundary';
+import { reportError } from '../components/ErrorBoundary/errorReporter';
 
 /**
  * 遅延読み込みヘルパ。
  * - React.lazy でコード分割
  * - チャンク読み込み失敗時に1回だけ自動リトライ
  * - ErrorBoundary でフォールバック表示
+ * - リトライ失敗は errorReporter へ送信
  */
 const lazyWithRetry = (importFn: () => Promise<{ default: React.ComponentType<any> }>) => {
   return lazy(() =>
@@ -20,7 +22,7 @@ const lazyWithRetry = (importFn: () => Promise<{ default: React.ComponentType<an
         error?.name === 'ChunkLoadError';
 
       if (isChunkError) {
-        console.warn('[lazyLoad] Chunk load failed, retrying...', error);
+        reportError('chunk', error, 'async', undefined, { retryAttempt: 1 });
         return importFn();
       }
       throw error;
@@ -31,7 +33,7 @@ const lazyWithRetry = (importFn: () => Promise<{ default: React.ComponentType<an
 export const lazyLoad = (importFn: () => Promise<{ default: React.ComponentType<any> }>): ReactElement => {
   const Component = lazyWithRetry(importFn) as React.LazyExoticComponent<React.ComponentType<any>>;
   return (
-    <ErrorBoundary fallbackKind="chunk">
+    <ErrorBoundary fallbackKind="chunk" name="LazyLoadBoundary">
       <SuspenseLoading>
         <Component />
       </SuspenseLoading>
