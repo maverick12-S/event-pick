@@ -32,7 +32,7 @@ import {
   FiAlignLeft,
   FiFileText,
 } from 'react-icons/fi';
-import postManagementMockApi from '../../../api/mock/postManagementMockApi';
+import { postManagementApi } from '../hooks/usePostManagement';
 import { toFourByFiveUnsplash } from '../../../api/db/mockImages';
 import { CarouselIndicator } from '../components';
 import { useFormValidation } from '../../../lib/useFormValidation';
@@ -95,7 +95,7 @@ const glassCardSx = {
 };
 
 const POST_DETAIL_CONTENT_MAX_WIDTH = 928;
-const POST_DETAIL_SCALE = 0.75;
+const POST_DETAIL_SCALE = 0.6;
 
 /* ─────────────────────────────────────────────
    セクションヘッダー（アクセントライン付き）
@@ -275,10 +275,10 @@ const PostDetailScreenB: React.FC = () => {
   const previewRestoreSelectedPostDates = (location.state as { restoreSelectedPostDates?: string[] } | null)?.restoreSelectedPostDates;
   const previewRestoreAutoPostEnabled = (location.state as { restoreAutoPostEnabled?: boolean } | null)?.restoreAutoPostEnabled;
 
-  const event = useMemo(() => postManagementMockApi.findPostEventByRoute(tab, id), [tab, id]);
+  const event = useMemo(() => postManagementApi.findPostEventByRoute(tab, id), [tab, id]);
   const scheduledPost = useMemo(() => {
     if (tab !== 'scheduled') return null;
-    return postManagementMockApi.findScheduledPostById(id);
+    return postManagementApi.findScheduledPostById(id);
   }, [tab, id]);
 
   const isPreviewMode = Boolean(previewForm);
@@ -446,7 +446,7 @@ const PostDetailScreenB: React.FC = () => {
     const result = validate(editForm);
     if (!result.success) return;
 
-    const saved = postManagementMockApi.updateScheduledPostById(scheduledPost.id, {
+    const saved = postManagementApi.updateScheduledPostById(scheduledPost.id, {
       title: editForm.title,
       category: editForm.category,
       ward: editForm.ward,

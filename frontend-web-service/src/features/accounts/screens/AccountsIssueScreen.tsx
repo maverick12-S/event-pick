@@ -14,7 +14,7 @@ import {
   Typography,
 } from '@mui/material';
 import { FiArrowLeft, FiEye, FiEyeOff, FiLock, FiMapPin, FiTag, FiUser } from 'react-icons/fi';
-import accountsMockApi from '../../../api/mock/accountsMockApi';
+import { useAccountIdGenerator } from '../hooks/useAccountIdGenerator';
 import type { IssueAccountFormState } from '../types/issueAccount';
 import useIssueAccountMock from '../hooks/useIssueAccountMock';
 import {
@@ -30,7 +30,8 @@ import { accountIssueFormSchema } from '../../../lib/formSchemas';
 const AccountsIssueScreen: React.FC = () => {
   const navigate = useNavigate();
   const issueMutation = useIssueAccountMock();
-  const [accountId] = useState(() => accountsMockApi.generateAccountId());
+  const generateAccountId = useAccountIdGenerator();
+  const [accountId] = useState(() => generateAccountId());
   const [form, setForm] = useState<IssueAccountFormState>(INITIAL_ISSUE_FORM);
   const [showPassword, setShowPassword] = useState(false);
   const [planGuideOpen, setPlanGuideOpen] = useState(false);

@@ -14,7 +14,7 @@ import { FiArrowLeft } from 'react-icons/fi';
 import { useFormValidation } from '../../../lib/useFormValidation';
 import { contactFormSchema } from '../../../lib/formSchemas';
 
-const CONTACT_SCREEN_SCALE = 1.35;
+const CONTACT_SCREEN_SCALE = 1.08;
 
 const categoryOptions = [
   'アカウント',

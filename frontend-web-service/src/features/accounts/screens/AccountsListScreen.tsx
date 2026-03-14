@@ -16,11 +16,10 @@ import { FiArrowLeft, FiDownload, FiSearch, FiSend } from 'react-icons/fi';
 import type { AccountsSortKey } from '../../../types/models/accountQuery';
 import useAccountsMock from '../hooks/useAccountsMock';
 import { cellAlignSx, desktopTableMinWidth, rowGridTemplate } from '../styles/accountsList.styles';
-import ContractLicenseDialog from '../components/ContractLicenseDialog';
+import { useAuth } from '../../../contexts/AuthContext';
+import TemplateLicenseAgreementModal from '../../templates/components/TemplateLicenseAgreementModal';
 
-const ACCOUNTS_LIST_SCALE = 1.25;
-const CONTRACT_TEMPLATE_NAME = 'EventPick利用支援・拠点アカウント提供契約書 v4.0 完全改訂版';
-const CONTRACT_TEMPLATE_VERSION = 'v4.0';
+const ACCOUNTS_LIST_SCALE = 1.0;
 const CONTRACT_DOWNLOAD_PATH = '/contracts/eventpick-location-account-agreement-v4.pdf';
 
 const CONTRACT_COMPANY_PROFILE = {
@@ -53,6 +52,7 @@ const getStatusColor = (status: string): string => {
 
 const AccountsListScreen: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [query, setQuery] = useState('');
   const [sortKey, setSortKey] = useState<AccountsSortKey>('name-asc');
   const [licenseOpen, setLicenseOpen] = useState(false);
@@ -77,29 +77,13 @@ const AccountsListScreen: React.FC = () => {
     setLicenseOpen(true);
   };
 
-  const handleAcceptLicense = () => {
-    const acceptedAt = new Date().toISOString();
-    const existingLogs = JSON.parse(localStorage.getItem('eventpick-contract-download-logs') ?? '[]') as Array<Record<string, string>>;
-    existingLogs.unshift({
-      companyName: CONTRACT_COMPANY_PROFILE.companyName,
-      corporationNumber: CONTRACT_COMPANY_PROFILE.corporationNumber,
-      representativeName: CONTRACT_COMPANY_PROFILE.representativeName,
-      contactEmail: CONTRACT_COMPANY_PROFILE.contactEmail,
-      templateName: CONTRACT_TEMPLATE_NAME,
-      templateVersion: CONTRACT_TEMPLATE_VERSION,
-      acceptedAt,
-      ipAddress: '未取得（モック環境）',
-      downloadLog: `download:${acceptedAt}`,
-    });
-    localStorage.setItem('eventpick-contract-download-logs', JSON.stringify(existingLogs));
-
+  const handleDownloadReady = (_templateId: string) => {
     const anchor = document.createElement('a');
     anchor.href = CONTRACT_DOWNLOAD_PATH;
     anchor.download = 'EventPick利用支援・拠点アカウント提供契約書_v4.0_完全改訂版.pdf';
     document.body.appendChild(anchor);
     anchor.click();
     document.body.removeChild(anchor);
-    setLicenseOpen(false);
   };
 
   return (
@@ -523,10 +507,13 @@ const AccountsListScreen: React.FC = () => {
         </Box>
       </Box>
 
-      <ContractLicenseDialog
+      <TemplateLicenseAgreementModal
         open={licenseOpen}
         onClose={() => setLicenseOpen(false)}
-        onAccept={handleAcceptLicense}
+        templateId="eventpick-location-account-agreement-v4"
+        companyId={CONTRACT_COMPANY_PROFILE.corporationNumber}
+        userId={user?.id ?? ''}
+        onDownloadReady={handleDownloadReady}
       />
     </Box>
   );

@@ -126,3 +126,10 @@ export type {
   AdminActivityLogsParams,
   AdminActivityLogsResponse,
 } from './admin.dto';
+
+// ── 承諾ログ ──
+export type {
+  AgreementType,
+  AgreementLogCreateRequest,
+  AgreementLogCreateResponse,
+} from './agreement.dto';

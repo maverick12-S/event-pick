@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Box, ButtonBase, Collapse, Grid, InputBase, Typography } from '@mui/material';
 import { FiArrowLeft, FiCalendar, FiClock, FiFileText, FiSearch, FiX } from 'react-icons/fi';
 import { type PostDraftItem } from '../../../types/models/postDraft';
-import postManagementMockApi from '../../../api/mock/postManagementMockApi';
+import { postManagementApi } from '../hooks/usePostManagement';
 
 const formatDate = (iso: string): string => {
   const date = new Date(iso);
@@ -182,7 +182,7 @@ const PostDraftsScreen: React.FC = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [savedWithinDays, setSavedWithinDays] = useState<'all' | 7 | 30 | 90>('all');
 
-  const drafts = useMemo(() => postManagementMockApi.listPostDrafts(), []);
+  const drafts = useMemo(() => postManagementApi.listPostDrafts(), []);
   const categories = useMemo(
     () => Array.from(new Set(drafts.map((item) => item.category).filter(Boolean))),
     [drafts],

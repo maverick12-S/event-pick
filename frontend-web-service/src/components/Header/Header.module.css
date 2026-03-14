@@ -26,7 +26,7 @@
 }
 
 .headerAuthenticated {
-  grid-template-columns: max-content minmax(24px, 1fr) max-content max-content;
+  grid-template-columns: max-content minmax(24px, 1fr) max-content max-content max-content;
   column-gap: 0;
   padding-right: clamp(18px, 2.4vw, 32px);
 }
@@ -76,6 +76,86 @@
   min-width: 0;
   padding-right: 8px;
   overflow: hidden;
+}
+
+/* ---- チケット表示 ---- */
+.ticketBlock {
+  display: flex;
+  flex-direction: column;
+  justify-self: end;
+  padding: 4px 0;
+  margin: 0 14px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  min-width: max-content;
+  white-space: nowrap;
+  transition: box-shadow 0.15s ease;
+}
+
+.ticketBlock:hover {
+  box-shadow: 0 2px 16px rgba(100, 180, 255, 0.08);
+}
+
+.ticketRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 12px;
+  font-size: 1.32rem;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.92);
+  font-variant-numeric: tabular-nums;
+}
+
+.ticketDivider {
+  height: 1px;
+  margin: 0 8px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.ticketIcon {
+  font-size: 1.05em;
+  flex-shrink: 0;
+}
+
+.ticketIconDaily {
+  color: rgba(130, 200, 255, 0.85);
+}
+
+.ticketIconMonthly {
+  color: rgba(200, 170, 255, 0.85);
+}
+
+.ticketLabel {
+  color: rgba(255, 255, 255, 0.45);
+  font-weight: 600;
+  font-size: 0.78em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  width: 3.6em;
+  flex-shrink: 0;
+}
+
+.ticketNums {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.ticketValue {
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.01em;
+  min-width: 3.2em;
+  text-align: right;
+}
+
+.ticketTotal {
+  font-weight: 500;
+  font-size: 0.82em;
+  color: rgba(255, 255, 255, 0.35);
 }
 
 .authUserBlock {
@@ -222,7 +302,7 @@
 /* ---- 小さい画面: 時刻だけ表示 ---- */
 @media (max-width: 1080px) {
   .headerAuthenticated {
-    grid-template-columns: max-content minmax(12px, 1fr) max-content max-content;
+    grid-template-columns: max-content minmax(12px, 1fr) max-content max-content max-content;
   }
 
   .authDatePanel {
@@ -238,6 +318,16 @@
   .userName {
     max-width: 132px;
   }
+
+  .ticketBlock {
+    margin: 0 6px;
+  }
+
+  .ticketRow {
+    font-size: 0.72rem;
+    padding: 2px 8px;
+    gap: 4px;
+  }
 }
 
 @media (max-width: 920px) {
@@ -252,6 +342,11 @@
   .userName {
     max-width: 106px;
   }
+
+  .ticketLabel {
+    font-size: 0.7em;
+    width: 2em;
+  }
 }
 
 @media (max-width: 760px) {
@@ -260,7 +355,7 @@
   }
 
   .headerAuthenticated {
-    grid-template-columns: max-content minmax(8px, 1fr) max-content max-content;
+    grid-template-columns: max-content minmax(8px, 1fr) max-content max-content max-content;
   }
 
   .datePanel {
@@ -279,6 +374,10 @@
 
   .userButton {
     padding-inline: 8px;
+  }
+
+  .ticketBlock {
+    display: none;
   }
 }
 

@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Box, ButtonBase, Grid, Typography } from '@mui/material';
 import { FiArrowLeft, FiClock, FiExternalLink, FiMapPin } from 'react-icons/fi';
-import postManagementMockApi from '../../../api/mock/postManagementMockApi';
+import { postManagementApi } from '../hooks/usePostManagement';
 import { CarouselIndicator } from '../components';
 
 const CATEGORY_COLORS: Record<string, { bg: string; color: string; border: string }> = {
@@ -57,8 +57,8 @@ const PostEventDetailScreen: React.FC = () => {
   const navigate = useNavigate();
 
   const event = useMemo(() => {
-    const found = postManagementMockApi.findPostEventByRoute(tab, id);
-    const fallback = postManagementMockApi.findPostEventByRoute('today', '1');
+    const found = postManagementApi.findPostEventByRoute(tab, id);
+    const fallback = postManagementApi.findPostEventByRoute('today', '1');
     return found ?? fallback;
   }, [tab, id]);
 

@@ -4,6 +4,7 @@ import {
   Alert,
   Box,
   ButtonBase,
+  CircularProgress,
   MenuItem,
   Select,
   Snackbar,
@@ -11,12 +12,12 @@ import {
   Typography,
 } from '@mui/material';
 import { FiArrowLeft } from 'react-icons/fi';
-import { getBillingAddress, updateBillingAddress } from '../../../api/db/billing.db';
+import { useBillingAddress, useUpdateBillingAddress } from '../hooks/useBilling';
 import type { BillingAddress } from '../../../types/models/billing';
 import { useFormValidation } from '../../../lib/useFormValidation';
 import { billingEditFormSchema } from '../../../lib/formSchemas';
 
-const BILLING_EDIT_SCALE = 1.2;
+const BILLING_EDIT_SCALE = 0.96;
 
 // shared field sx
 const fieldSx = {
@@ -54,7 +55,9 @@ const PHONE_PREFIX_OPTIONS = ['+81', '+1', '+65', '+44', '+86'];
 
 const SettingsBillingEditScreen: React.FC = () => {
   const navigate = useNavigate();
-  const [form, setForm] = useState<BillingAddress>(() => getBillingAddress());
+  const { data: initialAddress, isLoading } = useBillingAddress();
+  const updateMutation = useUpdateBillingAddress();
+  const [form, setForm] = useState<BillingAddress | null>(null);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
     message: '',
@@ -62,8 +65,17 @@ const SettingsBillingEditScreen: React.FC = () => {
   });
   const { errors: fieldErrors, validate, clearError, firstError } = useFormValidation(billingEditFormSchema);
 
+  // Initialize form when data arrives
+  React.useEffect(() => {
+    if (initialAddress && !form) setForm({ ...initialAddress });
+  }, [initialAddress, form]);
+
+  if (isLoading || !form) {
+    return <Box sx={{ display: 'flex', justifyContent: 'center', pt: 8 }}><CircularProgress sx={{ color: '#7dc8ff' }} /></Box>;
+  }
+
   const update = (key: keyof BillingAddress) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm((prev) => ({ ...prev, [key]: e.target.value }));
+    setForm((prev) => prev ? { ...prev, [key]: e.target.value } : prev);
     clearError(key);
   };
 
@@ -73,8 +85,10 @@ const SettingsBillingEditScreen: React.FC = () => {
       setSnackbar({ open: true, message: firstError ?? 'バリデーションエラー', severity: 'error' });
       return;
     }
-    updateBillingAddress(form);
-    setSnackbar({ open: true, message: '請求先情報を更新しました', severity: 'success' });
+    updateMutation.mutate(form, {
+      onSuccess: () => setSnackbar({ open: true, message: '請求先情報を更新しました', severity: 'success' }),
+      onError: () => setSnackbar({ open: true, message: '更新に失敗しました', severity: 'error' }),
+    });
   };
 
   return (
@@ -200,7 +214,7 @@ const SettingsBillingEditScreen: React.FC = () => {
                 fullWidth
                 size="small"
                 value={form.country}
-                onChange={(e) => setForm((prev) => ({ ...prev, country: e.target.value }))}
+                onChange={(e) => setForm((prev) => prev ? { ...prev, country: e.target.value } : prev)}
                 sx={selectSx}
                 MenuProps={{
                   disableScrollLock: true,
@@ -289,7 +303,7 @@ const SettingsBillingEditScreen: React.FC = () => {
                   fullWidth
                   size="small"
                   value={form.phoneCountry}
-                  onChange={(e) => setForm((prev) => ({ ...prev, phoneCountry: e.target.value }))}
+                  onChange={(e) => setForm((prev) => prev ? { ...prev, phoneCountry: e.target.value } : prev)}
                   sx={selectSx}
                   MenuProps={{
                     disableScrollLock: true,

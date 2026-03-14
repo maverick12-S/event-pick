@@ -10,6 +10,10 @@ export const apiClient = axios.create({
     Accept: 'application/json',
   },
   withCredentials: true,
+  // CSRF: サーバーが Set-Cookie で XSRF-TOKEN を発行し、
+  // Axios が自動で X-XSRF-TOKEN ヘッダーとして送信する
+  xsrfCookieName: 'XSRF-TOKEN',
+  xsrfHeaderName: 'X-XSRF-TOKEN',
 });
 
 // Attach Authorization header from tokenService for all requests

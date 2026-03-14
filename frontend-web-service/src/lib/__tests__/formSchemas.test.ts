@@ -97,7 +97,7 @@ describe('passwordResetFormSchema', () => {
 
 describe('passwordChangeFormSchema', () => {
   it('一致するパスワードペアを受理する', () => {
-    expect(passwordChangeFormSchema.safeParse({ password: 'newpass12', confirm: 'newpass12' }).success).toBe(true);
+    expect(passwordChangeFormSchema.safeParse({ password: 'NewPass1!', confirm: 'NewPass1!' }).success).toBe(true);
   });
 
   it('8文字未満のパスワードを拒否する', () => {
@@ -105,7 +105,7 @@ describe('passwordChangeFormSchema', () => {
   });
 
   it('不一致なパスワードを拒否する', () => {
-    const result = passwordChangeFormSchema.safeParse({ password: 'password1', confirm: 'password2' });
+    const result = passwordChangeFormSchema.safeParse({ password: 'Password1!', confirm: 'Password2!' });
     expect(result.success).toBe(false);
     if (!result.success) {
       const confirmError = result.error.issues.find((i) => i.path.includes('confirm'));
@@ -141,7 +141,7 @@ describe('accountIssueFormSchema', () => {
     baseName: '渋谷店',
     displayName: '渋谷支店',
     address: '東京都渋谷区1-2-3',
-    initialPassword: 'Password1',
+    initialPassword: 'Password1!',
     plan: 'ライトプラン' as const,
     couponCode: 'WELCOME',
   };
@@ -360,7 +360,7 @@ describe('adminAccountFormSchema', () => {
 });
 
 describe('adminPasswordFormSchema', () => {
-  const valid = { currentPassword: 'old123456', nextPassword: 'new12345', confirmPassword: 'new12345' };
+  const valid = { currentPassword: 'old123456', nextPassword: 'New1234!', confirmPassword: 'New1234!' };
 
   it('有効なデータを受理する', () => {
     expect(adminPasswordFormSchema.safeParse(valid).success).toBe(true);

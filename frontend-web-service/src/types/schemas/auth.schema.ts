@@ -71,7 +71,11 @@ export const passwordResetResponseSchema = z.object({
 export const passwordChangeRequestSchema = z.object({
   token: z.string().min(1),
   /** 新パスワード */
-  new_password: z.string().min(8).max(128),
+  new_password: z.string().min(8).max(128)
+    .regex(/[A-Z]/, '大文字(A-Z)を1文字以上含めてください')
+    .regex(/[a-z]/, '小文字(a-z)を1文字以上含めてください')
+    .regex(/[0-9]/, '数字(0-9)を1文字以上含めてください')
+    .regex(/[^A-Za-z0-9]/, '記号を1文字以上含めてください'),
 });
 
 /** パスワード変更レスポンス */
