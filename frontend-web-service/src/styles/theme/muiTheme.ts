@@ -102,9 +102,7 @@ export const authTheme = createTheme({
         },
       },
     },
-    MuiGrid2: {
-      defaultProps: { disableEqualOverflow: true },
-    },
+    MuiGrid: {},
   },
 });
 

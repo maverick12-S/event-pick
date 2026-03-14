@@ -35,6 +35,8 @@ import {
 import postManagementMockApi from '../../../api/mock/postManagementMockApi';
 import { toFourByFiveUnsplash } from '../../../api/db/mockImages';
 import { CarouselIndicator } from '../components';
+import { useFormValidation } from '../../../lib/useFormValidation';
+import { postDetailEditFormSchema } from '../../../lib/formSchemas';
 
 /* ─────────────────────────────────────────────
    カテゴリーカラーパレット
@@ -282,6 +284,7 @@ const PostDetailScreenB: React.FC = () => {
   const isPreviewMode = Boolean(previewForm);
 
   const [editForm, setEditForm] = useState<ScheduledEditForm | null>(null);
+  const { errors: fieldErrors, validate, clearError } = useFormValidation(postDetailEditFormSchema);
 
   const baseTitle = previewForm?.title || scheduledPost?.title || event?.title || '';
   const baseCategory = previewForm?.category || scheduledPost?.category || event?.category || '';
@@ -440,6 +443,9 @@ const PostDetailScreenB: React.FC = () => {
   const handleSaveScheduledEdit = () => {
     if (!scheduledPost || !editForm) return;
 
+    const result = validate(editForm);
+    if (!result.success) return;
+
     const saved = postManagementMockApi.updateScheduledPostById(scheduledPost.id, {
       title: editForm.title,
       category: editForm.category,
@@ -590,19 +596,25 @@ const PostDetailScreenB: React.FC = () => {
               size="small"
               label="タイトル"
               value={editForm.title}
-              onChange={(event) => setEditForm((prev) => (prev ? { ...prev, title: event.target.value } : prev))}
+              onChange={(event) => { setEditForm((prev) => (prev ? { ...prev, title: event.target.value } : prev)); clearError('title'); }}
+              error={Boolean(fieldErrors.title)}
+              helperText={fieldErrors.title}
             />
             <TextField
               size="small"
               label="市区"
               value={editForm.ward}
-              onChange={(event) => setEditForm((prev) => (prev ? { ...prev, ward: event.target.value } : prev))}
+              onChange={(event) => { setEditForm((prev) => (prev ? { ...prev, ward: event.target.value } : prev)); clearError('ward'); }}
+              error={Boolean(fieldErrors.ward)}
+              helperText={fieldErrors.ward}
             />
             <TextField
               size="small"
               label="会場名"
               value={editForm.venue}
-              onChange={(event) => setEditForm((prev) => (prev ? { ...prev, venue: event.target.value } : prev))}
+              onChange={(event) => { setEditForm((prev) => (prev ? { ...prev, venue: event.target.value } : prev)); clearError('venue'); }}
+              error={Boolean(fieldErrors.venue)}
+              helperText={fieldErrors.venue}
             />
 
             <Select
@@ -638,7 +650,9 @@ const PostDetailScreenB: React.FC = () => {
               size="small"
               label="概要"
               value={editForm.description}
-              onChange={(event) => setEditForm((prev) => (prev ? { ...prev, description: event.target.value } : prev))}
+              onChange={(event) => { setEditForm((prev) => (prev ? { ...prev, description: event.target.value } : prev)); clearError('description'); }}
+              error={Boolean(fieldErrors.description)}
+              helperText={fieldErrors.description}
               multiline
               minRows={2}
               sx={{ gridColumn: { xs: '1', md: '1 / -1' } }}

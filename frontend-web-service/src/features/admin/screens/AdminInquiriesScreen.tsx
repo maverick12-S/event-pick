@@ -15,23 +15,9 @@ import {
   FiUsers,
 } from 'react-icons/fi';
 import styles from './AdminInquiriesScreen.module.css';
-
-// ──────── 型定義 ────────
-type InquiryStatus = 'open' | 'in_progress' | 'closed';
-type SenderType = 'corporate' | 'consumer';
-
-interface Inquiry {
-  id: string;
-  subject: string;
-  body: string;
-  senderName: string;
-  senderEmail: string;
-  senderType: SenderType;
-  category: string;
-  status: InquiryStatus;
-  createdAt: string;
-  reply?: string;
-}
+import type { InquiryScreenStatus, SenderType, Inquiry } from '../types/admin';
+import { useFormValidation } from '../../../lib/useFormValidation';
+import { adminInquiryReplyFormSchema } from '../../../lib/formSchemas';
 
 // ──────── モックデータ ────────
 const MOCK_INQUIRIES: Inquiry[] = [
@@ -45,9 +31,9 @@ const MOCK_INQUIRIES: Inquiry[] = [
   { id: 'inq008', subject: 'イベント参加のお礼とフィードバック', body: '先日のワインフェスティバルに参加しました。素晴らしいイベントでした！\n一点、会場内のWi-Fi環境が不安定だったので、次回は改善していただけると嬉しいです。', senderName: '木村 麻衣', senderEmail: 'kimura@example.com', senderType: 'consumer', category: 'フィードバック', status: 'closed', createdAt: '2026-03-07T11:00:00Z', reply: '木村様、貴重なフィードバックをありがとうございます。Wi-Fi環境の改善について、イベント主催者と共有いたしました。' },
 ];
 
-const STATUS_LABELS: Record<InquiryStatus, string> = { open: '対応待ち', in_progress: '対応中', closed: '完了' };
+const STATUS_LABELS: Record<InquiryScreenStatus, string> = { open: '対応待ち', in_progress: '対応中', closed: '完了' };
 const SENDER_TYPE_LABELS: Record<SenderType, string> = { corporate: '企業', consumer: '消費者' };
-type StatusFilter = 'all' | InquiryStatus;
+type StatusFilter = 'all' | InquiryScreenStatus;
 
 const AdminInquiriesScreen: React.FC = () => {
   const [inquiries, setInquiries] = useState<Inquiry[]>(MOCK_INQUIRIES);
@@ -56,6 +42,7 @@ const AdminInquiriesScreen: React.FC = () => {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Inquiry | null>(null);
   const [replyText, setReplyText] = useState('');
+  const { validate: validateReply } = useFormValidation(adminInquiryReplyFormSchema);
 
   // サマリー
   const summary = useMemo(() => ({
@@ -91,7 +78,9 @@ const AdminInquiriesScreen: React.FC = () => {
   const openDetail = (inq: Inquiry) => { setSelected(inq); setReplyText(inq.reply ?? ''); };
 
   const handleReply = () => {
-    if (!selected || !replyText.trim()) return;
+    if (!selected) return;
+    const result = validateReply({ replyText });
+    if (!result.success) return;
     setInquiries((prev) => prev.map((i) => i.id === selected.id ? { ...i, status: 'in_progress' as const, reply: replyText.trim() } : i));
     setSelected((prev) => prev ? { ...prev, status: 'in_progress', reply: replyText.trim() } : null);
   };

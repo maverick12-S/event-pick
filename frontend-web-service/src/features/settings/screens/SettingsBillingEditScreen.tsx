@@ -13,6 +13,8 @@ import {
 import { FiArrowLeft } from 'react-icons/fi';
 import { getBillingAddress, updateBillingAddress } from '../../../api/db/billing.db';
 import type { BillingAddress } from '../../../types/models/billing';
+import { useFormValidation } from '../../../lib/useFormValidation';
+import { billingEditFormSchema } from '../../../lib/formSchemas';
 
 const BILLING_EDIT_SCALE = 1.2;
 
@@ -53,16 +55,24 @@ const PHONE_PREFIX_OPTIONS = ['+81', '+1', '+65', '+44', '+86'];
 const SettingsBillingEditScreen: React.FC = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState<BillingAddress>(() => getBillingAddress());
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'info' }>({
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
     message: '',
     severity: 'success',
   });
+  const { errors: fieldErrors, validate, clearError, firstError } = useFormValidation(billingEditFormSchema);
 
-  const update = (key: keyof BillingAddress) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+  const update = (key: keyof BillingAddress) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm((prev) => ({ ...prev, [key]: e.target.value }));
+    clearError(key);
+  };
 
   const handleSave = () => {
+    const result = validate(form);
+    if (!result.success) {
+      setSnackbar({ open: true, message: firstError ?? 'バリデーションエラー', severity: 'error' });
+      return;
+    }
     updateBillingAddress(form);
     setSnackbar({ open: true, message: '請求先情報を更新しました', severity: 'success' });
   };
@@ -158,6 +168,8 @@ const SettingsBillingEditScreen: React.FC = () => {
                 value={form.name}
                 onChange={update('name')}
                 sx={fieldSx}
+                error={Boolean(fieldErrors.name)}
+                helperText={fieldErrors.name}
               />
             </Box>
 
@@ -171,6 +183,8 @@ const SettingsBillingEditScreen: React.FC = () => {
                 value={form.email}
                 onChange={update('email')}
                 sx={fieldSx}
+                error={Boolean(fieldErrors.email)}
+                helperText={fieldErrors.email}
               />
             </Box>
 
@@ -209,6 +223,8 @@ const SettingsBillingEditScreen: React.FC = () => {
                 value={form.postalCode}
                 onChange={update('postalCode')}
                 sx={fieldSx}
+                error={Boolean(fieldErrors.postalCode)}
+                helperText={fieldErrors.postalCode}
               />
             </Box>
 
@@ -232,6 +248,8 @@ const SettingsBillingEditScreen: React.FC = () => {
                   value={form.city}
                   onChange={update('city')}
                   sx={fieldSx}
+                  error={Boolean(fieldErrors.city)}
+                  helperText={fieldErrors.city}
                 />
               </Box>
             </Box>
@@ -245,6 +263,8 @@ const SettingsBillingEditScreen: React.FC = () => {
                 value={form.address1}
                 onChange={update('address1')}
                 sx={fieldSx}
+                error={Boolean(fieldErrors.address1)}
+                helperText={fieldErrors.address1}
               />
             </Box>
             <Box>

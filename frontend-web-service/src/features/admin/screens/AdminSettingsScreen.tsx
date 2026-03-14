@@ -20,45 +20,26 @@ import {
   FiHash,
 } from 'react-icons/fi';
 import styles from './AdminSettingsScreen.module.css';
+import type {
+  ScreenOperatorAccountSettings,
+  ScreenPasswordSettings,
+  ScreenSiteSettings,
+  ScreenNotifSettings,
+  ScreenSecuritySettings,
+} from '../types/admin';
+import { useFormValidation } from '../../../lib/useFormValidation';
+import {
+  adminAccountFormSchema,
+  adminPasswordFormSchema,
+  adminSiteFormSchema,
+  adminSecurityFormSchema,
+} from '../../../lib/formSchemas';
 
-interface OperatorAccountSettings {
-  displayName: string;
-  username: string;
-  email: string;
-  phone: string;
-  role: string;
-}
-
-interface PasswordSettings {
-  currentPassword: string;
-  nextPassword: string;
-  confirmPassword: string;
-}
-
-interface SiteSettings {
-  siteName: string;
-  siteUrl: string;
-  adminEmail: string;
-  supportEmail: string;
-  timezone: string;
-  language: string;
-  description: string;
-}
-
-interface NotifSettings {
-  emailNewReview: boolean;
-  emailNewInquiry: boolean;
-  emailDailyReport: boolean;
-  emailWeeklyReport: boolean;
-}
-
-interface SecuritySettings {
-  twoFactorRequired: boolean;
-  sessionTimeoutMin: number;
-  maxLoginAttempts: number;
-  ipWhitelist: string;
-  passwordMinLength: number;
-}
+type OperatorAccountSettings = ScreenOperatorAccountSettings;
+type PasswordSettings = ScreenPasswordSettings;
+type SiteSettings = ScreenSiteSettings;
+type NotifSettings = ScreenNotifSettings;
+type SecuritySettings = ScreenSecuritySettings;
 
 // ──────── デフォルト値 ────────
 const DEFAULT_SITE: SiteSettings = {
@@ -117,21 +98,42 @@ const AdminSettingsScreen: React.FC = () => {
   const [notif, setNotif] = useState<NotifSettings>(DEFAULT_NOTIF);
   const [security, setSecurity] = useState<SecuritySettings>(DEFAULT_SECURITY);
 
+  const { validate: validateAccount } = useFormValidation(adminAccountFormSchema);
+  const { validate: validatePassword } = useFormValidation(adminPasswordFormSchema);
+  const { validate: validateSite } = useFormValidation(adminSiteFormSchema);
+  const { validate: validateSecurity } = useFormValidation(adminSecurityFormSchema);
+
   const handleSave = () => {
+    const accountResult = validateAccount(account);
+    if (!accountResult.success) {
+      alert('運営アカウント情報にエラーがあります: ' + Object.values(accountResult.errors)[0]);
+      return;
+    }
+
     const passwordChanging = password.currentPassword || password.nextPassword || password.confirmPassword;
     if (passwordChanging) {
-      if (!password.currentPassword || !password.nextPassword || !password.confirmPassword) {
-        alert('パスワード変更には現在のパスワードと新しいパスワードをすべて入力してください');
+      const pwResult = validatePassword(password);
+      if (!pwResult.success) {
+        alert(Object.values(pwResult.errors)[0]);
         return;
       }
-      if (password.nextPassword.length < security.passwordMinLength) {
-        alert(`新しいパスワードは ${security.passwordMinLength} 文字以上で入力してください`);
-        return;
-      }
-      if (password.nextPassword !== password.confirmPassword) {
-        alert('新しいパスワードと確認用パスワードが一致していません');
-        return;
-      }
+    }
+
+    const siteResult = validateSite(site);
+    if (!siteResult.success) {
+      alert('サイト設定にエラーがあります: ' + Object.values(siteResult.errors)[0]);
+      return;
+    }
+
+    const secResult = validateSecurity({
+      sessionTimeoutMin: security.sessionTimeoutMin,
+      maxLoginAttempts: security.maxLoginAttempts,
+      passwordMinLength: security.passwordMinLength,
+      ipWhitelist: security.ipWhitelist,
+    });
+    if (!secResult.success) {
+      alert('セキュリティ設定にエラーがあります: ' + Object.values(secResult.errors)[0]);
+      return;
     }
 
     setPassword(DEFAULT_PASSWORD);

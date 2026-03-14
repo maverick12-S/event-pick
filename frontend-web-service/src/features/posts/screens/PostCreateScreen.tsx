@@ -37,6 +37,9 @@ import {
   getPostQuickAssistSettings,
   type AssistFieldKey,
 } from '../utils/postQuickAssistSettings';
+import type { PostFormData, PreviewFormPayload, CalendarMonth } from '../types/postForm';
+import { useFormValidation } from '../../../lib/useFormValidation';
+import { postFormSchema } from '../../../lib/formSchemas';
 
 const MAX_IMAGES = 10;
 const DETAIL_MAX_LENGTH = 1200;
@@ -53,43 +56,7 @@ const CATEGORIES = [
   'ライブ', '観光', '祭り', '温泉', '車',
 ];
 
-interface PostFormData {
-  title: string;
-  images: { file: File; preview: string; positionX: number; positionY: number; zoom: number }[];
-  summary: string;
-  detail: string;
-  reservation: string;
-  address: string;
-  venueName: string;
-  budget: string;
-  startTime: string;
-  endTime: string;
-  category: string;
-}
-
 type QuickAssistMode = 'replace' | 'append';
-
-type PreviewImagePayload = {
-  preview: string;
-  positionX: number;
-  positionY: number;
-  zoom: number;
-};
-
-type PreviewFormPayload = {
-  title: string;
-  images: string[];
-  imageEdits?: PreviewImagePayload[];
-  summary: string;
-  detail: string;
-  reservation: string;
-  address: string;
-  venueName: string;
-  budget: string;
-  startTime: string;
-  endTime: string;
-  category: string;
-};
 
 type PostCreateLocationState = {
   restoreForm?: PreviewFormPayload;
@@ -834,12 +801,6 @@ const DiscardDialog: React.FC<{
   </Dialog>
 );
 
-type CalendarMonth = {
-  key: string;
-  label: string;
-  rows: Array<Array<string | null>>;
-};
-
 const buildCalendarMonths = (startIso: string, endIso: string): CalendarMonth[] => {
   const start = parseLocalIsoDate(startIso);
   const end = parseLocalIsoDate(endIso);
@@ -1082,6 +1043,7 @@ const PostCreateScreen: React.FC = () => {
     message: '',
     severity: 'success',
   });
+  const { errors: fieldErrors, validate, clearError, firstError } = useFormValidation(postFormSchema);
 
   const todayIso = useMemo(() => toLocalIsoDate(new Date()), []);
   const maxSelectableIso = useMemo(() => addDays(todayIso, 30), [todayIso]);
@@ -1131,8 +1093,10 @@ const PostCreateScreen: React.FC = () => {
     navigate(location.pathname, { replace: true, state: null });
   }, [location.pathname, location.state, navigate]);
 
-  const setField = <K extends keyof PostFormData>(key: K, value: PostFormData[K]) =>
+  const setField = <K extends keyof PostFormData>(key: K, value: PostFormData[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+    if (typeof key === 'string') clearError(key);
+  };
 
   const handleApplyQuickAssist = () => {
     if (assistApplyFields.length === 0) {
@@ -1280,17 +1244,10 @@ const PostCreateScreen: React.FC = () => {
     });
   };
 
-  const validate = (): string | null => {
-    if (!form.title.trim()) return 'タイトルを入力してください';
-    if (!form.category) return 'カテゴリーを選択してください';
-    if (!form.summary.trim()) return '説明概要を入力してください';
-    return null;
-  };
-
   const handleSubmit = () => {
-    const error = validate();
-    if (error) {
-      setSnackbar({ open: true, message: error, severity: 'error' });
+    const result = validate(form);
+    if (!result.success) {
+      setSnackbar({ open: true, message: firstError ?? 'エラーがあります', severity: 'error' });
       return;
     }
     setSelectedPostDates((prev) => (prev.length > 0 ? prev : [todayIso]));

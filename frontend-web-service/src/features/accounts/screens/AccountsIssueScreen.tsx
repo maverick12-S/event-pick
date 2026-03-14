@@ -24,6 +24,8 @@ import {
 } from '../constants/accountsIssue.constants';
 import { issueFieldSx, issueLabelSx } from '../styles/accountsIssue.styles';
 import PlanGuideModal from '../components/PlanGuideModal';
+import { useFormValidation } from '../../../lib/useFormValidation';
+import { accountIssueFormSchema } from '../../../lib/formSchemas';
 
 const AccountsIssueScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -41,21 +43,15 @@ const AccountsIssueScreen: React.FC = () => {
 
   const setField = <K extends keyof IssueAccountFormState>(key: K, value: IssueAccountFormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+    clearError(key);
   };
 
-  const validate = (): string | null => {
-    if (!form.baseName.trim()) return '拠点アカウント名を入力してください';
-    if (!form.displayName.trim()) return '拠点アカウント表示名を入力してください';
-    if (!form.address.trim()) return '住所を入力してください';
-    if (!form.initialPassword.trim()) return '初期パスワードを入力してください';
-    if (form.initialPassword.trim().length < 8) return '初期パスワードは8文字以上で入力してください';
-    return null;
-  };
+  const { errors: fieldErrors, validate, clearError, firstError } = useFormValidation(accountIssueFormSchema);
 
   const handleCreate = async () => {
-    const error = validate();
-    if (error) {
-      setSnackbar({ open: true, message: error, severity: 'error' });
+    const result = validate(form);
+    if (!result.success) {
+      setSnackbar({ open: true, message: firstError ?? 'バリデーションエラー', severity: 'error' });
       return;
     }
 
@@ -179,6 +175,8 @@ const AccountsIssueScreen: React.FC = () => {
                 onChange={(event) => setField('baseName', event.target.value)}
                 fullWidth
                 sx={issueFieldSx}
+                error={Boolean(fieldErrors.baseName)}
+                helperText={fieldErrors.baseName}
                 InputProps={{ startAdornment: <FiUser style={{ marginRight: 8, color: '#83d9ff' }} /> }}
               />
             </Box>
@@ -190,6 +188,8 @@ const AccountsIssueScreen: React.FC = () => {
                 onChange={(event) => setField('displayName', event.target.value)}
                 fullWidth
                 sx={issueFieldSx}
+                error={Boolean(fieldErrors.displayName)}
+                helperText={fieldErrors.displayName}
               />
             </Box>
           </Box>
@@ -202,6 +202,8 @@ const AccountsIssueScreen: React.FC = () => {
             onChange={(event) => setField('address', event.target.value)}
             fullWidth
             sx={issueFieldSx}
+            error={Boolean(fieldErrors.address)}
+            helperText={fieldErrors.address}
             InputProps={{ startAdornment: <FiMapPin style={{ marginRight: 8, color: '#83d9ff' }} /> }}
           />
 
@@ -214,6 +216,8 @@ const AccountsIssueScreen: React.FC = () => {
             fullWidth
             type={showPassword ? 'text' : 'password'}
             sx={issueFieldSx}
+            error={Boolean(fieldErrors.initialPassword)}
+            helperText={fieldErrors.initialPassword}
             InputProps={{
               startAdornment: <FiLock style={{ marginRight: 8, color: '#83d9ff' }} />,
               endAdornment: (
