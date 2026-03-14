@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import openapiClient, { NotificationsResponse } from '../../api/openapiClient';
+import openapiClient from '../../api/openapiClient';
+import type { NotificationsResponse } from '../../api/openapiClient';
 import { queryKeys } from '../../api/queryKeys';
 
 export const useNotifications = (params?: Record<string, unknown>) => {

@@ -20,22 +20,9 @@ import {
   FiExternalLink,
 } from 'react-icons/fi';
 import styles from './AdminReviewsScreen.module.css';
-
-// ──────── 型定義 ────────
-type ReviewStatus = 'pending' | 'approved' | 'rejected';
-
-interface ReviewApplication {
-  id: string;
-  corporateCode: string;
-  companyName: string;
-  representativeName: string;
-  address: string;
-  notifyEmail: string;
-  registryDocUrl: string;
-  submittedAt: string;
-  status: ReviewStatus;
-  rejectionReason?: string;
-}
+import type { ReviewScreenStatus, ReviewApplication } from '../types/admin';
+import { useFormValidation } from '../../../lib/useFormValidation';
+import { adminReviewRejectFormSchema } from '../../../lib/formSchemas';
 
 // ──────── モックデータ ────────
 const MOCK_REVIEWS: ReviewApplication[] = [
@@ -48,8 +35,8 @@ const MOCK_REVIEWS: ReviewApplication[] = [
   { id: 'rv007', corporateCode: 'CORP-007', companyName: '合同会社マルシェサポート', representativeName: '高田 恵', address: '北海道札幌市中央区大通西17-18', notifyEmail: 'takada@marchesupport.jp', registryDocUrl: '/mock/docs/registry_rv007.pdf', submittedAt: '2026-03-11T13:00:00Z', status: 'pending' },
 ];
 
-const STATUS_LABELS: Record<ReviewStatus, string> = { pending: '未承認', approved: '承認済', rejected: '却下' };
-type FilterType = 'all' | ReviewStatus;
+const STATUS_LABELS: Record<ReviewScreenStatus, string> = { pending: '未承認', approved: '承認済', rejected: '却下' };
+type FilterType = 'all' | ReviewScreenStatus;
 
 const AdminReviewsScreen: React.FC = () => {
   const [reviews, setReviews] = useState<ReviewApplication[]>(MOCK_REVIEWS);
@@ -60,6 +47,7 @@ const AdminReviewsScreen: React.FC = () => {
   const [rejectTarget, setRejectTarget] = useState<ReviewApplication | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [detailTarget, setDetailTarget] = useState<ReviewApplication | null>(null);
+  const { validate: validateReject } = useFormValidation(adminReviewRejectFormSchema);
 
   const summary = useMemo(() => ({
     pending: reviews.filter((r) => r.status === 'pending').length,
@@ -88,7 +76,9 @@ const AdminReviewsScreen: React.FC = () => {
   };
 
   const handleReject = () => {
-    if (!rejectTarget || !rejectReason.trim()) return;
+    if (!rejectTarget) return;
+    const result = validateReject({ rejectReason });
+    if (!result.success) return;
     setReviews((prev) => prev.map((r) => r.id === rejectTarget.id ? { ...r, status: 'rejected' as const, rejectionReason: rejectReason.trim() } : r));
     setRejectTarget(null);
     setRejectReason('');

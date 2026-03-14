@@ -138,3 +138,114 @@ export interface AuthLogsResponse {
 export interface UpdateUserStatusRequest {
   status: 'active' | 'suspended';
 }
+
+// ===== 以下、各画面から抽出した共有型定義 =====
+
+// ─── お問い合わせ (AdminInquiriesScreen) ─────
+export type InquiryScreenStatus = 'open' | 'in_progress' | 'closed';
+export type SenderType = 'corporate' | 'consumer';
+
+export interface Inquiry {
+  id: string;
+  subject: string;
+  body: string;
+  senderName: string;
+  senderEmail: string;
+  senderType: SenderType;
+  category: string;
+  status: InquiryScreenStatus;
+  createdAt: string;
+  reply?: string;
+}
+
+// ─── 審査 (AdminReviewsScreen) ─────
+export type ReviewScreenStatus = 'pending' | 'approved' | 'rejected';
+
+export interface ReviewApplication {
+  id: string;
+  corporateCode: string;
+  companyName: string;
+  representativeName: string;
+  address: string;
+  notifyEmail: string;
+  registryDocUrl: string;
+  submittedAt: string;
+  status: ReviewScreenStatus;
+  rejectionReason?: string;
+}
+
+// ─── アクティビティログ (AdminActivityLogScreen) ─────
+export type ActivityCategory = 'review' | 'account' | 'coupon' | 'category' | 'inquiry' | 'settings' | 'system';
+
+export interface ActivityEntry {
+  id: string;
+  category: ActivityCategory;
+  title: string;
+  description: string;
+  actor: string;
+  executedAt: string;
+}
+
+// ─── クーポン (AdminCouponsScreen) ─────
+export type CouponStatus = 'active' | 'expired' | 'used';
+export type CouponType = 'percent' | 'fixed';
+
+export interface Coupon {
+  id: string;
+  code: string;
+  type: CouponType;
+  discount: number;
+  maxUses: number;
+  usedCount: number;
+  expiresAt: string;
+  status: CouponStatus;
+  createdAt: string;
+}
+
+// ─── カテゴリ (AdminCategoriesScreen) ─────
+export interface AdminCategory {
+  id: string;
+  name: string;
+  count: number;
+  createdAt: string;
+}
+
+// ─── 設定 (AdminSettingsScreen) ─────
+export interface ScreenOperatorAccountSettings {
+  displayName: string;
+  username: string;
+  email: string;
+  phone: string;
+  role: string;
+}
+
+export interface ScreenPasswordSettings {
+  currentPassword: string;
+  nextPassword: string;
+  confirmPassword: string;
+}
+
+export interface ScreenSiteSettings {
+  siteName: string;
+  siteUrl: string;
+  adminEmail: string;
+  supportEmail: string;
+  timezone: string;
+  language: string;
+  description: string;
+}
+
+export interface ScreenNotifSettings {
+  emailNewReview: boolean;
+  emailNewInquiry: boolean;
+  emailDailyReport: boolean;
+  emailWeeklyReport: boolean;
+}
+
+export interface ScreenSecuritySettings {
+  twoFactorRequired: boolean;
+  sessionTimeoutMin: number;
+  maxLoginAttempts: number;
+  ipWhitelist: string;
+  passwordMinLength: number;
+}

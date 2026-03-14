@@ -11,6 +11,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthPageLayout, FormCard } from '../../../../../components/ui';
 import { fieldStyles } from '../../../../../components/ui/FormField/FormField';
 import { Button, LinkButton, LinkGroup } from '../../../../../components/ui/Button/Button';
+import { useFormValidation } from '../../../../../lib/useFormValidation';
+import { signupFormSchema } from '../../../../../lib/formSchemas';
 import styles from './SignupScreen.module.css';
 
 const SignupScreen: React.FC = () => {
@@ -28,7 +30,7 @@ const SignupScreen: React.FC = () => {
   const [notifyEmail, setNotifyEmail] = useState(initialState.signupData?.notifyEmail ?? '');
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { errors: fieldErrors, validate, clearError, firstError } = useFormValidation(signupFormSchema);
 
   const submitted = Boolean(initialState.mfaPassed);
 
@@ -39,11 +41,8 @@ const SignupScreen: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    if (!corporateCode || !companyName || !representative || !notifyEmail) {
-      setError('必須項目を入力してください');
-      return;
-    }
+    const result = validate({ corporateCode, companyName, representative, notifyEmail });
+    if (!result.success) return;
     setLoading(true);
     const signupData = { corporateCode, companyName, representative, address, notifyEmail };
     navigate('/mfa', { state: { from: 'signup', signupData } });
@@ -85,9 +84,9 @@ const SignupScreen: React.FC = () => {
     >
       <FormCard wide className={styles.signupCardBoost}>
         <form className={fieldStyles.form} onSubmit={handleSubmit} encType="multipart/form-data">
-          {error && (
+          {firstError && (
             <div className={fieldStyles.errorBanner} role="alert">
-              {error}
+              {firstError}
             </div>
           )}
 
@@ -102,7 +101,7 @@ const SignupScreen: React.FC = () => {
                 id="corporate-code"
                 className={fieldStyles.input}
                 value={corporateCode}
-                onChange={(e) => setCorporateCode(e.target.value)}
+                onChange={(e) => { setCorporateCode(e.target.value); clearError('corporateCode'); }}
                 placeholder="法人コード"
                 required
               />
@@ -117,7 +116,7 @@ const SignupScreen: React.FC = () => {
                 id="company-name"
                 className={fieldStyles.input}
                 value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
+                onChange={(e) => { setCompanyName(e.target.value); clearError('companyName'); }}
                 placeholder="会社名"
                 required
               />
@@ -144,7 +143,7 @@ const SignupScreen: React.FC = () => {
                 id="representative"
                 className={fieldStyles.input}
                 value={representative}
-                onChange={(e) => setRepresentative(e.target.value)}
+                onChange={(e) => { setRepresentative(e.target.value); clearError('representative'); }}
                 placeholder="代表者名"
                 required
               />
@@ -160,7 +159,7 @@ const SignupScreen: React.FC = () => {
                 type="email"
                 className={fieldStyles.input}
                 value={notifyEmail}
-                onChange={(e) => setNotifyEmail(e.target.value)}
+                onChange={(e) => { setNotifyEmail(e.target.value); clearError('notifyEmail'); }}
                 placeholder="メールアドレス"
                 required
               />

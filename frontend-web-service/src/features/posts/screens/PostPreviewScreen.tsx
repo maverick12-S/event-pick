@@ -4,23 +4,10 @@ import { Box, ButtonBase, Chip, Typography } from '@mui/material';
 import { FiArrowLeft, FiClock, FiLink, FiMapPin, FiTag } from 'react-icons/fi';
 import { toFourByFiveUnsplash } from '../../../api/db/mockImages';
 import { CarouselIndicator } from '../components';
-
-type PreviewPostPayload = {
-  title: string;
-  images: string[];
-  summary: string;
-  detail: string;
-  reservation: string;
-  address: string;
-  venueName: string;
-  budget: string;
-  startTime: string;
-  endTime: string;
-  category: string;
-};
+import type { PreviewFormPayload } from '../types/postForm';
 
 type PreviewLocationState = {
-  previewForm?: PreviewPostPayload;
+  previewForm?: PreviewFormPayload;
 };
 
 const cardSx = {

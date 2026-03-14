@@ -231,8 +231,15 @@ describe('ErrorPage — 全エラー種別の表示検証', () => {
   it('auth のボタンはログインページへリンク', () => {
     // window.location.href の書き込みをインターセプト
     const hrefSetter = vi.fn();
+    const loc = { ...window.location };
+    delete (loc as any).href;
+    Object.defineProperty(loc, 'href', {
+      get() { return ''; },
+      set(v: string) { hrefSetter(v); },
+      configurable: true,
+    });
     Object.defineProperty(window, 'location', {
-      value: { ...window.location, href: '', set href(v: string) { hrefSetter(v); } },
+      value: loc,
       writable: true,
     });
 

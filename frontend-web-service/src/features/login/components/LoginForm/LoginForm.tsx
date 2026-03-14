@@ -21,6 +21,8 @@ import {
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import type { LoginRequest } from '../../../../types/auth';
+import { useFormValidation } from '../../../../lib/useFormValidation';
+import { loginFormSchema } from '../../../../lib/formSchemas';
 
 interface LoginFormProps {
   isLoading: boolean;
@@ -41,21 +43,14 @@ const LoginForm: React.FC<LoginFormProps> = ({
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<{ [k: string]: string }>({});
+  const { errors: fieldErrors, validate, clearError } = useFormValidation(loginFormSchema);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const errs: { [k: string]: string } = {};
-    if (!realm.trim())    errs.realm    = '拠点レルムを入力してください';
-    if (!username.trim()) errs.username = 'ユーザー名を入力してください';
-    if (!password)        errs.password = 'パスワードを入力してください';
-    setFieldErrors(errs);
-    if (Object.keys(errs).length > 0) return;
-    onSubmit({ realm: realm.trim(), username: username.trim(), password });
+    const result = validate({ realm, username, password });
+    if (!result.success) return;
+    onSubmit({ realm: result.data.realm, username: result.data.username, password: result.data.password });
   };
-
-  const clearError = (field: string) =>
-    setFieldErrors((prev) => { const n = { ...prev }; delete n[field]; return n; });
 
   return (
     <Card elevation={0}>

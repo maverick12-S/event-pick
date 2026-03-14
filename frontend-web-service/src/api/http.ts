@@ -1,4 +1,4 @@
-import axios, { type AxiosRequestConfig, AxiosError } from 'axios';
+import axios, { type AxiosRequestConfig, type AxiosHeaders } from 'axios';
 import { API_PREFIX } from './endpoints';
 import { tokenService } from './tokenService';
 
@@ -17,8 +17,8 @@ apiClient.interceptors.request.use((config) => {
   try {
     const token = tokenService.getAccessToken();
     if (token) {
-      if (!config.headers) config.headers = {} as any;
-      (config.headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+      if (!config.headers) config.headers = new axios.AxiosHeaders();
+      (config.headers as AxiosHeaders).set('Authorization', `Bearer ${token}`);
     }
   } catch (err) {
     // swallow - do not block requests if token retrieval fails
@@ -43,10 +43,9 @@ const processQueue = (error: unknown, token: string | null) => {
     if (error) p.reject(error);
     else {
       if (token) {
-        p.originalRequest.headers = {
-          ...(p.originalRequest.headers as Record<string, unknown> | undefined),
-          Authorization: `Bearer ${token}`,
-        } as any;
+        const merged = new axios.AxiosHeaders(p.originalRequest.headers as Record<string, string> | undefined);
+        merged.set('Authorization', `Bearer ${token}`);
+        p.originalRequest.headers = merged;
       }
       p.resolve(apiClient(p.originalRequest));
     }
@@ -58,13 +57,12 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error: unknown) => {
     if (!axios.isAxiosError(error)) return Promise.reject(error);
-    const axiosError = error as AxiosError;
-    const originalRequest = axiosError.config as AxiosRequestConfigWithRetry | undefined;
-    if (!originalRequest) return Promise.reject(axiosError);
+    const originalRequest = error.config as AxiosRequestConfigWithRetry | undefined;
+    if (!originalRequest) return Promise.reject(error);
 
-    if (axiosError.response?.status !== 401) return Promise.reject(axiosError);
+    if (error.response?.status !== 401) return Promise.reject(error);
 
-    if (originalRequest._retry) return Promise.reject(axiosError);
+    if (originalRequest._retry) return Promise.reject(error);
     originalRequest._retry = true;
 
     if (isRefreshing) {
@@ -82,20 +80,19 @@ apiClient.interceptors.response.use(
         tokenService.setAccessToken(tokens.access_token ?? null);
         tokenService.setRefreshToken(tokens.refresh_token ?? null);
         processQueue(null, tokens.access_token ?? null);
-        originalRequest.headers = {
-          ...(originalRequest.headers as Record<string, unknown> | undefined),
-          Authorization: `Bearer ${tokens.access_token}`,
-        } as any;
+        const mergedHeaders = new axios.AxiosHeaders(originalRequest.headers as Record<string, string> | undefined);
+        mergedHeaders.set('Authorization', `Bearer ${tokens.access_token}`);
+        originalRequest.headers = mergedHeaders;
         return apiClient(originalRequest);
       }
       // fallback: treat as failure
       processQueue(new Error('Refresh failed'), null);
-      try { tokenService.clear(); } catch {}
+      try { tokenService.clear(); } catch { /* noop */ }
       window.dispatchEvent(new Event('auth:logout'));
-      return Promise.reject(axiosError);
+      return Promise.reject(error);
     } catch (refreshErr) {
       processQueue(refreshErr, null);
-      try { tokenService.clear(); } catch {}
+      try { tokenService.clear(); } catch { /* noop */ }
       window.dispatchEvent(new Event('auth:logout'));
       return Promise.reject(refreshErr);
     } finally {

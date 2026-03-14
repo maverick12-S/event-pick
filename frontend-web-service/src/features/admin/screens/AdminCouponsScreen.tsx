@@ -7,18 +7,9 @@
 import React, { useState } from 'react';
 import { FiGift } from 'react-icons/fi';
 import styles from './AdminCouponsScreen.module.css';
-
-interface Coupon {
-  id: string;
-  code: string;
-  type: 'percent' | 'fixed';
-  discount: number;
-  maxUses: number;
-  usedCount: number;
-  expiresAt: string;
-  status: 'active' | 'expired' | 'used';
-  createdAt: string;
-}
+import type { Coupon } from '../types/admin';
+import { useFormValidation } from '../../../lib/useFormValidation';
+import { adminCouponGenerateFormSchema } from '../../../lib/formSchemas';
 
 const INITIAL_COUPONS: Coupon[] = [
   { id: 'cp01', code: 'WELCOME2026', type: 'percent', discount: 10, maxUses: 1000, usedCount: 342, expiresAt: '2026-06-30', status: 'active', createdAt: '2026-01-01' },
@@ -40,11 +31,16 @@ const AdminCouponsScreen: React.FC = () => {
   const [discount, setDiscount] = useState('');
   const [maxUses, setMaxUses] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
+  const { validate, firstError } = useFormValidation(adminCouponGenerateFormSchema);
 
   const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
+    const result = validate({ code, type, discount, maxUses, expiresAt });
+    if (!result.success) {
+      alert(firstError ?? '入力内容を確認してください');
+      return;
+    }
     const trimmedCode = code.trim().toUpperCase();
-    if (!trimmedCode || !discount || !maxUses || !expiresAt) return;
 
     const newCoupon: Coupon = {
       id: `cp_${Date.now()}`,

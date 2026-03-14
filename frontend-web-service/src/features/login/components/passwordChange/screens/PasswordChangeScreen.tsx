@@ -12,6 +12,8 @@ import {
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import MuiAuthLayout from '../../../../../components/ui/MuiAuthLayout/MuiAuthLayout';
+import { useFormValidation } from '../../../../../lib/useFormValidation';
+import { passwordChangeFormSchema } from '../../../../../lib/formSchemas';
 
 const PasswordChangeScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -24,23 +26,13 @@ const PasswordChangeScreen: React.FC = () => {
   const [showConf, setShowConf]     = useState(false);
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<{ password?: string; confirm?: string }>({});
-
-  const validate = () => {
-    const errs: { password?: string; confirm?: string } = {};
-    if (!password)           errs.password = '新しいパスワードを入力してください';
-    else if (password.length < 8) errs.password = '8文字以上で入力してください';
-    if (!confirm)            errs.confirm  = '確認用パスワードを入力してください';
-    else if (password !== confirm) errs.confirm = 'パスワードが一致しません';
-    return errs;
-  };
+  const { errors: fieldErrors, validate, clearError } = useFormValidation(passwordChangeFormSchema);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const errs = validate();
-    setFieldErrors(errs);
-    if (Object.keys(errs).length > 0) return;
+    const result = validate({ password, confirm });
+    if (!result.success) return;
     setLoading(true);
     try {
       await new Promise((r) => setTimeout(r, 700));
@@ -78,7 +70,7 @@ const PasswordChangeScreen: React.FC = () => {
               placeholder="8文字以上"
               type={showPass ? 'text' : 'password'}
               value={password}
-              onChange={(e) => { setPassword(e.target.value); setFieldErrors((p) => ({ ...p, password: undefined })); }}
+              onChange={(e) => { setPassword(e.target.value); clearError('password'); }}
               error={Boolean(fieldErrors.password)}
               helperText={fieldErrors.password}
               autoComplete="new-password"
@@ -109,7 +101,7 @@ const PasswordChangeScreen: React.FC = () => {
               placeholder="同じパスワードを再入力"
               type={showConf ? 'text' : 'password'}
               value={confirm}
-              onChange={(e) => { setConfirm(e.target.value); setFieldErrors((p) => ({ ...p, confirm: undefined })); }}
+              onChange={(e) => { setConfirm(e.target.value); clearError('confirm'); }}
               error={Boolean(fieldErrors.confirm)}
               helperText={fieldErrors.confirm}
               autoComplete="new-password"
