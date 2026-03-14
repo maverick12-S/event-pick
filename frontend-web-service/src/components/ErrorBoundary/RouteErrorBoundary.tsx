@@ -3,6 +3,7 @@
  * ─────────────────────────────────────────────
  * React Router の errorElement として使用するエラー境界。
  * useRouteError() でルーティングエラーを取得し、ErrorPage を表示。
+ * errorReporter 連携済み。
  */
 
 import React from 'react';
@@ -10,6 +11,7 @@ import { useRouteError, isRouteErrorResponse } from 'react-router-dom';
 import ErrorPage from './ErrorPage';
 import type { ErrorKind } from './ErrorPage';
 import { classifyError, extractErrorMessage } from './classifyError';
+import { reportError } from './errorReporter';
 
 const RouteErrorBoundary: React.FC = () => {
   const error = useRouteError();
@@ -38,7 +40,8 @@ const RouteErrorBoundary: React.FC = () => {
     message = extractErrorMessage(error);
   }
 
-  console.error('[RouteErrorBoundary] Route error:', error);
+  // errorReporter 経由でレポート
+  reportError(kind, error, 'route');
 
   return <ErrorPage kind={kind} message={message} />;
 };

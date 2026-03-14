@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import App from './app';
 import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
+import { reportError } from './components/ErrorBoundary/errorReporter';
+import { classifyError } from './components/ErrorBoundary/classifyError';
 import './styles/index.css';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/queryClient';
@@ -12,12 +14,18 @@ import { authTheme } from './styles/theme/muiTheme';
 
 // 未処理の同期エラー
 window.addEventListener('error', (event) => {
-  console.error('[Global] Unhandled error:', event.error ?? event.message);
+  const error = event.error ?? new Error(event.message);
+  const kind = classifyError(error);
+  reportError(kind, error, 'global');
 });
 
 // 未処理の Promise rejection
 window.addEventListener('unhandledrejection', (event) => {
-  console.error('[Global] Unhandled promise rejection:', event.reason);
+  const error = event.reason instanceof Error
+    ? event.reason
+    : new Error(String(event.reason));
+  const kind = classifyError(error);
+  reportError(kind, error, 'rejection');
 });
 
 const root = document.getElementById('root');

@@ -3,6 +3,7 @@ name: Unit CI
 on:
   push:
     branches:
+      - 'feature'
       - 'feature/**'
     paths:
       - 'frontend-web-service/**'
