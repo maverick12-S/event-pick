@@ -10,6 +10,9 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/queryClient';
 import { authTheme } from './styles/theme/muiTheme';
 
+// Zod グローバル日本語エラーマップ (z.setErrorMap を副作用で登録)
+import './lib/zodErrorMap';
+
 /* ─── グローバルエラーハンドラ ─── */
 
 // 未処理の同期エラー

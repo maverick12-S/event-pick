@@ -20,6 +20,8 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: https://cognito-idp.ap-northeast-1.amazonaws.com/test
+  flyway:
+    enabled: false
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration

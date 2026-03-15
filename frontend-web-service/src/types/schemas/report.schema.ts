@@ -4,7 +4,7 @@ import { z } from 'zod';
 // 参照エンティティ: EventPreview_c (集計元)
 
 /** 日付形式 YYYY-MM-DD */
-const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'YYYY-MM-DD 形式で入力してください');
 
 /** レポート一覧パラメータ */
 export const reportListParamsSchema = z.object({

@@ -6,13 +6,13 @@ import { z } from 'zod';
 /** クーポン作成リクエスト → Plan_Coupon */
 export const adminCouponCreateRequestSchema = z.object({
   /** クーポンコード VARCHAR(20) ○ */
-  coupon_code: z.string().min(1).max(20),
+  coupon_code: z.string().min(1, 'クーポンコードを入力してください').max(20, '20文字以内で入力してください'),
   /** 対象種別 CHAR(1) ○ 1:企業/2:消費者 */
-  target_type: z.enum(['1', '2']),
+  target_type: z.enum(['1', '2'], { message: '対象種別を選択してください' }),
   /** 割引種別 CHAR(1) ○ 1:金額/2:率 */
-  discount_type: z.enum(['1', '2']),
+  discount_type: z.enum(['1', '2'], { message: '割引種別を選択してください' }),
   /** 無料期間日数 INT(3) △ */
-  free_days: z.number().int().min(0).max(999).optional(),
+  free_days: z.number().int('整数で入力してください').min(0, '0以上で入力してください').max(999, '999以内で入力してください').optional(),
 });
 
 /** クーポン作成レスポンス */
@@ -24,9 +24,9 @@ export const adminCouponCreateResponseSchema = z.object({
 /** カテゴリー作成リクエスト → EventCategory_c */
 export const adminCategoryCreateRequestSchema = z.object({
   /** カテゴリーコード VARCHAR(20) ○ */
-  category_code: z.string().min(1).max(20),
+  category_code: z.string().min(1, 'カテゴリーコードを入力してください').max(20, '20文字以内で入力してください'),
   /** カテゴリー名 VARCHAR(20) ○ */
-  category_name: z.string().min(1).max(20),
+  category_name: z.string().min(1, 'カテゴリー名を入力してください').max(20, '20文字以内で入力してください'),
 });
 
 /** カテゴリー削除リクエスト */
@@ -44,7 +44,7 @@ export const adminInquiryReplyRequestSchema = z.object({
   /** 対応状態 CHAR(1) ○ */
   inquiry_status: z.enum(['1', '2', '3']),
   /** 返信内容 TEXT(1500) ○ */
-  message: z.string().min(1).max(1500),
+  message: z.string().min(1, '返信内容を入力してください').max(1500, '1500文字以内で入力してください'),
   /** 担当運営ユーザーID CHAR(26) */
   admin_user_id: z.string().length(26),
 });
@@ -75,7 +75,7 @@ export const adminReviewRejectRequestSchema = z.object({
   /** 審査ステータス CHAR(1) 3:差戻し/4:却下 */
   review_status: z.enum(['3', '4']),
   /** 差戻理由 VARCHAR(200) ○ (差戻し時必須) */
-  review_comment: z.string().min(1).max(200),
+  review_comment: z.string().min(1, '理由を入力してください').max(200, '200文字以内で入力してください'),
   reviewer_id: z.string().length(26),
 });
 
@@ -89,7 +89,7 @@ export const adminConsumerSuspendRequestSchema = z.object({
 export const adminConsumerDeleteScheduleRequestSchema = z.object({
   userId: z.string().min(1),
   /** 削除予定日 DATE(10) */
-  deleteScheduledAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  deleteScheduledAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'YYYY-MM-DD 形式で入力してください'),
 });
 
 /** 拠点アカウントサスペンドリクエスト */
@@ -100,36 +100,36 @@ export const adminLocationAccountSuspendRequestSchema = z.object({
 /** 拠点アカウント削除スケジュールリクエスト */
 export const adminLocationAccountDeleteScheduleRequestSchema = z.object({
   companyId: z.string().min(1),
-  deleteScheduledAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  deleteScheduledAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'YYYY-MM-DD 形式で入力してください'),
 });
 
 /** 管理者設定更新リクエスト → AdminUser + サイト設定 */
 export const adminSettingsUpdateRequestSchema = z.object({
   account: z.object({
     /** 表示名 VARCHAR(40) */
-    displayName: z.string().min(1).max(40),
-    username: z.string().min(1).max(40),
+    displayName: z.string().min(1, '表示名を入力してください').max(40, '40文字以内で入力してください'),
+    username: z.string().min(1, 'ユーザー名を入力してください').max(40, '40文字以内で入力してください'),
     /** メール VARCHAR(80) */
-    email: z.string().email().max(80),
+    email: z.string().email('有効なメールアドレスを入力してください').max(80, '80文字以内で入力してください'),
     /** 電話番号 VARCHAR(15) */
-    phone: z.string().max(15).optional(),
+    phone: z.string().max(15, '15文字以内で入力してください').optional(),
   }),
   password: z.object({
-    currentPassword: z.string().min(1),
-    newPassword: z.string().min(8).max(128),
-    confirmPassword: z.string().min(8).max(128),
+    currentPassword: z.string().min(1, '現在のパスワードを入力してください'),
+    newPassword: z.string().min(8, '8文字以上で入力してください').max(128, '128文字以内で入力してください'),
+    confirmPassword: z.string().min(8, '8文字以上で入力してください').max(128, '128文字以内で入力してください'),
   }).refine(d => d.newPassword === d.confirmPassword, {
     message: 'パスワードが一致しません',
     path: ['confirmPassword'],
   }).optional(),
   site: z.object({
-    siteName: z.string().min(1).max(80),
-    siteUrl: z.string().url().max(255),
-    adminEmail: z.string().email().max(128),
-    supportEmail: z.string().email().max(128),
-    timezone: z.enum(['Asia/Tokyo', 'UTC', 'America/New_York']),
-    language: z.enum(['ja', 'en']),
-    description: z.string().max(500).optional(),
+    siteName: z.string().min(1, 'サイト名を入力してください').max(80, '80文字以内で入力してください'),
+    siteUrl: z.string().url('有効なURLを入力してください').max(255, '255文字以内で入力してください'),
+    adminEmail: z.string().email('有効なメールアドレスを入力してください').max(128, '128文字以内で入力してください'),
+    supportEmail: z.string().email('有効なメールアドレスを入力してください').max(128, '128文字以内で入力してください'),
+    timezone: z.enum(['Asia/Tokyo', 'UTC', 'America/New_York'], { message: 'タイムゾーンを選択してください' }),
+    language: z.enum(['ja', 'en'], { message: '言語を選択してください' }),
+    description: z.string().max(500, '500文字以内で入力してください').optional(),
   }),
   notifications: z.object({
     emailNewReview: z.boolean(),
@@ -139,16 +139,16 @@ export const adminSettingsUpdateRequestSchema = z.object({
   }),
   security: z.object({
     twoFactorRequired: z.boolean(),
-    sessionTimeoutMin: z.number().int().min(1).max(1440),
-    maxLoginAttempts: z.number().int().min(1).max(100),
-    passwordMinLength: z.number().int().min(6).max(128),
-    ipWhitelist: z.string().max(1000).optional(),
+    sessionTimeoutMin: z.number().int('整数で入力してください').min(1, '1分以上で設定してください').max(1440, '1440分以内で設定してください'),
+    maxLoginAttempts: z.number().int('整数で入力してください').min(1, '1回以上で設定してください').max(100, '100回以内で設定してください'),
+    passwordMinLength: z.number().int('整数で入力してください').min(6, '6文字以上で設定してください').max(128, '128文字以内で設定してください'),
+    ipWhitelist: z.string().max(1000, '1000文字以内で入力してください').optional(),
   }),
 });
 
 /** 管理者ユーザー検索パラメータ */
 export const adminUsersParamsSchema = z.object({
-  search: z.string().max(100).optional(),
+  search: z.string().max(100, '100文字以内で入力してください').optional(),
   status: z.enum(['', 'active', 'suspended', 'pending']).optional(),
   page: z.number().int().min(1).optional(),
   perPage: z.number().int().min(1).max(100).optional(),
@@ -166,7 +166,7 @@ export const adminAuthLogsParamsSchema = z.object({
 export const adminActivityLogsParamsSchema = z.object({
   category: z.enum(['', '審査', 'アカウント', 'クーポン', 'カテゴリ', 'お問い合わせ', '設定', 'システム']).optional(),
   date: z.string().optional(),
-  search: z.string().max(200).optional(),
+  search: z.string().max(200, '200文字以内で入力してください').optional(),
   page: z.number().int().min(1).optional(),
   perPage: z.number().int().min(1).max(100).optional(),
 });

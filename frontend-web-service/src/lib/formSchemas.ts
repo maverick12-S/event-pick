@@ -15,7 +15,7 @@ import { safeString, safeEmail } from './sanitize';
 const strongPassword = (label = 'パスワード') =>
   z.string()
     .min(8, `${label}は8文字以上で入力してください`)
-    .max(128)
+    .max(128, `${label}は128文字以内で入力してください`)
     .regex(/[A-Z]/, `${label}に大文字(A-Z)を1文字以上含めてください`)
     .regex(/[a-z]/, `${label}に小文字(a-z)を1文字以上含めてください`)
     .regex(/[0-9]/, `${label}に数字(0-9)を1文字以上含めてください`)
@@ -71,8 +71,8 @@ export const accountIssueFormSchema = z.object({
   displayName: safeString({ max: 40 }),
   address: safeString({ min: 1, max: 60 }),
   initialPassword: strongPassword('初期パスワード'),
-  plan: z.enum(['プレミアムプラン', 'スタンダードプラン', 'ライトプラン']),
-  couponCode: z.string().max(20).optional(),
+  plan: z.enum(['プレミアムプラン', 'スタンダードプラン', 'ライトプラン'], { message: 'プランを選択してください' }),
+  couponCode: z.string().max(20, '20文字以内で入力してください').optional(),
 });
 export type AccountIssueFormData = z.infer<typeof accountIssueFormSchema>;
 
@@ -83,10 +83,10 @@ export const accountEditFormSchema = z.object({
   email: safeEmail({ max: 80 }),
   /** 空文字 or 未入力は許可、入力時はパスワードポリシー適用 */
   password: z.union([z.literal(''), strongPassword()]).optional(),
-  plan: z.enum(['プレミアムプラン', 'スタンダードプラン', 'ライトプラン']),
-  couponCode: z.string().max(20).optional(),
+  plan: z.enum(['プレミアムプラン', 'スタンダードプラン', 'ライトプラン'], { message: 'プランを選択してください' }),
+  couponCode: z.string().max(20, '20文字以内で入力してください').optional(),
   paymentInfo: z.string().optional(),
-  status: z.enum(['利用中', '停止中', '削除予定']),
+  status: z.enum(['利用中', '停止中', '削除予定'], { message: 'ステータスを選択してください' }),
 });
 export type AccountEditFormData = z.infer<typeof accountEditFormSchema>;
 
@@ -105,9 +105,9 @@ export const billingEditFormSchema = z.object({
   prefecture: safeString({ min: 1, max: 10 }),
   city: safeString({ min: 1, max: 30 }),
   address1: safeString({ min: 1, max: 60 }),
-  address2: z.string().max(60).optional(),
-  phoneCountry: z.string().max(5).optional(),
-  phoneNumber: z.string().max(15).optional(),
+  address2: z.string().max(60, '60文字以内で入力してください').optional(),
+  phoneCountry: z.string().max(5, '5文字以内で入力してください').optional(),
+  phoneNumber: z.string().max(15, '15文字以内で入力してください').optional(),
 });
 export type BillingEditFormData = z.infer<typeof billingEditFormSchema>;
 
@@ -134,10 +134,10 @@ export const postFormSchema = z.object({
   title: safeString({ min: 1, max: 100 }),
   summary: safeString({ min: 1, max: 400 }),
   detail: safeString({ max: 1200 }),
-  reservation: z.string().max(200).optional(),
+  reservation: z.string().max(200, '200文字以内で入力してください').optional(),
   address: safeString({ max: 100 }),
   venueName: safeString({ max: 60 }),
-  budget: z.string().max(30).optional(),
+  budget: z.string().max(30, '30文字以内で入力してください').optional(),
   startTime: z.string().optional(),
   endTime: z.string().optional(),
   category: safeString({ min: 1 }),
@@ -151,7 +151,7 @@ export const postDetailEditFormSchema = z.object({
   ward: safeString({ max: 60 }),
   venue: safeString({ max: 60 }),
   description: safeString({ max: 400 }),
-  timeLabel: z.string().max(20).optional(),
+  timeLabel: z.string().max(20, '20文字以内で入力してください').optional(),
   nextPostDate: z.string().optional(),
 });
 export type PostDetailEditFormData = z.infer<typeof postDetailEditFormSchema>;
@@ -181,28 +181,28 @@ export type AdminPasswordFormData = z.infer<typeof adminPasswordFormSchema>;
 /** サイト基本設定フォーム */
 export const adminSiteFormSchema = z.object({
   siteName: safeString({ min: 1, max: 60 }),
-  siteUrl: z.string().url('有効なURLを入力してください').max(200),
+  siteUrl: z.string().url('有効なURLを入力してください').max(200, '200文字以内で入力してください'),
   adminEmail: safeEmail({ max: 128 }),
   supportEmail: safeEmail({ max: 128 }),
-  timezone: z.string().min(1),
-  language: z.string().min(1),
+  timezone: z.string().min(1, 'タイムゾーンを選択してください'),
+  language: z.string().min(1, '言語を選択してください'),
   description: safeString({ max: 300 }),
 });
 export type AdminSiteFormData = z.infer<typeof adminSiteFormSchema>;
 
 /** セキュリティ設定フォーム */
 export const adminSecurityFormSchema = z.object({
-  sessionTimeoutMin: z.number().int().min(5, '5分以上で設定してください').max(1440),
-  maxLoginAttempts: z.number().int().min(1).max(100),
-  passwordMinLength: z.number().int().min(6).max(128),
-  ipWhitelist: z.string().max(500).optional(),
+  sessionTimeoutMin: z.number({ message: '数値を入力してください' }).int('整数で入力してください').min(5, '5分以上で設定してください').max(1440, '1440分以内で設定してください'),
+  maxLoginAttempts: z.number({ message: '数値を入力してください' }).int('整数で入力してください').min(1, '1回以上で設定してください').max(100, '100回以内で設定してください'),
+  passwordMinLength: z.number({ message: '数値を入力してください' }).int('整数で入力してください').min(6, '6文字以上で設定してください').max(128, '128文字以内で設定してください'),
+  ipWhitelist: z.string().max(500, '500文字以内で入力してください').optional(),
 });
 export type AdminSecurityFormData = z.infer<typeof adminSecurityFormSchema>;
 
 /** クーポン生成フォーム（Admin） */
 export const adminCouponGenerateFormSchema = z.object({
   code: safeString({ min: 1, max: 20 }),
-  type: z.enum(['percent', 'fixed']),
+  type: z.enum(['percent', 'fixed'], { message: '割引タイプを選択してください' }),
   discount: z.string().min(1, '割引値を入力してください'),
   maxUses: z.string().min(1, '利用上限数を入力してください'),
   expiresAt: z.string().min(1, '有効期限を入力してください'),

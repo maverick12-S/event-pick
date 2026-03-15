@@ -3,6 +3,8 @@ package com.eventpick.backend.restapi.controller;
 import com.eventpick.backend.biz.service.CompanyAccountService;
 import com.eventpick.backend.restapi.common.CommonResponse;
 import com.eventpick.backend.restapi.dto.CompanyAccountDto;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
@@ -17,11 +19,13 @@ import java.util.List;
 @RequestMapping("/api/v1/company-accounts")
 @RequiredArgsConstructor
 @Validated
+@Tag(name = "拠点アカウント (CompanyAccount)", description = "拠点アカウントCRUD")
 public class CompanyAccountController {
 
     private final CompanyAccountService companyAccountService;
 
     /** GET /api/v1/company-accounts - 拠点アカウント一覧 */
+    @Operation(summary = "拠点アカウント一覧")
     @GetMapping
     public CommonResponse<List<CompanyAccountDto>> getCompanyAccounts(
             @RequestParam(required = false, defaultValue = "40") Integer limit,
@@ -30,12 +34,14 @@ public class CompanyAccountController {
     }
 
     /** GET /api/v1/company-accounts/{accountId} - 拠点アカウント詳細 */
+    @Operation(summary = "拠点アカウント詳細")
     @GetMapping("/{accountId}")
     public CommonResponse<CompanyAccountDto> getCompanyAccount(@PathVariable String accountId) {
         return CommonResponse.ok(companyAccountService.getCompanyAccount(accountId));
     }
 
     /** PUT /api/v1/company-accounts/{accountId} - 拠点アカウント更新 */
+    @Operation(summary = "拠点アカウント更新")
     @PutMapping("/{accountId}")
     public CommonResponse<Void> updateCompanyAccount(
             @PathVariable String accountId,

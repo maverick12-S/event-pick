@@ -2,6 +2,7 @@ package com.eventpick.backend.restapi.controller;
 
 import com.eventpick.backend.biz.service.CompanyService;
 import com.eventpick.backend.restapi.dto.CompanyDto;
+import com.eventpick.backend.restapi.exception.ExceptionLogger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,9 @@ class CompanyControllerTest {
 
     @MockitoBean
     private CompanyService companyService;
+
+    @MockitoBean
+    private ExceptionLogger exceptionLogger;
 
     @Autowired
     private ObjectMapper objectMapper;

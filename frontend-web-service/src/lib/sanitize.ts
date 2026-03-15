@@ -84,21 +84,25 @@ import { z } from 'zod';
 /** 禁止文字チェック付き文字列スキーマ */
 export const safeString = (opts?: { min?: number; max?: number }) => {
   let schema = z.string();
-  if (opts?.min !== undefined) schema = schema.min(opts.min);
-  if (opts?.max !== undefined) schema = schema.max(opts.max);
+  if (opts?.min !== undefined) {
+    schema = schema.min(opts.min, opts.min === 1 ? '入力してください' : `${opts.min}文字以上で入力してください`);
+  }
+  if (opts?.max !== undefined) {
+    schema = schema.max(opts.max, `${opts.max}文字以内で入力してください`);
+  }
   return schema.refine((v) => !containsForbidden(v), { message: FORBIDDEN_CHARS_MSG });
 };
 
 /** 禁止文字チェック付きURL文字列スキーマ */
 export const safeUrl = (opts?: { max?: number }) => {
-  let schema = z.string().url();
-  if (opts?.max !== undefined) schema = schema.max(opts.max);
+  let schema = z.string().url('有効なURLを入力してください');
+  if (opts?.max !== undefined) schema = schema.max(opts.max, `${opts.max}文字以内で入力してください`);
   return schema.refine((v) => !containsForbiddenUrl(v), { message: FORBIDDEN_CHARS_MSG });
 };
 
 /** 禁止文字チェック付きメールスキーマ */
 export const safeEmail = (opts?: { max?: number }) => {
-  let schema = z.string().email();
-  if (opts?.max !== undefined) schema = schema.max(opts.max);
+  let schema = z.string().email('有効なメールアドレスを入力してください');
+  if (opts?.max !== undefined) schema = schema.max(opts.max, `${opts.max}文字以内で入力してください`);
   return schema.refine((v) => !containsForbidden(v), { message: FORBIDDEN_CHARS_MSG });
 };

@@ -46,7 +46,7 @@ spring:
           max-idle: 20
           min-idle: 5
 
-  # Security - JWT (OAuth2 Resource Server)
+  # Security - JWT (OAuth2 Resource Server / Cognito)
   security:
     oauth2:
       resourceserver:
@@ -58,6 +58,12 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+
+  # Flyway Database Migration
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
 
 # Server
 server:
@@ -83,16 +89,55 @@ management:
   endpoint:
     health:
       show-details: when-authorized
+  tracing:
+    sampling:
+      probability: 0.1
 
-# Logging
-logging:
-  level:
-    root: INFO
-    com.eventpick: DEBUG
-    org.springframework.security: INFO
-    org.hibernate.SQL: WARN
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+# AWS
+aws:
+  region: ${AWS_REGION:ap-northeast-1}
+  s3:
+    bucket: ${S3_BUCKET:eventpick-uploads}
+  ses:
+    from-email: ${SES_FROM_EMAIL:noreply@eventpick.co.jp}
+  cognito:
+    user-pool-id: ${COGNITO_USER_POOL_ID:ap-northeast-1_XXXXXXXXX}
+    client-id: ${COGNITO_CLIENT_ID:}
+
+# Resilience4j
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+      externalApi:
+        failure-rate-threshold: 60
+        wait-duration-in-open-state: 60s
+        sliding-window-size: 20
+        minimum-number-of-calls: 10
+    instances:
+      stripe:
+        base-config: externalApi
+      googleMaps:
+        base-config: externalApi
+      cognito:
+        base-config: default
+  retry:
+    configs:
+      default:
+        max-attempts: 3
+        wait-duration: 500ms
+      externalApi:
+        max-attempts: 2
+        wait-duration: 1s
+    instances:
+      stripe:
+        base-config: externalApi
+      ses:
+        base-config: default
 
 # SpringDoc
 springdoc:

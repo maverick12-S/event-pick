@@ -3,6 +3,7 @@ package com.eventpick.backend.restapi.controller;
 import com.eventpick.backend.biz.service.AuthService;
 import com.eventpick.backend.restapi.dto.LoginRequestDto;
 import com.eventpick.backend.restapi.dto.LoginResponseDto;
+import com.eventpick.backend.restapi.exception.ExceptionLogger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private AuthService authService;
+
+    @MockitoBean
+    private ExceptionLogger exceptionLogger;
 
     @Autowired
     private ObjectMapper objectMapper;

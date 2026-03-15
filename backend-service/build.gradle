@@ -25,6 +25,7 @@ repositories {
 }
 
 dependencies {
+	// Spring Boot Starters
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
@@ -33,19 +34,41 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.15'
+
+	// Resilience4j (Circuit Breaker / Retry / Rate Limiter)
+	implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.2.0'
+	implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+	// Flyway Database Migration
+	implementation 'org.flywaydb:flyway-core'
+	implementation 'org.flywaydb:flyway-database-postgresql'
+
+	// AWS SDK v2
+	implementation platform('software.amazon.awssdk:bom:2.29.51')
+	implementation 'software.amazon.awssdk:s3'
+	implementation 'software.amazon.awssdk:ses'
+	implementation 'software.amazon.awssdk:cognitoidentityprovider'
+
+	// Distributed Tracing (Micrometer + OpenTelemetry)
+	implementation 'io.micrometer:micrometer-tracing-bridge-otel'
+	implementation platform('io.opentelemetry:opentelemetry-bom:1.46.0')
+	implementation 'io.opentelemetry:opentelemetry-exporter-otlp'
+
+	// Structured Logging (JSON for CloudWatch)
+	implementation 'net.logstash.logback:logstash-logback-encoder:8.0'
+
+	// Prometheus metrics
+	implementation 'io.micrometer:micrometer-registry-prometheus'
+
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'org.postgresql:postgresql'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
+	testImplementation 'com.h2database:h2'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
-}
-
-// Test dependencies
-dependencies {
-    testImplementation 'com.h2database:h2'
 }

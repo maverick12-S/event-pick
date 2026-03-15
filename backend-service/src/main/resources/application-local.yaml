@@ -16,6 +16,12 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_XXXXXXXXX
+  flyway:
+    enabled: false
+
+# ローカルではAWSクライアント無効化
+aws:
+  region: ap-northeast-1
 
 logging:
   level:
