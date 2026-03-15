@@ -28,13 +28,14 @@ describe('admin.schema', () => {
   });
 
   describe('adminCategoryCreateRequestSchema', () => {
-    it('accepts valid', () => { expect(adminCategoryCreateRequestSchema.parse({ name: '音楽' })).toBeTruthy(); });
-    it('rejects empty', () => { expect(() => adminCategoryCreateRequestSchema.parse({ name: '' })).toThrow(); });
-    it('rejects over 20', () => { expect(() => adminCategoryCreateRequestSchema.parse({ name: 'x'.repeat(21) })).toThrow(); });
+    it('accepts valid', () => { expect(adminCategoryCreateRequestSchema.parse({ category_code: 'MUSIC', category_name: '音楽' })).toBeTruthy(); });
+    it('rejects empty category_name', () => { expect(() => adminCategoryCreateRequestSchema.parse({ category_code: 'MUSIC', category_name: '' })).toThrow(); });
+    it('rejects category_name over 20', () => { expect(() => adminCategoryCreateRequestSchema.parse({ category_code: 'MUSIC', category_name: 'x'.repeat(21) })).toThrow(); });
+    it('rejects empty category_code', () => { expect(() => adminCategoryCreateRequestSchema.parse({ category_code: '', category_name: '音楽' })).toThrow(); });
   });
 
   describe('adminCategoryDeleteRequestSchema', () => {
-    it('accepts valid', () => { expect(adminCategoryDeleteRequestSchema.parse({ categoryId: 'c1' })).toBeTruthy(); });
+    it('accepts valid', () => { expect(adminCategoryDeleteRequestSchema.parse({ category_id: '01' })).toBeTruthy(); });
   });
 
   describe('adminInquiryReplyRequestSchema', () => {

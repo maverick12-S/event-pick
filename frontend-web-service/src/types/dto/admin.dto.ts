@@ -141,16 +141,18 @@ export interface AdminCouponCreateResponse {
 
 // ─── カテゴリ管理 (AdminCategoriesScreen) ─────────
 
-/** カテゴリ作成リクエスト POST /admin/categories */
+/** カテゴリ作成リクエスト POST /admin/categories → EventCategory_c */
 export interface AdminCategoryCreateRequest {
-  /** カテゴリ名 (最大30文字) */
-  name: string;
+  /** カテゴリコード — EventCategory_c.category_code VARCHAR(20) */
+  category_code: string;
+  /** カテゴリ名 — EventCategory_c.category_name VARCHAR(20) */
+  category_name: string;
 }
 
-/** カテゴリ削除リクエスト DELETE /admin/categories/:id */
+/** カテゴリ削除リクエスト DELETE /admin/categories/:id → EventCategory_c */
 export interface AdminCategoryDeleteRequest {
-  /** 対象カテゴリID */
-  categoryId: string;
+  /** 対象カテゴリID — EventCategory_c.category_id CHAR(2) */
+  category_id: string;
 }
 
 // ─── お問い合わせ管理 (AdminInquiriesScreen) ──────

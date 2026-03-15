@@ -1,28 +1,12 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Box, Button, ButtonBase, CircularProgress, Collapse, Grid, InputBase, MenuItem, Select, Typography } from '@mui/material';
+import React from 'react';
+import { Box, ButtonBase, CircularProgress, Grid, InputBase, Typography } from '@mui/material';
 import { FiSearch } from 'react-icons/fi';
-import usePostsMock from '../hooks/usePostsMock';
-import type { PostEventDbItem, PostsTabKey } from '../../../types/models/post';
-import type { PostListSortKey } from '../../../types/models/postSort';
-import { postManagementApi } from '../hooks/usePostManagement';
-import { PostEventCard, PostSortSelect } from '../components';
-import {
-  defaultPostSearchFilters,
-  detectTimeSlot,
-  toSelectedValues,
-  type PostSearchFilters,
-} from '../utils/postSearchFilters';
-import { sortPostsByKey } from '../utils/postSort';
+import type { PostsTabKey } from '../../../types/models/post';
+import { PostEventCard } from '../components';
+import PostSearchFilterPanel from '../components/PostSearchFilterPanel';
+import PostListPagination from '../components/PostListPagination';
+import usePostsListFilters from '../hooks/usePostsListFilters';
 
-const {
-  categories: categoryOptions,
-  cities: cityOptions,
-  prefectures: prefectureOptions,
-  timeSlots: timeSlotOptions,
-} = postManagementApi.getPostFilterOptions();
-
-const PAGE_LIMIT = 60;
 const POSTS_LIST_SCALE = 0.77;
 
 const tabs: Array<{ key: PostsTabKey; label: string }> = [
@@ -32,88 +16,26 @@ const tabs: Array<{ key: PostsTabKey; label: string }> = [
 ];
 
 const PostsListScreen: React.FC = () => {
-  const [searchParams] = useSearchParams();
-  const isAccountScope = searchParams.get('scope') === 'account';
-  const initialTab = searchParams.get('tab');
-  const resolvedInitialTab: PostsTabKey =
-    initialTab === 'tomorrow' ? 'tomorrow' : initialTab === 'scheduled' ? 'scheduled' : initialTab === 'today' ? 'today' : isAccountScope ? 'scheduled' : 'today';
-  const [activeTab, setActiveTab] = useState<PostsTabKey>(resolvedInitialTab);
-  const navigate = useNavigate();
-  const [page, setPage] = useState(1);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [sortBy, setSortBy] = useState<PostListSortKey>('postedAtDesc');
-  const [draftFilters, setDraftFilters] = useState<PostSearchFilters>(defaultPostSearchFilters);
-  const [appliedFilters, setAppliedFilters] = useState<PostSearchFilters>(defaultPostSearchFilters);
-
-  const params = useMemo(
-    () => ({
-      tab: activeTab,
-      page,
-      limit: PAGE_LIMIT,
-      sortBy,
-      search: appliedFilters.title.trim(),
-      categories: appliedFilters.categories,
-      prefectures: appliedFilters.prefectures,
-      cities: appliedFilters.cities,
-      timeSlots: appliedFilters.timeSlots,
-    }),
-    [activeTab, page, sortBy, appliedFilters],
-  );
-
-  const { data, isFetching } = usePostsMock(params);
-
-  const accountLinkedItems = useMemo<PostEventDbItem[]>(() => {
-    const query = appliedFilters.title.trim().toLowerCase();
-
-    const mapped = postManagementApi
-      .listScheduledPostEventCardsByLocation(postManagementApi.getCurrentLocationId())
-      .filter((item) => {
-        if (query && !item.title.toLowerCase().includes(query)) {
-          return false;
-        }
-
-        if (appliedFilters.categories.length > 0 && !appliedFilters.categories.some((category) => item.category.includes(category))) {
-          return false;
-        }
-
-        if (appliedFilters.cities.length > 0 && !appliedFilters.cities.some((city) => item.ward.includes(city))) {
-          return false;
-        }
-
-        if (appliedFilters.timeSlots.length > 0 && !appliedFilters.timeSlots.includes(detectTimeSlot(item.timeLabel))) {
-          return false;
-        }
-
-        return true;
-      });
-
-    return sortPostsByKey(mapped, sortBy);
-  }, [appliedFilters, sortBy]);
-
-  const accountTotalPages = Math.max(Math.ceil(accountLinkedItems.length / PAGE_LIMIT), 1);
-  const accountPage = Math.min(page, accountTotalPages);
-  const accountPageItems = useMemo(() => {
-    const start = (accountPage - 1) * PAGE_LIMIT;
-    return accountLinkedItems.slice(start, start + PAGE_LIMIT);
-  }, [accountLinkedItems, accountPage]);
-
-  useEffect(() => {
-    const queryTab = searchParams.get('tab');
-    if (queryTab === 'today' || queryTab === 'tomorrow' || queryTab === 'scheduled') {
-      setActiveTab(queryTab);
-      setPage(1);
-      return;
-    }
-
-    if (isAccountScope) {
-      setActiveTab('scheduled');
-      setPage(1);
-    }
-  }, [searchParams, isAccountScope]);
-
-  const displayItems = isAccountScope ? accountPageItems : (data?.items ?? []);
-  const totalPages = isAccountScope ? accountTotalPages : (data?.totalPages ?? 1);
-  const currentPage = isAccountScope ? accountPage : (data?.page ?? page);
+  const {
+    isAccountScope,
+    activeTab,
+    page,
+    searchOpen,
+    setSearchOpen,
+    sortBy,
+    draftFilters,
+    setDraftFilters,
+    isFetching,
+    displayItems,
+    totalPages,
+    currentPage,
+    handleTabClick,
+    handleSortChange,
+    handleClearFilters,
+    handleApplyFilters,
+    handlePrevPage,
+    handleNextPage,
+  } = usePostsListFilters();
 
   return (
     <Box sx={{ width: '100%', overflowX: 'clip', px: { xs: 1.25, sm: 2, md: 2.5 }, pb: { xs: 3, md: 4 } }}>
@@ -246,19 +168,7 @@ const PostsListScreen: React.FC = () => {
                         key={tab.key}
                         role="tab"
                         aria-selected={active}
-                        onClick={() => {
-                          if (tab.key === 'scheduled') {
-                            navigate('/posts/scheduled');
-                            return;
-                          }
-
-                          if (isAccountScope) {
-                            navigate('/posts');
-                            return;
-                          }
-
-                          navigate(`/posts?tab=${tab.key}`);
-                        }}
+                        onClick={() => handleTabClick(tab.key)}
                         sx={{
                           minHeight: 44,
                           px: 2.2,
@@ -297,218 +207,15 @@ const PostsListScreen: React.FC = () => {
               </Grid>
             </Grid>
 
-            <Collapse
-              in={searchOpen}
-              timeout={420}
-              easing="cubic-bezier(0.22, 1, 0.36, 1)"
-              sx={{ mt: searchOpen ? { xs: 1, md: 0.9, lg: 1.2 } : 0 }}
-            >
-              <Box
-                sx={{
-                  borderRadius: 2,
-                  border: '1px solid rgba(186, 210, 239, 0.45)',
-                  backgroundColor: 'rgba(18, 32, 54, 0.9)',
-                  boxShadow: 'inset 0 1px 0 rgba(243, 249, 255, 0.24)',
-                  p: { xs: 1.1, md: 1.25 },
-                  opacity: searchOpen ? 1 : 0,
-                  transform: searchOpen ? 'translateY(0)' : 'translateY(-10px)',
-                  transition: 'opacity 260ms ease, transform 420ms cubic-bezier(0.22, 1, 0.36, 1)',
-                }}
-              >
-                <Grid container spacing={1.1} alignItems="center">
-                  <Grid size={{ xs: 12, md: 3 }}>
-                    <Select
-                      fullWidth
-                      multiple
-                      displayEmpty
-                      value={draftFilters.categories}
-                      renderValue={(selected) => {
-                        const values = toSelectedValues(selected);
-                        return values.length > 0 ? values.join(' / ') : 'カテゴリー(全て)';
-                      }}
-                      onChange={(event) => {
-                        const values = event.target.value;
-                        setDraftFilters((prev) => ({ ...prev, categories: typeof values === 'string' ? values.split(',') : values }));
-                      }}
-                      MenuProps={{
-                        disableScrollLock: true,
-                        PaperProps: {
-                          sx: {
-                            backgroundColor: '#17293f',
-                            color: '#e9f2ff',
-                          },
-                        },
-                      }}
-                      sx={{
-                        color: '#f2f8ff',
-                        backgroundColor: 'rgba(8, 18, 34, 0.72)',
-                        '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(178, 204, 236, 0.8)' },
-                        '& .MuiSvgIcon-root': { color: '#d9e9ff' },
-                      }}
-                    >
-                      {categoryOptions.map((option) => (
-                        <MenuItem key={option} value={option}>
-                          {option}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </Grid>
-                  <Grid size={{ xs: 12, md: 3 }}>
-                    <Select
-                      fullWidth
-                      multiple
-                      displayEmpty
-                      value={draftFilters.prefectures}
-                      renderValue={(selected) => {
-                        const values = toSelectedValues(selected);
-                        return values.length > 0 ? values.join(' / ') : '県(全て)';
-                      }}
-                      onChange={(event) => {
-                        const values = event.target.value;
-                        setDraftFilters((prev) => ({
-                          ...prev,
-                          prefectures: typeof values === 'string' ? values.split(',') : values,
-                        }));
-                      }}
-                      MenuProps={{
-                        disableScrollLock: true,
-                        PaperProps: {
-                          sx: {
-                            backgroundColor: '#17293f',
-                            color: '#e9f2ff',
-                          },
-                        },
-                      }}
-                      sx={{
-                        color: '#f2f8ff',
-                        backgroundColor: 'rgba(8, 18, 34, 0.72)',
-                        '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(178, 204, 236, 0.8)' },
-                        '& .MuiSvgIcon-root': { color: '#d9e9ff' },
-                      }}
-                    >
-                      {prefectureOptions.map((option) => (
-                        <MenuItem key={option} value={option}>
-                          {option}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </Grid>
-                  <Grid size={{ xs: 12, md: 3 }}>
-                    <Select
-                      fullWidth
-                      multiple
-                      displayEmpty
-                      value={draftFilters.cities}
-                      renderValue={(selected) => {
-                        const values = toSelectedValues(selected);
-                        return values.length > 0 ? values.join(' / ') : '市・区(全て)';
-                      }}
-                      onChange={(event) => {
-                        const values = event.target.value;
-                        setDraftFilters((prev) => ({ ...prev, cities: typeof values === 'string' ? values.split(',') : values }));
-                      }}
-                      MenuProps={{
-                        disableScrollLock: true,
-                        PaperProps: {
-                          sx: {
-                            backgroundColor: '#17293f',
-                            color: '#e9f2ff',
-                          },
-                        },
-                      }}
-                      sx={{
-                        color: '#f2f8ff',
-                        backgroundColor: 'rgba(8, 18, 34, 0.72)',
-                        '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(178, 204, 236, 0.8)' },
-                        '& .MuiSvgIcon-root': { color: '#d9e9ff' },
-                      }}
-                    >
-                      {cityOptions.map((option) => (
-                        <MenuItem key={option} value={option}>
-                          {option}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </Grid>
-
-                  <Grid size={{ xs: 12, md: 3 }}>
-                    <Select
-                      fullWidth
-                      multiple
-                      displayEmpty
-                      value={draftFilters.timeSlots}
-                      renderValue={(selected) => {
-                        const values = toSelectedValues(selected);
-                        return values.length > 0 ? values.join(' / ') : '時間帯(全て)';
-                      }}
-                      onChange={(event) => {
-                        const values = event.target.value;
-                        setDraftFilters((prev) => ({ ...prev, timeSlots: typeof values === 'string' ? values.split(',') : values }));
-                      }}
-                      MenuProps={{
-                        disableScrollLock: true,
-                        PaperProps: {
-                          sx: {
-                            backgroundColor: '#17293f',
-                            color: '#e9f2ff',
-                          },
-                        },
-                      }}
-                      sx={{
-                        color: '#f2f8ff',
-                        backgroundColor: 'rgba(8, 18, 34, 0.72)',
-                        '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(178, 204, 236, 0.8)' },
-                        '& .MuiSvgIcon-root': { color: '#d9e9ff' },
-                      }}
-                    >
-                      {timeSlotOptions.map((option) => (
-                        <MenuItem key={option} value={option}>
-                          {option}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </Grid>
-
-                  <Grid size={{ xs: 12, md: 12 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 0.9, flexWrap: 'wrap' }}>
-                      <PostSortSelect
-                        value={sortBy}
-                        onChange={(value) => {
-                          setSortBy(value);
-                          setPage(1);
-                        }}
-                        minHeight={42}
-                        minWidth={{ xs: '100%', sm: 240 }}
-                      />
-                      <Box sx={{ display: 'flex', gap: 0.8, justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
-                      <Button
-                        variant="outlined"
-                        onClick={() => {
-                          setDraftFilters({ ...defaultPostSearchFilters });
-                        }}
-                        sx={{
-                          color: '#e8f2ff',
-                          borderColor: 'rgba(169, 196, 228, 0.7)',
-                        }}
-                      >
-                        クリア
-                      </Button>
-                      <Button
-                        variant="contained"
-                        onClick={() => {
-                          setAppliedFilters({ ...draftFilters });
-                          setPage(1);
-                          setSearchOpen(false);
-                        }}
-                      >
-                        検索
-                      </Button>
-                      </Box>
-                    </Box>
-                  </Grid>
-                </Grid>
-              </Box>
-            </Collapse>
+            <PostSearchFilterPanel
+              open={searchOpen}
+              draftFilters={draftFilters}
+              onDraftChange={setDraftFilters}
+              sortBy={sortBy}
+              onSortChange={handleSortChange}
+              onClear={handleClearFilters}
+              onApply={handleApplyFilters}
+            />
           </Box>
 
           <Box sx={{ width: '100%', maxWidth: 1500, mx: 'auto' }}>
@@ -545,53 +252,13 @@ const PostsListScreen: React.FC = () => {
                 </Box>
               ) : null}
 
-              <Box
-                component="footer"
-                sx={{
-                  mt: { xs: 1.5, md: 2 },
-                  display: 'grid',
-                  gridTemplateColumns: 'auto auto auto',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  gap: 1.25,
-                }}
-              >
-                <ButtonBase
-                  onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                  disabled={page <= 1}
-                  sx={{
-                    minHeight: 34,
-                    px: 1.5,
-                    borderRadius: 1.25,
-                    border: '1px solid rgba(171, 198, 236, 0.56)',
-                    backgroundColor: 'rgba(244, 250, 255, 0.12)',
-                    color: '#edf5ff',
-                    fontSize: '0.78rem',
-                    opacity: page <= 1 ? 0.48 : 1,
-                  }}
-                >
-                  前へ
-                </ButtonBase>
-                <Typography sx={{ minWidth: 76, textAlign: 'center', color: '#dceaff', fontSize: '0.82rem', fontWeight: 600 }}>
-                  {`${currentPage} / ${totalPages}`}
-                </Typography>
-                <ButtonBase
-                  onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-                  disabled={page >= totalPages}
-                  sx={{
-                    minHeight: 34,
-                    px: 1.5,
-                    borderRadius: 1.25,
-                    border: '1px solid rgba(171, 198, 236, 0.56)',
-                    backgroundColor: 'rgba(244, 250, 255, 0.12)',
-                    color: '#edf5ff',
-                    fontSize: '0.78rem',
-                    opacity: page >= totalPages ? 0.48 : 1,
-                  }}
-                >
-                  次へ
-                </ButtonBase>
-              </Box>
+              <PostListPagination
+                page={page}
+                totalPages={totalPages}
+                currentPage={currentPage}
+                onPrev={handlePrevPage}
+                onNext={handleNextPage}
+              />
             </Box>
           </Box>
         </Box>

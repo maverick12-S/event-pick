@@ -1716,17 +1716,37 @@ components:
 
     SignupRequest:
       type: object
-      required: [corporateCode, companyName, representative, notifyEmail]
+      required: [company_code, company_name, representative_name, company_type, admin_email, login_type]
       properties:
-        corporateCode:
+        company_code:
           type: string
-        companyName:
+          maxLength: 16
+          description: 法人コード — Company.company_code VARCHAR(16)
+        company_name:
           type: string
-        representative:
+          maxLength: 80
+          description: 企業名（正式） — Company.company_name VARCHAR(80)
+        representative_name:
           type: string
-        notifyEmail:
+          maxLength: 40
+          description: 代表者名 — Company.representative_name VARCHAR(40)
+        company_type:
+          type: string
+          enum: ['1', '2']
+          description: 企業種別 CHAR(1) 1:法人/2:個人事業
+        admin_email:
           type: string
           format: email
+          maxLength: 128
+          description: 管理用メール — Company.admin_email VARCHAR(128)
+        admin_phone:
+          type: string
+          maxLength: 15
+          description: 管理用電話番号 E.164 — Company.admin_phone VARCHAR(15)
+        login_type:
+          type: string
+          enum: ['1', '2', '3', '4']
+          description: ログイン種別 CHAR(1) 1:email/2:phone/3:google/4:line
 
     Company:
       type: object
@@ -1798,7 +1818,8 @@ components:
           type: integer
         daily_reset_at:
           type: string
-          format: date-time
+          format: date
+          description: 日次リセット日 — Company_Ticket.daily_reset_at DATE(10)
         monthly_granted:
           type: integer
         monthly_used:
@@ -1858,6 +1879,8 @@ components:
           format: uri
         address:
           type: string
+          maxLength: 100
+          description: 住所 — EventPost_c.address VARCHAR(100)
         event_date:
           type: string
           format: date
@@ -1874,53 +1897,60 @@ components:
 
     PostCreateRequest:
       type: object
-      required: [title, summary, event_date, event_start_time, event_end_time, category_id]
+      required: [title, image_urls, summary, category_id, scheduled_dates]
+      description: |
+        投稿作成リクエスト → Event_Template_c + EventSchedule_c + EventMedia_c 生成
       properties:
         title:
           type: string
           maxLength: 20
+          description: タイトル — Event_Template_c.title VARCHAR(20)
+        image_urls:
+          type: array
+          items:
+            type: string
+            maxLength: 255
+          minItems: 1
+          maxItems: 3
+          description: 画像URL一覧 — EventMedia_c.image_url VARCHAR(255) 最大3件
         summary:
           type: string
           maxLength: 80
+          description: 説明概要 — Event_Template_c.summary VARCHAR(80)
         description:
           type: string
           maxLength: 1000
+          description: 詳細説明 — Event_Template_c.description TEXT(1000)
         reservation_url:
           type: string
           format: uri
-        address:
+          maxLength: 255
+          description: 予約URL — Event_Template_c.reservation_url VARCHAR(255)
+        location_id:
           type: string
-        event_date:
+          maxLength: 26
+          description: 住所ID — Event_Template_c.location_id CHAR(26)
+        venue_name:
           type: string
-          format: date
+          maxLength: 40
+          description: 会場名テキスト（UI入力、住所参照解決前）
         event_start_time:
           type: string
+          description: 開始時間 HH:mm:ss — Event_Template_c.event_start_time TIME(8)
         event_end_time:
           type: string
+          description: 終了時間 HH:mm:ss — Event_Template_c.event_end_time TIME(8)
         category_id:
           type: string
-        post_dates:
+          maxLength: 26
+          description: カテゴリーID — EventCategory_c.category_id
+        scheduled_dates:
           type: array
           items:
             type: string
             format: date
-        condition:
-          type: object
-          properties:
-            hashtags:
-              type: array
-              items:
-                type: string
-            platforms:
-              type: array
-              items:
-                type: string
-            autoPost:
-              type: boolean
-            repeatInterval:
-              type: string
-            captionTemplate:
-              type: string
+          minItems: 1
+          description: 投稿予定日一覧 YYYY-MM-DD — EventSchedule_c.event_date DATE(10)
 
     UserAccount:
       type: object
@@ -1931,7 +1961,8 @@ components:
           type: string
         login_type:
           type: string
-          enum: [email, phone, google, line]
+          enum: ['1', '2', '3', '4']
+          description: ログイン種別 CHAR(1) 1:email/2:phone/3:google/4:line
         user_name:
           type: string
         user_email:
@@ -1941,7 +1972,8 @@ components:
           type: string
         user_gender:
           type: string
-          enum: [M, F, O]
+          enum: ['1', '2', '3']
+          description: 性別 CHAR(1) 1:男性/2:女性/3:その他
         birth_year:
           type: string
         terms_agreed:
@@ -2041,41 +2073,66 @@ components:
 
     CompanyNotification:
       type: object
+      description: 通知設定 — Company_Notification エンティティ準拠
       properties:
-        notification_id:
+        notification_setting_id:
           type: string
-        company_id:
+          maxLength: 26
+          description: 通知設定ID CHAR(26) ULID
+        company_account_id:
           type: string
+          maxLength: 26
+          description: 企業アカウントID CHAR(26)
+        function_code:
+          type: string
+          maxLength: 20
+          description: 実行機能コード VARCHAR(20)
+        is_enabled:
+          type: boolean
+          description: 通知有効フラグ
         notification_type:
           type: string
           enum: ['1', '2', '3']
-        title:
-          type: string
-        message:
-          type: string
-        is_read:
-          type: boolean
-        created_at:
-          type: string
-          format: date-time
+          description: 通知種別 CHAR(1) 1:メール/2:Push/3:両方
 
     ExecutionHistoryItem:
       type: object
+      description: |
+        実行履歴 — Company_Execution_History エンティティ準拠
+        UIでは表示用に変換（category→function_code対応表示名、actor→company_account参照）
       properties:
-        id:
+        history_id:
           type: string
-        executedAt:
+          maxLength: 26
+          description: 履歴ID CHAR(26) ULID
+        company_account_id:
+          type: string
+          maxLength: 26
+          description: 企業アカウントID CHAR(26)
+        function_code:
+          type: string
+          maxLength: 20
+          description: 実行機能コード VARCHAR(20)
+        execution_type:
+          type: string
+          enum: ['1', '2', '3']
+          description: 実行種別 CHAR(1) 1:自動/2:手動/3:システム
+        target_type:
+          type: string
+          enum: ['1', '2', '3']
+          description: 対象種別 CHAR(1) 1:投稿/2:アカウント/3:設定
+        result_status:
+          type: string
+          enum: ['1', '2']
+          description: 結果ステータス CHAR(1) 1:成功/2:失敗
+        error_message:
+          type: string
+          maxLength: 200
+          description: エラーメッセージ VARCHAR(200)
+        created_at:
           type: string
           format: date-time
-        category:
-          type: string
-          enum: [投稿, アカウント払出, 情報変更, 削除, 削除予定]
-        title:
-          type: string
-        description:
-          type: string
-        actor:
-          type: string
+          description: 作成日時
 
     Paging:
       type: object
@@ -2099,12 +2156,13 @@ components:
 
     EventStatus:
       type: string
-      enum: [DRAFT, PUBLISHED, HIDDEN, DELETED]
-      description: イベント公開状態
+      enum: ['1', '2', '3']
+      description: イベント公開状態 CHAR(1) 1:公開前/2:公開中/3:終了
 
     Roles:
       type: string
-      enum: [ORGANIZATION_OWNER, ORGANIZATION_ADMIN, ROOT, IMADMIN]
+      enum: ['01', '02', '03']
+      description: 企業ロール — Company_Role.company_role_id CHAR(2) 01:親企業/02:子拠点/03:運営
 
     DateOnly:
       type: string

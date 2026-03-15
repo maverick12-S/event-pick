@@ -24,6 +24,7 @@ export interface AuthUser {
   id: string;
   username: string;
   realm: string;
-  displayName?: string; 
+  displayName?: string;
+  planCode?: 'LIGHT' | 'STANDARD' | 'PREMIUM';
 }
 

@@ -194,6 +194,39 @@ describe('accountEditFormSchema', () => {
     expect(accountEditFormSchema.safeParse({ ...valid, status: '停止中' }).success).toBe(true);
     expect(accountEditFormSchema.safeParse({ ...valid, status: '削除予定' }).success).toBe(true);
   });
+
+  // --- パスワードポリシー ---
+  it('password 省略を受理する（変更なし）', () => {
+    expect(accountEditFormSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it('password 空文字を受理する（変更なし）', () => {
+    expect(accountEditFormSchema.safeParse({ ...valid, password: '' }).success).toBe(true);
+  });
+
+  it('password がポリシー準拠なら受理する', () => {
+    expect(accountEditFormSchema.safeParse({ ...valid, password: 'NewPass1!' }).success).toBe(true);
+  });
+
+  it('password が8文字未満の場合に拒否する', () => {
+    expect(accountEditFormSchema.safeParse({ ...valid, password: 'Sh0rt!' }).success).toBe(false);
+  });
+
+  it('password に大文字がない場合に拒否する', () => {
+    expect(accountEditFormSchema.safeParse({ ...valid, password: 'newpass1!' }).success).toBe(false);
+  });
+
+  it('password に小文字がない場合に拒否する', () => {
+    expect(accountEditFormSchema.safeParse({ ...valid, password: 'NEWPASS1!' }).success).toBe(false);
+  });
+
+  it('password に数字がない場合に拒否する', () => {
+    expect(accountEditFormSchema.safeParse({ ...valid, password: 'NewPass!!' }).success).toBe(false);
+  });
+
+  it('password に記号がない場合に拒否する', () => {
+    expect(accountEditFormSchema.safeParse({ ...valid, password: 'NewPass12' }).success).toBe(false);
+  });
 });
 
 // ═══════════════════════════════════════════════

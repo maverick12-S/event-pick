@@ -22,11 +22,11 @@ export interface Paging {
 }
 
 export interface EventItem {
-  id: string;
+  post_id: string;
   title: string;
   description?: string;
-  eventDate?: string; // YYYY-MM-DD
-  status?: string;
+  event_date?: string; // YYYY-MM-DD — EventPost_c.event_date DATE(10)
+  status?: string; // CHAR(1) 1:公開前/2:公開中/3:終了
 }
 
 export interface PaginatedEvents {
@@ -42,7 +42,7 @@ export interface ReportChartDataPoint {
 }
 
 export interface ReportTopEvent {
-  eventId: string;
+  post_id: string;
   title: string;
   views: number;
   favorites: number;
@@ -51,21 +51,21 @@ export interface ReportTopEvent {
 
 export interface ReportSummary {
   period: { from: string; to: string };
-  totalViews: number;
-  totalFavorites: number;
-  totalClicks: number;
-  chartData: ReportChartDataPoint[];
-  topEvents: ReportTopEvent[];
+  total_views: number;
+  total_favorites: number;
+  total_clicks: number;
+  chart_data: ReportChartDataPoint[];
+  top_events: ReportTopEvent[];
 }
 
 export interface TicketTransaction {
-  transactionId: string;
-  type: 'PURCHASE' | 'CONSUME' | 'REFUND' | 'EXPIRE';
+  history_id: string;
+  operation_type: '1' | '2' | '3' | '4'; // CHAR(1) 1:購入/2:消費/3:返金/4:期限切れ
   amount: number;
   balance: number;
-  eventId?: string;
-  eventTitle?: string;
-  createdAt: string;
+  related_post_id?: string;
+  event_title?: string; // joined display field
+  created_at: string;
 }
 
 export interface TicketHistoryResponse {
@@ -74,42 +74,42 @@ export interface TicketHistoryResponse {
 }
 
 export interface MediaUploadResponse {
-  mediaId: string;
-  mediaUrl: string;
-  thumbnailUrl: string;
-  fileSize: number;
+  media_id: string;
+  media_url: string;
+  thumbnail_url: string;
+  file_size: number;
   width: number;
   height: number;
 }
 
 export interface PresignedUrlResponse {
-  presignedUrl: string;
-  uploadUrl: string;
-  expiresIn: number;
-  fileKey: string;
+  presigned_url: string;
+  upload_url: string;
+  expires_in: number;
+  file_key: string;
   fields?: Record<string, string>;
 }
 
 export interface NotificationItem {
-  notificationId: string;
-  type: string;
+  notification_id: string;
+  notification_type: string;
   title: string;
   message: string;
-  isRead: boolean;
-  createdAt: string;
-  relatedUrl?: string;
+  is_read: boolean;
+  created_at: string;
+  related_url?: string;
 }
 
 export interface NotificationsResponse {
   notifications: NotificationItem[];
   total: number;
-  unreadCount: number;
+  unread_count: number;
 }
 
 export interface CheckoutSessionResponse {
-  sessionId: string;
-  checkoutUrl: string;
-  expiresAt: string;
+  session_id: string;
+  checkout_url: string;
+  expires_at: string;
 }
 
 class ApiError extends Error {

@@ -68,8 +68,8 @@ export const postDetailEditRequestSchema = z.object({
   description: z.string().max(1000).optional(),
   /** 予約URL VARCHAR(255) */
   reservation_url: z.string().url().max(255).optional(),
-  /** 住所 CHAR(26) */
-  address: z.string().max(26).optional(),
+  /** 住所 VARCHAR(100) */
+  address: z.string().max(100).optional(),
   /** 開催日 DATE(10) */
   event_date: dateSchema.optional(),
   /** 開始時間 TIME(8) */

@@ -6,6 +6,8 @@ import {
   CircularProgress,
   MenuItem,
   Select,
+  Snackbar,
+  Alert,
   Table,
   TableBody,
   TableCell,
@@ -58,6 +60,8 @@ const formatDateLabel = (value: string, fallback = '指定日') => (value ? valu
 const ReportScreen: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const isLightPlan = user?.planCode === 'LIGHT' || (!user?.planCode);
+  const [planSnackOpen, setPlanSnackOpen] = useState(false);
 
   // 実API連携前の暫定判定: 親拠点系のrealmのみ拠点ID検索を表示。
   const isParentAccount = useMemo(() => {
@@ -335,19 +339,31 @@ const ReportScreen: React.FC = () => {
                     </TableCell>
                     <TableCell sx={detailBodyCellSx}>
                       <ButtonBase
-                        onClick={() => navigate(item.detailPath)}
+                        onClick={() => {
+                          if (isLightPlan) {
+                            setPlanSnackOpen(true);
+                            return;
+                          }
+                          navigate(item.detailPath);
+                        }}
+                        disabled={false}
+                        aria-disabled={isLightPlan}
                         sx={{
                           minHeight: 36,
                           px: 1.7,
                           borderRadius: 1.5,
                           border: '1px solid rgba(178, 214, 255, 0.6)',
-                          background: 'linear-gradient(165deg, rgba(83, 156, 249, 0.95), rgba(52, 122, 221, 0.95))',
+                          background: isLightPlan
+                            ? 'linear-gradient(165deg, rgba(120, 140, 160, 0.6), rgba(90, 110, 130, 0.6))'
+                            : 'linear-gradient(165deg, rgba(83, 156, 249, 0.95), rgba(52, 122, 221, 0.95))',
                           color: '#f7fbff',
                           fontWeight: 700,
                           fontSize: '0.94rem',
                           boxShadow: '0 4px 10px rgba(8, 24, 50, 0.36)',
+                          opacity: isLightPlan ? 0.6 : 1,
+                          cursor: isLightPlan ? 'not-allowed' : 'pointer',
                           '&:hover': {
-                            filter: 'brightness(1.05)',
+                            filter: isLightPlan ? 'none' : 'brightness(1.05)',
                           },
                           '&:focus-visible': {
                             outline: '2px solid rgba(220, 235, 255, 0.9)',
@@ -416,6 +432,17 @@ const ReportScreen: React.FC = () => {
 
         <ReportSummaryPanel summary={summary} />
       </Box>
+
+      <Snackbar
+        open={planSnackOpen}
+        autoHideDuration={4000}
+        onClose={() => setPlanSnackOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="info" onClose={() => setPlanSnackOpen(false)} variant="filled">
+          スタンダードプランよりご利用いただけます
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

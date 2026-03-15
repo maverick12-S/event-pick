@@ -1,13 +1,26 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
 
 const mockUseAuth = vi.fn();
+const mockNavigate = vi.fn();
+
+// Mock Navigate to avoid React Router v7 jsdom hang
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+  return {
+    ...actual,
+    Navigate: (props: { to: string }) => {
+      mockNavigate(props.to);
+      return null;
+    },
+  };
+});
 
 vi.mock('../../contexts/AuthContext', () => ({
   useAuth: () => mockUseAuth(),
 }));
 
+import { MemoryRouter } from 'react-router-dom';
 import OperatorRoute from '../OperatorRoute';
 
 function renderInRouter(initialEntries = ['/admin']) {
@@ -19,6 +32,10 @@ function renderInRouter(initialEntries = ['/admin']) {
 }
 
 describe('OperatorRoute', () => {
+  beforeEach(() => {
+    mockNavigate.mockClear();
+  });
+
   it('shows loading when not initialized', () => {
     mockUseAuth.mockReturnValue({
       isAuthenticated: false,
@@ -29,26 +46,23 @@ describe('OperatorRoute', () => {
     expect(screen.getByText('読み込み中...')).toBeInTheDocument();
   });
 
-  it('redirects when not authenticated', () => {
+  it('redirects to /login when not authenticated', () => {
     mockUseAuth.mockReturnValue({
       isAuthenticated: false,
       isInitialized: true,
       isOperator: false,
     });
-    const { container } = renderInRouter();
-    expect(screen.queryByText('読み込み中...')).toBeNull();
-    // Should have redirected, container won't have meaningful content
-    expect(container.innerHTML).not.toContain('読み込み中');
+    renderInRouter();
+    expect(mockNavigate).toHaveBeenCalledWith('/login');
   });
 
-  it('redirects non-operator to dashboard', () => {
+  it('redirects non-operator to /dashboard', () => {
     mockUseAuth.mockReturnValue({
       isAuthenticated: true,
       isInitialized: true,
       isOperator: false,
     });
-    const { container } = renderInRouter();
-    expect(screen.queryByText('読み込み中...')).toBeNull();
-    expect(container.innerHTML).not.toContain('読み込み中');
+    renderInRouter();
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
   });
 });

@@ -23,14 +23,16 @@ export const adminCouponCreateResponseSchema = z.object({
 
 /** カテゴリー作成リクエスト → EventCategory_c */
 export const adminCategoryCreateRequestSchema = z.object({
+  /** カテゴリーコード VARCHAR(20) ○ */
+  category_code: z.string().min(1).max(20),
   /** カテゴリー名 VARCHAR(20) ○ */
-  name: z.string().min(1).max(20),
+  category_name: z.string().min(1).max(20),
 });
 
 /** カテゴリー削除リクエスト */
 export const adminCategoryDeleteRequestSchema = z.object({
   /** カテゴリーID CHAR(2) */
-  categoryId: z.string().min(1).max(26),
+  category_id: z.string().min(1).max(2),
 });
 
 /** お問い合わせ返信リクエスト → InquiryHistory */

@@ -81,7 +81,8 @@ export const accountEditFormSchema = z.object({
   baseName: safeString({ min: 1, max: 40 }),
   address: safeString({ min: 1, max: 60 }),
   email: safeEmail({ max: 80 }),
-  password: z.string().optional(),
+  /** 空文字 or 未入力は許可、入力時はパスワードポリシー適用 */
+  password: z.union([z.literal(''), strongPassword()]).optional(),
   plan: z.enum(['プレミアムプラン', 'スタンダードプラン', 'ライトプラン']),
   couponCode: z.string().max(20).optional(),
   paymentInfo: z.string().optional(),

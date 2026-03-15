@@ -151,7 +151,7 @@ export const adminApi = {
   /** DELETE /admin/categories/:id */
   deleteCategory: async (req: AdminCategoryDeleteRequest): Promise<void> => {
     const validated = adminCategoryDeleteRequestSchema.parse(req);
-    await apiClient.delete(endpoints.admin.category(validated.categoryId));
+    await apiClient.delete(endpoints.admin.category(validated.category_id));
   },
 
   // ─── お問い合わせ ───

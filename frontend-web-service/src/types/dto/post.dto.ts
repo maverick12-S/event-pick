@@ -102,7 +102,7 @@ export interface PostDetailEditRequest {
   description?: string;
   /** 予約URL — EventPost_c.reservation_url VARCHAR(255) */
   reservation_url?: string;
-  /** 住所 — EventPost_c.address CHAR(26) */
+  /** 住所 — EventPost_c.address VARCHAR(100) */
   address?: string;
   /** 開催日 — EventPost_c.event_date DATE(10) */
   event_date?: string;
