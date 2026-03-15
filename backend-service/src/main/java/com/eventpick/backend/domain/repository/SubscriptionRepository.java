@@ -14,4 +14,8 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Stri
     Optional<Subscription> findByStripeSubscriptionId(String stripeSubscriptionId);
 
     Optional<Subscription> findByCompanyId(String companyId);
+
+    java.util.List<Subscription> findByStatusAndAutoRenewTrue(String status);
+
+    Optional<Subscription> findByCompanyIdAndStatus(String companyId, String status);
 }

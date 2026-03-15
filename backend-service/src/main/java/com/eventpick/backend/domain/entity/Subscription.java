@@ -35,6 +35,10 @@ public class Subscription extends BaseEntity {
     @Column(name = "status", length = 20, nullable = false)
     private String status;
 
+    @Column(name = "auto_renew", nullable = false)
+    @Builder.Default
+    private Boolean autoRenew = true;
+
     @Column(name = "current_period_start")
     private LocalDateTime currentPeriodStart;
 

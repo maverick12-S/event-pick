@@ -25,4 +25,6 @@ public interface CompanyRepository extends JpaRepository<Company, String> {
     List<Company> findByParentCompanyIdAndIsDeletedFalse(String parentCompanyId);
 
     Page<Company> findByAccountStatusAndIsDeletedFalse(String accountStatus, Pageable pageable);
+
+    Optional<Company> findByCompanyCodeAndIsDeletedFalse(String companyCode);
 }

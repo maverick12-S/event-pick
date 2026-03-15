@@ -1,7 +1,10 @@
 package com.eventpick.backend.biz.service.impl;
 
+import com.eventpick.backend.biz.exception.BadRequestException;
+import com.eventpick.backend.biz.exception.MessageEnum;
 import com.eventpick.backend.biz.exception.ResourceNotFoundException;
 import com.eventpick.backend.biz.service.CompanyService;
+import com.eventpick.backend.biz.util.AuditLogHelper;
 import com.eventpick.backend.biz.util.IdGenerator;
 import com.eventpick.backend.biz.util.SecurityUtils;
 import com.eventpick.backend.domain.entity.Company;
@@ -34,6 +37,7 @@ public class CompanyServiceImpl implements CompanyService {
     private final CompanyRepository companyRepository;
     private final CompanyNotificationRepository notificationRepository;
     private final CompanyReviewRepository reviewRepository;
+    private final AuditLogHelper auditLogHelper;
 
     @Override
     @Cacheable(value = "companies", key = "#root.methodName")
@@ -74,6 +78,15 @@ public class CompanyServiceImpl implements CompanyService {
 
     @Override
     public void createCompany(CompanyDto request) {
+        // 法人番号の重複チェック
+        if (request.getCompanyCode() != null) {
+            companyRepository.findByCompanyCodeAndIsDeletedFalse(request.getCompanyCode())
+                    .ifPresent(existing -> {
+                        throw new BadRequestException(MessageEnum.CONFLICT)
+                                .context("companyCode", request.getCompanyCode(), "この法人番号は既に登録されています");
+                    });
+        }
+
         Company company = Company.builder()
                 .companyId(IdGenerator.generateUlid())
                 .companyCode(request.getCompanyCode())
@@ -84,9 +97,12 @@ public class CompanyServiceImpl implements CompanyService {
                 .adminEmail(request.getAdminEmail())
                 .adminPhone(request.getAdminPhone())
                 .accountStatus("1") // 有効
+                .reviewStatus("0")  // 未審査
                 .isDeleted(false)
                 .build();
         companyRepository.save(company);
+        auditLogHelper.log(company.getCompanyId(), "company", "COMPANY_CREATE",
+                "C", company.getCompanyId(), "企業登録: " + company.getCompanyName());
         log.info("Company created: {}", company.getCompanyId());
     }
 
@@ -115,6 +131,8 @@ public class CompanyServiceImpl implements CompanyService {
                 .orElseThrow(() -> new ResourceNotFoundException("Company", "companyId", companyId));
         company.setIsDeleted(true);
         companyRepository.save(company);
+        auditLogHelper.log(companyId, "company", "COMPANY_DELETE",
+                "C", companyId, "企業論理削除: " + company.getCompanyName());
         log.info("Company soft deleted: {}", companyId);
     }
 
@@ -122,14 +140,27 @@ public class CompanyServiceImpl implements CompanyService {
     public void updateCompanyStatus(String companyId, CompanyStatusPatchRequest request) {
         Company company = companyRepository.findByCompanyIdAndIsDeletedFalse(companyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Company", "companyId", companyId));
+        String oldStatus = company.getAccountStatus();
         company.setAccountStatus(request.getStatus());
         companyRepository.save(company);
+        auditLogHelper.log(companyId, "admin", "COMPANY_STATUS_CHANGE",
+                "C", companyId, "ステータス変更: " + oldStatus + " → " + request.getStatus());
     }
 
     @Override
     public void submitCompanyReview(String companyId, CompanyReviewDto request) {
-        companyRepository.findByCompanyIdAndIsDeletedFalse(companyId)
+        Company company = companyRepository.findByCompanyIdAndIsDeletedFalse(companyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Company", "companyId", companyId));
+
+        // 既に審査中の申請がないかチェック
+        List<CompanyReview> pending = reviewRepository.findByCompanyIdOrderByCreatedAtDesc(companyId);
+        boolean hasPending = pending.stream()
+                .anyMatch(r -> "1".equals(r.getReviewStatus())); // 1:申請中
+        if (hasPending) {
+            throw new BadRequestException(MessageEnum.BUSINESS_ERROR)
+                    .context("companyId", companyId, "審査中の申請が既に存在します");
+        }
+
         CompanyReview review = CompanyReview.builder()
                 .reviewId(IdGenerator.generateUlid())
                 .companyId(companyId)
@@ -138,6 +169,24 @@ public class CompanyServiceImpl implements CompanyService {
                 .submittedAt(LocalDateTime.now())
                 .build();
         reviewRepository.save(review);
+
+        // 企業の審査ステータスも更新
+        company.setReviewStatus("1"); // 審査中
+        companyRepository.save(company);
+
+        // 企業へ通知送信
+        CompanyNotification notification = CompanyNotification.builder()
+                .notificationId(IdGenerator.generateUlid())
+                .companyId(companyId)
+                .title("審査申請を受け付けました")
+                .message("審査申請（種別: " + request.getReviewType() + "）を受け付けました。結果は後日通知いたします。")
+                .notificationType("1") // 審査関連
+                .isRead(false)
+                .build();
+        notificationRepository.save(notification);
+
+        auditLogHelper.log(companyId, "company", "REVIEW_SUBMIT",
+                "R", review.getReviewId(), "審査申請: 種別=" + request.getReviewType());
         log.info("Company review submitted: companyId={}, reviewId={}", companyId, review.getReviewId());
     }
 

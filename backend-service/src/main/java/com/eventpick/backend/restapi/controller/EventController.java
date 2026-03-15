@@ -158,4 +158,12 @@ public class EventController {
         eventService.deleteMedia(eventId, mediaId);
         return ResponseEntity.noContent().build();
     }
+
+    /** DELETE /api/v1/events/{eventId} - イベント削除 (論理削除) */
+    @Operation(summary = "イベント削除", description = "指定イベントを論理削除する。")
+    @DeleteMapping("/{eventId}")
+    public ResponseEntity<Void> deleteEvent(@PathVariable String eventId) {
+        eventService.deleteEvent(eventId);
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -70,6 +70,14 @@ public class EventPost extends BaseEntity {
     @Builder.Default
     private Integer likeCount = 0;
 
+    @Column(name = "view_count", nullable = false)
+    @Builder.Default
+    private Integer viewCount = 0;
+
+    @Column(name = "favorite_count", nullable = false)
+    @Builder.Default
+    private Integer favoriteCount = 0;
+
     @Column(name = "scheduled_at")
     private LocalDateTime scheduledAt;
 

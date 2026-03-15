@@ -26,4 +26,5 @@ public interface EventService {
     void deleteSchedule(String eventId);
     void uploadMedia(String eventId, EventMediaUploadRequest request);
     void deleteMedia(String eventId, String mediaId);
+    void deleteEvent(String eventId);
 }

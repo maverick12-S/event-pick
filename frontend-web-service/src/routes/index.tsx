@@ -147,6 +147,12 @@ export const router = createBrowserRouter([
 
       // ルートアクセス → ログインへ
       { path: '/',  element: <Navigate to="/login" replace /> },
+
+      // 開発用: API疎通テスト（本番前に削除）
+      {
+        path: '/dev/api-test',
+        element: lazyLoad(() => import('../features/__dev/ApiTestScreen')),
+      },
     ],
   },
 

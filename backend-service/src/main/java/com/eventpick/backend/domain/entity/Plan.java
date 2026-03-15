@@ -37,6 +37,10 @@ public class Plan extends BaseEntity {
     @Column(name = "stripe_price_id", length = 64)
     private String stripePriceId;
 
+    @Column(name = "daily_ticket_limit", nullable = false)
+    @Builder.Default
+    private Integer dailyTicketLimit = 0;
+
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;

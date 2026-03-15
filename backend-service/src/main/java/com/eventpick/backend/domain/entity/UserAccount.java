@@ -3,6 +3,8 @@ package com.eventpick.backend.domain.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 /**
  * 一般ユーザーアカウントエンティティ。
  * テーブル: user_accounts
@@ -57,4 +59,7 @@ public class UserAccount extends BaseEntity {
     @Column(name = "is_deleted", nullable = false)
     @Builder.Default
     private Boolean isDeleted = false;
+
+    @Column(name = "last_login_at")
+    private LocalDateTime lastLoginAt;
 }

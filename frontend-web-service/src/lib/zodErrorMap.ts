@@ -1,165 +1,134 @@
 /**
- * zodErrorMap.ts — Zod グローバル日本語エラーマップ
+ * zodErrorMap.ts — Zod v4 グローバル日本語エラーマップ
  * ───────────────────────────────────────────────
- * Zod のデフォルト英語メッセージを日本語に置き換える。
- * main.tsx で import するだけで全スキーマに適用される。
+ * Zod v4 のデフォルト英語メッセージを日本語に置き換える。
+ * main.tsx / setupTests.ts で import するだけで全スキーマに適用される。
  *
- * 参考: https://zod.dev/ERROR_HANDLING?id=customizing-errors-with-zoderrormap
+ * Zod v4 の error map は (issue) => { message } の形式。
+ * issue.code: 'invalid_type' | 'too_small' | 'too_big' | 'invalid_format' | 'invalid_value' | 'custom' 等
+ * issue.origin: 'string' | 'number' | 'array' | 'date' 等 (too_small/too_big)
  */
 
-import { z, ZodIssueCode, ZodParsedType } from 'zod';
+import { z } from 'zod';
 
-const jpParsedType = (t: ZodParsedType): string => {
+const jpExpectedType = (t: string): string => {
   switch (t) {
-    case ZodParsedType.string:
-      return '文字列';
-    case ZodParsedType.number:
-      return '数値';
-    case ZodParsedType.bigint:
-      return '整数';
-    case ZodParsedType.boolean:
-      return '真偽値';
-    case ZodParsedType.date:
-      return '日付';
-    case ZodParsedType.array:
-      return '配列';
-    case ZodParsedType.object:
-      return 'オブジェクト';
-    case ZodParsedType.undefined:
-      return '未定義';
-    case ZodParsedType.null:
-      return 'null';
-    case ZodParsedType.nan:
-      return 'NaN';
-    default:
-      return t;
+    case 'string': return '文字列';
+    case 'number': return '数値';
+    case 'int': return '整数';
+    case 'bigint': return '整数';
+    case 'boolean': return '真偽値';
+    case 'date': return '日付';
+    case 'array': return '配列';
+    case 'object': return 'オブジェクト';
+    case 'undefined': return '未定義';
+    case 'null': return 'null';
+    default: return t;
   }
 };
 
-const zodJaErrorMap: z.ZodErrorMap = (issue, ctx) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const zodJaErrorMap = (issue: any): { message: string } => {
   switch (issue.code) {
     // ── 型不一致 ──
-    case ZodIssueCode.invalid_type:
-      if (issue.received === ZodParsedType.undefined) {
+    case 'invalid_type': {
+      // undefined = 必須フィールドが未入力
+      if (issue.input === undefined || issue.input === null) {
         return { message: '必須項目です' };
       }
-      return {
-        message: `${jpParsedType(issue.expected)}で入力してください（${jpParsedType(issue.received)}が入力されました）`,
-      };
-
-    // ── リテラル不一致 ──
-    case ZodIssueCode.invalid_literal:
-      return { message: `値が正しくありません` };
-
-    // ── 列挙値不一致 ──
-    case ZodIssueCode.invalid_enum_value:
-      return {
-        message: `選択肢から選んでください（${issue.options.join(' / ')}）`,
-      };
-
-    // ── union どれにも該当しない ──
-    case ZodIssueCode.invalid_union:
-      return { message: '入力値が正しくありません' };
-
-    case ZodIssueCode.invalid_union_discriminator:
-      return {
-        message: `選択肢から選んでください（${issue.options.join(' / ')}）`,
-      };
-
-    // ── 文字列バリデーション ──
-    case ZodIssueCode.invalid_string:
-      if (issue.validation === 'email') return { message: '有効なメールアドレスを入力してください' };
-      if (issue.validation === 'url') return { message: '有効なURLを入力してください' };
-      if (issue.validation === 'uuid') return { message: '有効なUUIDを入力してください' };
-      if (issue.validation === 'datetime') return { message: '有効な日時を入力してください' };
-      if (issue.validation === 'ip') return { message: '有効なIPアドレスを入力してください' };
-      if (typeof issue.validation === 'object' && 'startsWith' in issue.validation) {
-        return { message: `「${issue.validation.startsWith}」で始まる値を入力してください` };
+      // int チェック (z.number().int())
+      if (issue.expected === 'int') {
+        return { message: '整数で入力してください' };
       }
-      if (typeof issue.validation === 'object' && 'endsWith' in issue.validation) {
-        return { message: `「${issue.validation.endsWith}」で終わる値を入力してください` };
-      }
-      return { message: '入力形式が正しくありません' };
+      return { message: `${jpExpectedType(issue.expected)}で入力してください` };
+    }
 
-    // ── 数値 / 日付の大小 ──
-    case ZodIssueCode.too_small:
-      if (issue.type === 'string') {
+    // ── 最小値 / 最小長 ──
+    case 'too_small': {
+      const origin = issue.origin as string | undefined;
+      if (origin === 'string') {
         if (issue.minimum === 1) return { message: '入力してください' };
         return { message: `${issue.minimum}文字以上で入力してください` };
       }
-      if (issue.type === 'number') {
+      if (origin === 'number') {
         return {
           message: issue.inclusive
             ? `${issue.minimum}以上の値を入力してください`
             : `${issue.minimum}より大きい値を入力してください`,
         };
       }
-      if (issue.type === 'array') {
+      if (origin === 'array') {
         return { message: `${issue.minimum}件以上選択してください` };
       }
-      if (issue.type === 'date') {
-        return { message: `指定日以降の日付を入力してください` };
+      if (origin === 'date') {
+        return { message: '指定日以降の日付を入力してください' };
       }
       return { message: `${issue.minimum}以上にしてください` };
+    }
 
-    case ZodIssueCode.too_big:
-      if (issue.type === 'string') {
+    // ── 最大値 / 最大長 ──
+    case 'too_big': {
+      const origin = issue.origin as string | undefined;
+      if (origin === 'string') {
         return { message: `${issue.maximum}文字以内で入力してください` };
       }
-      if (issue.type === 'number') {
+      if (origin === 'number') {
         return {
           message: issue.inclusive
             ? `${issue.maximum}以下の値を入力してください`
             : `${issue.maximum}未満の値を入力してください`,
         };
       }
-      if (issue.type === 'array') {
+      if (origin === 'array') {
         return { message: `${issue.maximum}件以内で選択してください` };
       }
-      if (issue.type === 'date') {
-        return { message: `指定日以前の日付を入力してください` };
+      if (origin === 'date') {
+        return { message: '指定日以前の日付を入力してください' };
       }
       return { message: `${issue.maximum}以下にしてください` };
+    }
 
-    // ── 正規表現不一致 ──
-    case ZodIssueCode.invalid_string:
+    // ── フォーマットバリデーション (email, url, regex, datetime, uuid 等) ──
+    case 'invalid_format': {
+      const format = issue.format as string | undefined;
+      if (format === 'email') return { message: '有効なメールアドレスを入力してください' };
+      if (format === 'url') return { message: '有効なURLを入力してください' };
+      if (format === 'uuid') return { message: '有効なUUIDを入力してください' };
+      if (format === 'datetime') return { message: '有効な日時を入力してください' };
+      if (format === 'ip' || format === 'ipv4' || format === 'ipv6') return { message: '有効なIPアドレスを入力してください' };
+      if (format === 'regex') return { message: '入力形式が正しくありません' };
       return { message: '入力形式が正しくありません' };
+    }
 
-    // ── 配列内ユニーク違反 ──
-    case ZodIssueCode.custom:
-      return { message: ctx.defaultError };
+    // ── 列挙値 / リテラル不一致 ──
+    case 'invalid_value': {
+      const values = issue.values as unknown[];
+      if (values && values.length === 1) {
+        return { message: '値が正しくありません' };
+      }
+      return { message: '選択肢から選んでください' };
+    }
+
+    // ── union どれにも該当しない ──
+    case 'invalid_union':
+      return { message: '入力値が正しくありません' };
 
     // ── 認識できないキー ──
-    case ZodIssueCode.unrecognized_keys:
-      return { message: `不明な項目が含まれています: ${issue.keys.join(', ')}` };
-
-    // ── 引数/戻り値 ──
-    case ZodIssueCode.invalid_arguments:
-      return { message: '引数が正しくありません' };
-
-    case ZodIssueCode.invalid_return_type:
-      return { message: '戻り値が正しくありません' };
+    case 'unrecognized_keys':
+      return { message: `不明な項目が含まれています: ${(issue.keys || []).join(', ')}` };
 
     // ── 日付 ──
-    case ZodIssueCode.invalid_date:
+    case 'invalid_date':
       return { message: '有効な日付を入力してください' };
 
-    // ── intersection 型のマージ不可 ──
-    case ZodIssueCode.invalid_intersection_types:
-      return { message: '型の組み合わせが正しくありません' };
-
-    // ── not_multiple_of ──
-    case ZodIssueCode.not_multiple_of:
-      return { message: `${issue.multipleOf}の倍数で入力してください` };
-
-    // ── not_finite ──
-    case ZodIssueCode.not_finite:
-      return { message: '有限の数値を入力してください' };
+    // ── custom (refine 等) ──
+    case 'custom':
+      return { message: issue.message || '入力値が正しくありません' };
 
     default:
-      return { message: ctx.defaultError };
+      return { message: issue.message || '入力値が正しくありません' };
   }
 };
 
 // グローバル適用
-z.setErrorMap(zodJaErrorMap);
+z.setErrorMap(zodJaErrorMap as z.ZodErrorMap);

@@ -44,4 +44,13 @@ public interface EventPostRepository extends JpaRepository<EventPost, String>, J
             Pageable pageable);
 
     List<EventPost> findByCompanyAccountIdAndIsDeletedFalse(String companyAccountId);
+
+    @Query("SELECT e FROM EventPost e WHERE e.isDeleted = false AND e.status = '1' AND e.scheduledAt IS NOT NULL AND e.scheduledAt <= :now")
+    List<EventPost> findScheduledEventsToPublish(@Param("now") java.time.LocalDateTime now);
+
+    @Query("SELECT e FROM EventPost e WHERE e.isDeleted = false AND e.status = '2' AND e.eventDate < :date")
+    List<EventPost> findExpiredPublishedEvents(@Param("date") LocalDate date);
+
+    @Query("SELECT e FROM EventPost e WHERE e.isDeleted = true AND e.updatedAt < :cutoff")
+    List<EventPost> findDeletedBefore(@Param("cutoff") java.time.LocalDateTime cutoff);
 }

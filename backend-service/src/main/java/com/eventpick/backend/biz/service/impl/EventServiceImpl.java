@@ -1,15 +1,14 @@
 package com.eventpick.backend.biz.service.impl;
 
+import com.eventpick.backend.biz.exception.BadRequestException;
+import com.eventpick.backend.biz.exception.MessageEnum;
 import com.eventpick.backend.biz.exception.ResourceNotFoundException;
 import com.eventpick.backend.biz.service.EventService;
+import com.eventpick.backend.biz.util.AuditLogHelper;
 import com.eventpick.backend.biz.util.IdGenerator;
 import com.eventpick.backend.biz.util.SecurityUtils;
-import com.eventpick.backend.domain.entity.Company;
-import com.eventpick.backend.domain.entity.EventMedia;
-import com.eventpick.backend.domain.entity.EventPost;
-import com.eventpick.backend.domain.repository.CompanyRepository;
-import com.eventpick.backend.domain.repository.EventMediaRepository;
-import com.eventpick.backend.domain.repository.EventPostRepository;
+import com.eventpick.backend.domain.entity.*;
+import com.eventpick.backend.domain.repository.*;
 import com.eventpick.backend.restapi.dto.EventPostDto;
 import com.eventpick.backend.restapi.dto.PostCreateRequestDto;
 import com.eventpick.backend.restapi.dto.enums.EventStatus;
@@ -34,9 +33,16 @@ import java.util.List;
 @Transactional
 public class EventServiceImpl implements EventService {
 
+    private static final int MAX_MEDIA_PER_EVENT = 3;
+    private static final long MAX_FILE_SIZE_BYTES = 3 * 1024 * 1024; // 3MB
+
     private final EventPostRepository eventPostRepository;
     private final EventMediaRepository eventMediaRepository;
     private final CompanyRepository companyRepository;
+    private final CompanyTicketRepository ticketRepository;
+    private final TicketHistoryRepository ticketHistoryRepository;
+    private final EventPreviewRepository eventPreviewRepository;
+    private final AuditLogHelper auditLogHelper;
 
     @Override
     @Transactional(readOnly = true)
@@ -127,7 +133,17 @@ public class EventServiceImpl implements EventService {
     @Cacheable(value = "events", key = "#eventId")
     @Transactional(readOnly = true)
     public EventPostDto getEvent(String eventId) {
-        return toDto(findOrThrow(eventId));
+        EventPost event = findOrThrow(eventId);
+        // 閲覧履歴を記録（非同期的に後で集計される）
+        String userId = SecurityUtils.getCurrentUserSub().orElse(null);
+        EventPreview preview = EventPreview.builder()
+                .previewId(IdGenerator.generateUlid())
+                .postId(eventId)
+                .userId(userId)
+                .actionType("view")
+                .build();
+        eventPreviewRepository.save(preview);
+        return toDto(event);
     }
 
     @Override
@@ -145,10 +161,47 @@ public class EventServiceImpl implements EventService {
     @CacheEvict(value = "events", allEntries = true)
     public void publishEvent(String eventId) {
         EventPost event = findOrThrow(eventId);
+        Company company = getOwnerCompany(event);
+
+        // 既に公開済みチェック
+        if (EventStatus.PUBLISHED.getCode().equals(event.getStatus())) {
+            throw new BadRequestException(MessageEnum.BUSINESS_ERROR)
+                    .context("eventId", eventId, "既に公開されています");
+        }
+
+        // チケット残高確認 & 消費
+        CompanyTicket ticket = ticketRepository.findByCompanyId(company.getCompanyId())
+                .orElseThrow(() -> new BadRequestException(MessageEnum.BUSINESS_ERROR)
+                        .context("companyId", company.getCompanyId(), "チケット残高が不足しています"));
+        if (ticket.getRemainingTickets() <= 0) {
+            throw new BadRequestException(MessageEnum.BUSINESS_ERROR)
+                    .context("remaining", String.valueOf(ticket.getRemainingTickets()), "チケット残高が不足しています");
+        }
+
+        // チケット消費
+        ticket.setUsedTickets(ticket.getUsedTickets() + 1);
+        ticket.setRemainingTickets(ticket.getRemainingTickets() - 1);
+        ticketRepository.save(ticket);
+
+        // チケット消費履歴記録
+        TicketHistory history = TicketHistory.builder()
+                .historyId(IdGenerator.generateUlid())
+                .ticketId(ticket.getTicketId())
+                .companyId(company.getCompanyId())
+                .postId(eventId)
+                .action("publish")
+                .amount(1)
+                .build();
+        ticketHistoryRepository.save(history);
+
+        // 公開
         event.setStatus(EventStatus.PUBLISHED.getCode());
         event.setPublishedAt(LocalDateTime.now());
         eventPostRepository.save(event);
-        log.info("Event published: {}", eventId);
+
+        auditLogHelper.log(company.getCompanyId(), "company", "EVENT_PUBLISH",
+                "E", eventId, "イベント公開: " + event.getTitle());
+        log.info("Event published: eventId={}, company={}", eventId, company.getCompanyId());
     }
 
     @Override
@@ -170,22 +223,68 @@ public class EventServiceImpl implements EventService {
     @Override
     public void uploadMedia(String eventId, EventMediaUploadRequest request) {
         findOrThrow(eventId);
+
+        // 枚数制限チェック（最大3枚）
+        List<EventMedia> existing = eventMediaRepository.findByPostIdOrderBySortOrder(eventId);
+        if (existing.size() >= MAX_MEDIA_PER_EVENT) {
+            throw new BadRequestException(MessageEnum.VALIDATION_ERROR)
+                    .context("eventId", eventId, "画像は最大" + MAX_MEDIA_PER_EVENT + "枚までです");
+        }
+
+        // ファイルサイズチェック（最大3MB）
+        if (request.getFile() != null && request.getFile().getSize() > MAX_FILE_SIZE_BYTES) {
+            throw new BadRequestException(MessageEnum.UPLOAD_SIZE_EXCEEDED)
+                    .context("fileSize", String.valueOf(request.getFile().getSize()), "3MBを超えています");
+        }
+
+        // Content-Typeチェック (jpeg/png)
+        if (request.getFile() != null) {
+            String contentType = request.getFile().getContentType();
+            if (contentType != null && !contentType.equals("image/jpeg") && !contentType.equals("image/png")) {
+                throw new BadRequestException(MessageEnum.VALIDATION_ERROR)
+                        .context("contentType", contentType, "jpeg/pngのみ対応");
+            }
+        }
+
+        // TODO: S3アップロード (key: events/{eventId}/{UUID}.jpg)
+        String mediaId = IdGenerator.generateUlid();
+        String s3Key = "events/" + eventId + "/" + mediaId;
+
         EventMedia media = EventMedia.builder()
-                .mediaId(IdGenerator.generateUlid())
+                .mediaId(mediaId)
                 .postId(eventId)
-                .fileUrl("pending-upload")
+                .fileUrl("https://cdn.eventpick.io/" + s3Key)
                 .fileName(request.getFile() != null ? request.getFile().getOriginalFilename() : "unknown")
                 .contentType(request.getFile() != null ? request.getFile().getContentType() : null)
                 .fileSize(request.getFile() != null ? request.getFile().getSize() : 0)
+                .sortOrder(existing.size() + 1)
                 .build();
         eventMediaRepository.save(media);
-        log.info("Media uploaded for event: {}, mediaId: {}", eventId, media.getMediaId());
+        log.info("Media uploaded: eventId={}, mediaId={}", eventId, mediaId);
     }
 
     @Override
     public void deleteMedia(String eventId, String mediaId) {
         eventMediaRepository.deleteByPostIdAndMediaId(eventId, mediaId);
+        // TODO: S3上のファイルも削除
         log.info("Media deleted: eventId={}, mediaId={}", eventId, mediaId);
+    }
+
+    @Override
+    @CacheEvict(value = "events", allEntries = true)
+    public void deleteEvent(String eventId) {
+        EventPost event = findOrThrow(eventId);
+        event.setIsDeleted(true);
+        eventPostRepository.save(event);
+        auditLogHelper.log(event.getCompanyAccountId(), "company", "EVENT_DELETE",
+                "E", eventId, "イベント論理削除: " + event.getTitle());
+        log.info("Event soft deleted: {}", eventId);
+    }
+
+    private Company getOwnerCompany(EventPost event) {
+        // companyAccountIdから企業を特定
+        return companyRepository.findByCompanyIdAndIsDeletedFalse(event.getCompanyAccountId())
+                .orElseThrow(() -> new ResourceNotFoundException("Company", "companyId", event.getCompanyAccountId()));
     }
 
     private EventPost findOrThrow(String eventId) {

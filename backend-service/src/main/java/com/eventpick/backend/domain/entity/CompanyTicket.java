@@ -34,4 +34,7 @@ public class CompanyTicket extends BaseEntity {
     @Column(name = "remaining_tickets", nullable = false)
     @Builder.Default
     private Integer remainingTickets = 0;
+
+    @Column(name = "ticket_date")
+    private java.time.LocalDate ticketDate;
 }

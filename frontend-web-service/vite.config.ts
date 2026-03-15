@@ -8,6 +8,12 @@ export default defineConfig({
     // サンドボックス環境でのリバースプロキシアクセスを許可
     allowedHosts: true,
     host: '0.0.0.0',
+    proxy: {
+      '/api/v1': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+    },
   },
   test: {
     environment: 'jsdom',

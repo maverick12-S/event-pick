@@ -1,6 +1,7 @@
 package com.eventpick.backend.biz.service.impl;
 
 import com.eventpick.backend.biz.exception.ResourceNotFoundException;
+import com.eventpick.backend.biz.util.AuditLogHelper;
 import com.eventpick.backend.domain.entity.Company;
 import com.eventpick.backend.domain.repository.CompanyNotificationRepository;
 import com.eventpick.backend.domain.repository.CompanyRepository;
@@ -39,6 +40,9 @@ class CompanyServiceImplTest {
 
     @Mock
     private CompanyReviewRepository reviewRepository;
+
+    @Mock
+    private AuditLogHelper auditLogHelper;
 
     @Test
     @DisplayName("企業詳細取得: 存在する場合はDTOを返すこと")

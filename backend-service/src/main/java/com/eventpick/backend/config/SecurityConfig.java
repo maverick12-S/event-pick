@@ -49,6 +49,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/webhooks/stripe").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/master/prefectures").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/master/cities").permitAll()
+                // 開発用: フロント疎通テスト（本番前に削除すること）
+                .requestMatchers(HttpMethod.GET, "/api/v1/company-accounts").permitAll()
                 // Actuator / Swagger
                 .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
