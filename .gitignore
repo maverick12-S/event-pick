@@ -137,3 +137,24 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Java / Gradle
+*.class
+*.jar
+*.war
+*.ear
+build/
+!gradle/wrapper/gradle-wrapper.jar
+.gradle/
+out/
+target/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.classpath
+.project
